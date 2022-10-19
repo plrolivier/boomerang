@@ -1,19 +1,17 @@
 use std::os::unix::process::CommandExt;
 use std::process::{exit, Command};
 
-//use libc::user_regs_struct;
-
 use nix::sys::ptrace;
 use nix::sys::wait::wait;
 use nix::unistd::{fork, ForkResult, Pid};
 
-mod tracer_engine;
+use sysforward::tracer_engine::tracer::Tracer;
 
 
 
 fn main() {
 
-    match unsafe{fork()} {
+    match unsafe {fork()} {
 
         Ok(ForkResult::Child) => {
             run_child();
@@ -38,7 +36,7 @@ fn run_child() {
 
 fn run_parent(child: Pid) {
 
-    let mut tracer = tracer_engine::Tracer::new(child);
+    let mut tracer = Tracer::new(child);
 
     wait().unwrap();    // exit syscall
 
@@ -56,7 +54,7 @@ fn run_parent(child: Pid) {
 
 
 
-fn sync_registers(tracer: &mut tracer_engine::Tracer) {
+fn sync_registers(tracer: &mut Tracer) {
 
     let regs = ptrace::getregs(tracer.pid).unwrap();
 
@@ -89,7 +87,6 @@ fn sync_registers(tracer: &mut tracer_engine::Tracer) {
     tracer.regs.gs          = regs.gs;
 
 }
-
 
 fn wait_for_syscall(child: Pid) {
 

@@ -1,87 +1,28 @@
+/*
+ *
+ */
 pub mod tracer {
 
     use nix::unistd::Pid;
+    use nix::libc::user_regs_struct;
 
+    use crate::arch::{ TargetArch, Architecture };
 
-    pub struct X86Registers {
-        pub r15: u64,
-        pub r14: u64,
-        pub r13: u64,
-        pub r12: u64,
-        pub rbp: u64,
-        pub rbx: u64,
-        pub r11: u64,
-        pub r10: u64,
-        pub r9: u64,
-        pub r8: u64,
-        pub rax: u64,
-        pub rcx: u64,
-        pub rdx: u64,
-        pub rsi: u64,
-        pub rdi: u64,
-        pub orig_rax: u64,
-        pub rip: u64,
-        pub cs: u64,
-        pub eflags: u64,
-        pub rsp: u64,
-        pub ss: u64,
-        pub fs_base: u64,
-        pub gs_base: u64,
-        pub ds: u64,
-        pub es: u64,
-        pub fs: u64,
-        pub gs: u64,
-    }
-
-    impl X86Registers {
-
-        pub fn new() -> X86Registers {
-            X86Registers {
-                r15: 0,
-                r14: 0,
-                r13: 0,
-                r12: 0,
-                rbp: 0,
-                rbx: 0,
-                r11: 0,
-                r10: 0,
-                r9: 0,
-                r8: 0,
-                rax: 0,
-                rcx: 0,
-                rdx: 0,
-                rsi: 0,
-                rdi: 0,
-                orig_rax: 0,
-                rip: 0,
-                cs: 0,
-                eflags: 0,
-                rsp: 0,
-                ss: 0,
-                fs_base: 0,
-                gs_base: 0,
-                ds: 0,
-                es: 0,
-                fs: 0,
-                gs: 0,
-            }
-        }
-    }
 
 
     struct Syscall {
         no: u64,
-        args: [u64; 7],
+        args: Vec<u64>,
         retval: u64,
         errno: u64,
         decision: Decision
     }
 
     impl Syscall {
-        pub fn new() -> Syscall {
+        fn new() -> Syscall {
             Syscall {
                 no: 0,
-                args: [0, 0, 0, 0, 0, 0, 0,],
+                args: vec![0; 7],
                 retval: 0,
                 errno: 0,
                 decision: Decision::Continue,
@@ -96,6 +37,7 @@ pub mod tracer {
         FwdEntry,
         FwdExit,
         InspectExit,
+        LogLocal,
         NoExec,
         Kill,
     }
@@ -123,68 +65,142 @@ pub mod tracer {
     pub struct Tracer {
 
         pub pid: Pid,
-        pub regs: X86Registers,
+        //pub regs: Vec<u64>,
+        pub regs: user_regs_struct,     // only for x86_64
 
         syscall: Syscall,
         insyscall: bool,
         filter: Filter,
+
+        arch: Architecture,
     }
 
     impl Tracer {
 
-        pub fn new(pid: Pid) -> Tracer {
+        pub fn new(pid: Pid, arch: TargetArch) -> Tracer {
             Tracer {
                 pid: pid,
-                regs: X86Registers::new(),
+                //regs: vec![0; 33],
+                regs: user_regs_struct {
+                    r15: 0,
+                    r14: 0,
+                    r13: 0,
+                    r12: 0,
+                    rbp: 0,
+                    rbx: 0,
+                    r11: 0,
+                    r10: 0,
+                    r9: 0,
+                    r8: 0,
+                    rax: 0,
+                    rcx: 0,
+                    rdx: 0,
+                    rsi: 0,
+                    rdi: 0,
+                    orig_rax: 0,
+                    rip: 0,
+                    cs: 0,
+                    eflags: 0,
+                    rsp: 0,
+                    ss: 0,
+                    fs_base: 0,
+                    gs_base: 0,
+                    ds: 0,
+                    es: 0,
+                    fs: 0,
+                    gs: 0,
+                },
                 syscall: Syscall::new(),
                 insyscall: true,
                 filter: Filter::new(String::from("filtername")),
+                arch: Architecture::new(arch)
             }
+        }
+
+        /*
+         * When the tracking of the syscall entry/exit is left to the library,
+         * we only synchronize the registers.
+         */
+        pub fn sync_registers(&mut self, regs: user_regs_struct) {
+            self.regs = regs.clone();
         }
 
         pub fn trace(&mut self){
             match self.insyscall {
-                true    => self.trace_entry(),
-                false   => self.trace_exit(),
+                true    => {
+                    self.sync_entry();
+                    self.trace_entry();
+                },
+
+                false   => {
+                    self.sync_exit();
+                    self.trace_exit();
+                },
             }
-            self.insyscall = !self.insyscall;
+        }
+
+        fn sync_entry(&mut self) {
+            // Only for x86_64
+            self.set_syscall_entry(self.regs.orig_rax,
+                                   self.regs.rdi,
+                                   self.regs.rsi,
+                                   self.regs.rdx,
+                                   self.regs.r10,
+                                   self.regs.r8,
+                                   self.regs.r9,
+                                   0,
+            );
+        }
+
+        fn sync_exit(&mut self) {
+            // Only for x86_64
+            self.set_syscall_exit(self.regs.orig_rax, self.regs.rdx);
+        }
+
+        /*
+         * The other way is to directly call the right method.
+         */
+        pub fn set_syscall_entry(&mut self, scno: u64, arg1: u64, 
+                                 arg2: u64, arg3: u64, arg4: u64,
+                                 arg5: u64, arg6: u64, arg7: u64) {
+            // TODO: what about seccomp (see strace & PTRACE_GET_SYSCALL_INFO)
+            self.syscall.no = scno;
+            self.syscall.args[0] = arg1;
+            self.syscall.args[1] = arg2;
+            self.syscall.args[2] = arg3;
+            self.syscall.args[3] = arg4;
+            self.syscall.args[4] = arg5;
+            self.syscall.args[5] = arg6;
+            self.syscall.args[6] = arg7;
+        }
+
+        pub fn set_syscall_exit(&mut self, retval: u64, errno: u64) {
+            self.syscall.retval = retval;
+            self.syscall.errno = errno;
         }
 
         fn trace_entry(&mut self) {
-            self.copy_entry();
             self.log_entry();
 
             match self.filter_entry() {
                 Decision::Continue => (),
-                _ => panic!("Decision is not Continue")
+                _ => panic!("Decision not implemented")
             }
+
+            self.insyscall = true;
         }
 
         fn trace_exit(&mut self) {
-            self.copy_exit();
             self.log_exit();
 
             match self.filter_exit() {
                 Decision::Continue => (),
-                _ => panic!("Decision is not Continue")
+                _ => panic!("Decision not implemented")
             }
+
+            self.insyscall = false;
         }
 
-
-        fn copy_entry(&mut self) {
-            self.syscall.no = self.regs.orig_rax;
-            self.syscall.args[0] = self.regs.rdi;
-            self.syscall.args[1] = self.regs.rsi;
-            self.syscall.args[2] = self.regs.rdx;
-            self.syscall.args[3] = self.regs.r10;
-            self.syscall.args[4] = self.regs.r8;
-            self.syscall.args[5] = self.regs.r9;
-            self.syscall.args[6] = 0;
-        }
-
-        fn copy_exit(&mut self) {
-            self.syscall.retval = self.regs.orig_rax;
-        }
 
         fn log_entry(&self) {
             println!("[ENTRY] no: {:#x} args: {:#x?}", 

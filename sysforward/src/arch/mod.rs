@@ -24,9 +24,9 @@ pub enum TargetArch {
 
 
 pub struct Architecture {
-    name: TargetArch,
+    pub name: TargetArch,
     //register_table: Register,
-    syscall_table: SyscallTable,
+    pub(crate) syscall_table: SyscallTable,
 }
 
 impl Architecture {
@@ -104,9 +104,7 @@ impl SyscallTable {
         self.map.get(name).copied()
     }
 
-    /*
-    pub fn get_syscall_name(&self, no: &u64) -> Option<str> {
-        self.map.iter().find_map(|(key, &val)| if val == no { Some(no) } else { None })
+    pub fn get_syscall_name(&self, no: &u64) -> Option<String> {
+        self.map.iter().find_map(|(&key, &val)| if val == *no { Some(String::from(key)) } else { None })
     }
-    */
 }

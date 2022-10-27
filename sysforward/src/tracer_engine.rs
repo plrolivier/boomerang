@@ -9,27 +9,62 @@ pub mod tracer {
     use crate::arch::{ TargetArch, Architecture };
 
 
-
-    struct Syscall {
+    struct RawSyscall {
         no: u64,
         args: Vec<u64>,
         retval: u64,
         errno: u64,
-        decision: Decision
     }
 
-    impl Syscall {
-        fn new() -> Syscall {
-            Syscall {
+    impl RawSyscall {
+        fn new() -> Self {
+            Self {
                 no: 0,
                 args: vec![0; 7],
                 retval: 0,
                 errno: 0,
-                decision: Decision::Continue,
             }
         }
     }
 
+    #[derive(Debug)]
+    enum ArgType {
+        /* Direct value */
+        Integer(u64),
+        Fd(u16),
+        Size(u64),
+        Offset(u64),
+        Flag(u8),
+        Prot(u8),
+        Operation(u8),
+        Signal(u8),
+        /* Pointers */
+        Address(u64),
+        Buf(u64, Vec<u64>),
+        NullBuf(u64, String),   // Null terminated buffer
+        Struct(u64, String, Vec<u64>),
+    }
+
+
+    struct Syscall {
+        raw: RawSyscall,
+        name: String,
+        args: Vec<Option<ArgType>>,
+        decision: Option<Decision>,
+    }
+
+    impl Syscall {
+        fn new() -> Self {
+            Self {
+                raw: RawSyscall::new(),
+                name: String::with_capacity(25),
+                //args: vec![&None; 7],
+                args: Vec::from([None, None, None, None, None, None, None]),
+                //decision: None,
+                decision: Some(Decision::Continue), //Once the filtering implemented, put None 
+            }
+        }
+    }
 
     #[derive(Clone, Copy)]
     enum Decision {
@@ -111,7 +146,7 @@ pub mod tracer {
                     gs: 0,
                 },
                 syscall: Syscall::new(),
-                insyscall: true,
+                insyscall: false,   // Hypothesis: we do the tracing from the start!
                 filter: Filter::new(String::from("filtername")),
                 arch: Architecture::new(arch)
             }
@@ -127,12 +162,12 @@ pub mod tracer {
 
         pub fn trace(&mut self){
             match self.insyscall {
-                true    => {
+                false    => {
                     self.sync_entry();
                     self.trace_entry();
                 },
 
-                false   => {
+                true   => {
                     self.sync_exit();
                     self.trace_exit();
                 },
@@ -140,6 +175,8 @@ pub mod tracer {
         }
 
         fn sync_entry(&mut self) {
+            self.syscall = Syscall::new();
+
             // Only for x86_64
             self.set_syscall_entry(self.regs.orig_rax,
                                    self.regs.rdi,
@@ -164,26 +201,28 @@ pub mod tracer {
                                  arg2: u64, arg3: u64, arg4: u64,
                                  arg5: u64, arg6: u64, arg7: u64) {
             // TODO: what about seccomp (see strace & PTRACE_GET_SYSCALL_INFO)
-            self.syscall.no = scno;
-            self.syscall.args[0] = arg1;
-            self.syscall.args[1] = arg2;
-            self.syscall.args[2] = arg3;
-            self.syscall.args[3] = arg4;
-            self.syscall.args[4] = arg5;
-            self.syscall.args[5] = arg6;
-            self.syscall.args[6] = arg7;
+            self.syscall.raw.no = scno;
+            self.syscall.raw.args[0] = arg1;
+            self.syscall.raw.args[1] = arg2;
+            self.syscall.raw.args[2] = arg3;
+            self.syscall.raw.args[3] = arg4;
+            self.syscall.raw.args[4] = arg5;
+            self.syscall.raw.args[5] = arg6;
+            self.syscall.raw.args[6] = arg7;
         }
 
         pub fn set_syscall_exit(&mut self, retval: u64, errno: u64) {
-            self.syscall.retval = retval;
-            self.syscall.errno = errno;
+            self.syscall.raw.retval = retval;
+            self.syscall.raw.errno = errno;
         }
 
         fn trace_entry(&mut self) {
+            self.log_raw_entry();
+            self.decode_entry();
             self.log_entry();
 
             match self.filter_entry() {
-                Decision::Continue => (),
+                Some(Decision::Continue) => (),
                 _ => panic!("Decision not implemented")
             }
 
@@ -191,10 +230,11 @@ pub mod tracer {
         }
 
         fn trace_exit(&mut self) {
+            self.log_raw_exit();
             self.log_exit();
 
             match self.filter_exit() {
-                Decision::Continue => (),
+                Some(Decision::Continue) => (),
                 _ => panic!("Decision not implemented")
             }
 
@@ -202,22 +242,83 @@ pub mod tracer {
         }
 
 
+        fn log_raw_entry(&self) {
+            println!("[ENTRY] no: {:#x} args: {:x?}", 
+                     self.syscall.raw.no as usize, self.syscall.raw.args)
+        }
+
+        fn log_raw_exit(&self) {
+            println!("[EXIT] retval: {:#x}", 
+                     self.syscall.raw.retval as usize)
+        }
+
         fn log_entry(&self) {
-            println!("[ENTRY] no: {:#x} args: {:#x?}", 
-                     self.syscall.no as usize, self.syscall.args)
+            print!("[ENTRY] name: {} ", //args: {:#x?}", 
+                     self.syscall.name);
+            let mut args = Vec::new();
+            for arg in &self.syscall.args {
+                match arg {
+                    Some(x) => args.push(x),
+                    None => (),
+                }
+            }
+            println!("args: {:?}", args);
         }
 
         fn log_exit(&self) {
-            println!("[EXIT] retval: {:#x}", 
-                     self.syscall.retval as usize)
+            println!("[EXIT] name: {}", self.syscall.name);
         }
 
-        fn filter_entry(&self) -> Decision {
-            self.filter.filter(&self.syscall)
-        }
-
-        fn filter_exit(&self) -> Decision {
+        fn filter_entry(&mut self) -> Option<Decision> {
+            self.syscall.decision = Some(self.filter.filter(&self.syscall));
             self.syscall.decision
+        }
+
+        fn filter_exit(&self) -> Option<Decision> {
+            self.syscall.decision
+        }
+
+        fn decode_entry(&mut self) {
+            // TODO: improve the match by using number instead of strings
+            match self.arch.syscall_table.get_syscall_name(&self.syscall.raw.no) {
+                Some(x) => self.syscall.name = x,
+                None => println!("No name found for {}", self.syscall.raw.no),
+            }
+
+            match self.syscall.name.as_str() {
+                "open" => {
+                    self.syscall.args[0] = Some(ArgType::NullBuf(self.syscall.raw.args[0], String::from("filename")));
+                    self.syscall.args[1] = Some(ArgType::Flag(self.syscall.raw.args[1] as u8));
+                    self.syscall.args[2] = Some(ArgType::Integer(self.syscall.raw.args[2]));
+                },
+                "openat" => {
+                    self.syscall.args[0] = Some(ArgType::Integer(self.syscall.raw.args[0]));
+                    self.syscall.args[1] = Some(ArgType::NullBuf(self.syscall.raw.args[1], String::from("filename")));
+                    self.syscall.args[2] = Some(ArgType::Flag(self.syscall.raw.args[2] as u8));
+                    self.syscall.args[3] = Some(ArgType::Integer(self.syscall.raw.args[3]));
+                },
+                "read" => {
+                    self.syscall.args[0] = Some(ArgType::Fd(self.syscall.raw.args[0] as u16));
+                    self.syscall.args[1] = Some(ArgType::Buf(self.syscall.raw.args[1], vec![0]));
+                    self.syscall.args[2] = Some(ArgType::Size(self.syscall.raw.args[2]));
+                },
+                "write" => {
+                    self.syscall.args[0] = Some(ArgType::Fd(self.syscall.raw.args[0] as u16));
+                    self.syscall.args[1] = Some(ArgType::Buf(self.syscall.raw.args[1], vec![0]));
+                    self.syscall.args[2] = Some(ArgType::Size(self.syscall.raw.args[2]));
+                },
+                "close" => {
+                    self.syscall.args[0] = Some(ArgType::Fd(self.syscall.raw.args[0] as u16));
+                },
+                "mmap" => {
+                    self.syscall.args[0] = Some(ArgType::Address(self.syscall.raw.args[0]));
+                    self.syscall.args[1] = Some(ArgType::Size(self.syscall.raw.args[1]));
+                    self.syscall.args[2] = Some(ArgType::Prot(self.syscall.raw.args[2] as u8));
+                    self.syscall.args[3] = Some(ArgType::Fd(self.syscall.raw.args[3] as u16));
+                    self.syscall.args[4] = Some(ArgType::Offset(self.syscall.raw.args[4]));
+                },
+                _ => (),
+            }
         }
     }
 

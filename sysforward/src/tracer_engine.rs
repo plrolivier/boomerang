@@ -11,6 +11,7 @@ pub mod tracer {
     use nix::sys::ptrace;
 
     use crate::arch::{ TargetArch, Architecture };
+    use crate::syscall::ArgumentType::{ Decode, Int, Fd, Size, Offset, Flag, Prot, Signal, Address, Buffer, NullBuf, Struct };
 
 
     struct RawSyscall {
@@ -31,29 +32,10 @@ pub mod tracer {
         }
     }
 
-    #[derive(Debug)]
-    enum ArgType {
-        /* Direct value */
-        Integer(u64),
-        Fd(u16),
-        Size(u64),
-        Offset(u64),
-        Flag(u8),
-        Prot(u8),
-        //Operation(u8),
-        Signal(u8),
-        /* Pointers */
-        Address(u64),
-        Buf(u64, Vec<u64>),
-        NullBuf(u64, String),   // Null terminated buffer
-        Struct(u64, String, Vec<u64>),
-    }
-
-
     struct Syscall {
         raw: RawSyscall,
         name: String,
-        args: Vec<Option<ArgType>>,
+        args: Vec<Option<Box<dyn Decode>>>,
         decision: Option<Decision>,
     }
 
@@ -66,6 +48,24 @@ pub mod tracer {
                 args: Vec::from([None, None, None, None, None, None, None]),
                 //decision: None,
                 decision: Some(Decision::Continue), //Once the filtering implemented, put None 
+            }
+        }
+
+        fn decode(&mut self, pid: Pid, operation: &Box<dyn Operation>) {
+            for arg in self.args.iter_mut() {
+                match arg {
+                    Some(a) => a.decode(pid, operation),
+                    None => break,
+                }
+            }
+        }
+
+        fn print(&self) {
+            for arg in self.args.iter() {
+                match arg {
+                    Some(a) => a.print(),
+                    None => break,
+                }
             }
         }
     }
@@ -260,7 +260,8 @@ pub mod tracer {
         }
 
         fn log_entry(&self) {
-            print!("[ENTRY] name: {} ", //args: {:#x?}", 
+            //print!("[ENTRY] name: {} ", //args: {:#x?}", 
+            println!("[ENTRY] name: {} ", //args: {:#x?}", 
                      self.syscall.name);
             let mut args = Vec::new();
             for arg in &self.syscall.args {
@@ -269,7 +270,8 @@ pub mod tracer {
                     None => (),
                 }
             }
-            println!("args: {:?}", args);
+
+            self.syscall.print();
         }
 
         fn log_exit(&self) {
@@ -292,42 +294,48 @@ pub mod tracer {
                 None => println!("No name found for {}", self.syscall.raw.no),
             }
 
-            // TODO: we could reimplement this by using trait instead of enum for the type of
-            // arguments
+            /*
+             * First, assign a type to each argument according to the syscall.
+             */
             match self.syscall.name.as_str() {
                 "open" => {
-                    self.syscall.args[0] = Some(ArgType::NullBuf(self.syscall.raw.args[0], String::from("filename")));
-                    self.syscall.args[1] = Some(ArgType::Flag(self.syscall.raw.args[1] as u8));
-                    self.syscall.args[2] = Some(ArgType::Integer(self.syscall.raw.args[2]));
+                    self.syscall.args[0] = Some(Box::new(NullBuf::new(self.syscall.raw.args[0])));
+                    self.syscall.args[1] = Some(Box::new(Flag::new(self.syscall.raw.args[1])));
+                    self.syscall.args[2] = Some(Box::new(Int::new(self.syscall.raw.args[2])));
                 },
                 "openat" => {
-                    self.syscall.args[0] = Some(ArgType::Integer(self.syscall.raw.args[0]));
-                    self.syscall.args[1] = Some(ArgType::NullBuf(self.syscall.raw.args[1], String::from("filename")));
-                    self.syscall.args[2] = Some(ArgType::Flag(self.syscall.raw.args[2] as u8));
-                    self.syscall.args[3] = Some(ArgType::Integer(self.syscall.raw.args[3]));
+                    self.syscall.args[0] = Some(Box::new(Int::new(self.syscall.raw.args[0])));
+                    self.syscall.args[1] = Some(Box::new(NullBuf::new(self.syscall.raw.args[1])));
+                    self.syscall.args[2] = Some(Box::new(Flag::new(self.syscall.raw.args[2])));
+                    self.syscall.args[3] = Some(Box::new(Int::new(self.syscall.raw.args[3])));
                 },
                 "read" => {
-                    self.syscall.args[0] = Some(ArgType::Fd(self.syscall.raw.args[0] as u16));
-                    self.syscall.args[1] = Some(ArgType::Buf(self.syscall.raw.args[1], vec![0]));
-                    self.syscall.args[2] = Some(ArgType::Size(self.syscall.raw.args[2]));
+                    self.syscall.args[0] = Some(Box::new(Fd::new(self.syscall.raw.args[0])));
+                    self.syscall.args[1] = Some(Box::new(Buffer::new(self.syscall.raw.args[1], self.syscall.raw.args[2])));
+                    self.syscall.args[2] = Some(Box::new(Size::new(self.syscall.raw.args[2])));
                 },
                 "write" => {
-                    self.syscall.args[0] = Some(ArgType::Fd(self.syscall.raw.args[0] as u16));
-                    self.syscall.args[1] = Some(ArgType::Buf(self.syscall.raw.args[1], vec![0]));
-                    self.syscall.args[2] = Some(ArgType::Size(self.syscall.raw.args[2]));
+                    self.syscall.args[0] = Some(Box::new(Fd::new(self.syscall.raw.args[0])));
+                    self.syscall.args[1] = Some(Box::new(Buffer::new(self.syscall.raw.args[1], self.syscall.raw.args[2])));
+                    self.syscall.args[2] = Some(Box::new(Size::new(self.syscall.raw.args[2])));
                 },
                 "close" => {
-                    self.syscall.args[0] = Some(ArgType::Fd(self.syscall.raw.args[0] as u16));
+                    self.syscall.args[0] = Some(Box::new(Fd::new(self.syscall.raw.args[0])));
                 },
                 "mmap" => {
-                    self.syscall.args[0] = Some(ArgType::Address(self.syscall.raw.args[0]));
-                    self.syscall.args[1] = Some(ArgType::Size(self.syscall.raw.args[1]));
-                    self.syscall.args[2] = Some(ArgType::Prot(self.syscall.raw.args[2] as u8));
-                    self.syscall.args[3] = Some(ArgType::Fd(self.syscall.raw.args[3] as u16));
-                    self.syscall.args[4] = Some(ArgType::Offset(self.syscall.raw.args[4]));
+                    self.syscall.args[0] = Some(Box::new(Address::new(self.syscall.raw.args[0])));
+                    self.syscall.args[1] = Some(Box::new(Size::new(self.syscall.raw.args[1])));
+                    self.syscall.args[2] = Some(Box::new(Prot::new(self.syscall.raw.args[2])));
+                    self.syscall.args[3] = Some(Box::new(Fd::new(self.syscall.raw.args[3])));
+                    self.syscall.args[4] = Some(Box::new(Offset::new(self.syscall.raw.args[4])));
                 },
                 _ => (),
             }
+
+            /*
+             * Second, iterate over the argument to decode them.
+             */
+            self.syscall.decode(self.pid, &self.interceptor);
         }
 
         pub fn read_registers(&self) -> Option<user_regs_struct> {
@@ -338,11 +346,11 @@ pub mod tracer {
             self.interceptor.write_registers(self.pid, regs)
         }
 
-        pub fn read_memory(&self, pid: Pid, addr: u64, size: u64) -> Vec<u32> {
+        pub fn read_memory(&self, addr: u64, size: u64) -> Vec<u32> {
             self.interceptor.read_memory(self.pid, addr, size)
         }
 
-        pub fn write_memory(&self, pid: Pid, addr: u64, mem: Vec<u32>) -> u64 {
+        pub fn write_memory(&self, addr: u64, mem: Vec<u32>) -> u64 {
             self.interceptor.write_memory(self.pid, addr, mem)
         }
     }
@@ -378,7 +386,7 @@ pub mod tracer {
     /*
      * Operations are implemented by the "backend" according to **how** syscall are intercepted.
      */
-    trait Operation {
+    pub trait Operation {
         fn read_registers(&self, pid: Pid) -> Option<user_regs_struct>;
         fn write_registers(&self, pid: Pid, regs: user_regs_struct) -> bool;
 
@@ -424,7 +432,7 @@ pub mod tracer {
         fn read_memory(&self, pid: Pid, addr: u64, size: u64) -> Vec<u32> {
             let mut mem = Vec::new();
             let mut addr = addr;
-            let mut count = size;
+            let mut count = size + (4 - size % 4);
 
             while count > 0 {
                 let address = addr as ptrace::AddressType;

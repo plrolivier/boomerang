@@ -9,3 +9,4 @@
 - filtering implemented via a eBPF VM
 - protocol module: json protocol to send syscall info
 - executor module
+- Replace u64 with usize where it is architecture dependent

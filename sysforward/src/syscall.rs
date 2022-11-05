@@ -14,6 +14,7 @@ pub mod ArgumentType {
 
     pub trait Decode {
         fn decode(&mut self, pid: Pid, operation: &Box<dyn Operation>) { }
+        fn to_json(&self) -> String { format!("{{\"type\":none,\"value\":0}}") }
         fn print(&self) { }
     }
 
@@ -25,6 +26,10 @@ pub mod ArgumentType {
         }
     }
     impl Decode for Int { 
+        fn to_json(&self) -> String {
+            format!("{{\"type\":\"integer\",\"value\":{}}}", self.value)
+        }
+
         fn print(&self) {
             println!("value: {:#x}", self.value);
         }
@@ -37,6 +42,10 @@ pub mod ArgumentType {
         }
     }
     impl Decode for Fd {
+        fn to_json(&self) -> String {
+            format!("{{\"type\":\"fd\",\"value\":{}}}", self.value)
+        }
+
         fn print(&self) {
             println!("fd: {:#x}", self.value);
         }
@@ -49,6 +58,10 @@ pub mod ArgumentType {
         }
     }
     impl Decode for Size {
+        fn to_json(&self) -> String {
+            format!("{{\"type\":\"size\",\"value\":{}}}", self.value)
+        }
+
         fn print(&self) {
             println!("size: {:#x}", self.value);
         }
@@ -61,6 +74,10 @@ pub mod ArgumentType {
         }
     }
     impl Decode for Offset {
+        fn to_json(&self) -> String {
+            format!("{{\"type\":\"offset\",\"value\":{}}}", self.value)
+        }
+
         fn print(&self) {
             println!("offset: {:#x}", self.value);
         }
@@ -73,6 +90,10 @@ pub mod ArgumentType {
         }
     }
     impl Decode for Flag {
+        fn to_json(&self) -> String {
+            format!("{{\"type\":\"flag\",\"value\":{}}}", self.value)
+        }
+
         fn print(&self) {
             println!("flags: {:#x}", self.value);
         }
@@ -85,6 +106,10 @@ pub mod ArgumentType {
         }
     }
     impl Decode for Prot {
+        fn to_json(&self) -> String {
+            format!("{{\"type\":\"prot\",\"value\":{}}}", self.value)
+        }
+
         fn print(&self) {
             println!("prot: {:#x}", self.value);
         }
@@ -102,6 +127,10 @@ pub mod ArgumentType {
         }
     }
     impl Decode for Signal {
+        fn to_json(&self) -> String {
+            format!("{{\"type\":\"signal\",\"value\":{}}}", self.value)
+        }
+
         fn print(&self) {
             println!("signo: {:#x}", self.value);
         }
@@ -118,6 +147,10 @@ pub mod ArgumentType {
         }
     }
     impl Decode for Address {
+        fn to_json(&self) -> String {
+            format!("{{\"type\":\"address\",\"value\":{}}}", self.value)
+        }
+
         fn print(&self) {
             println!("address: {:#x}", self.value);
         }
@@ -126,40 +159,44 @@ pub mod ArgumentType {
     pub struct Buffer {
         address: u64,
         size: u64,
-        value: Vec<u32>,
+        content: Vec<u32>,
     }
     impl Buffer {
         pub fn new(address: u64, size: u64) -> Self {
             Self { 
                 address: address,
                 size: size,
-                value: Vec::new(),  // TODO: initialize with a default size?
+                content: Vec::new(),  // TODO: initialize with a default size?
             }
         }
     }
     impl Decode for Buffer {
         fn decode(&mut self, pid: Pid, operation: &Box<dyn Operation>) { 
-            self.value = operation.read_memory(pid, self.address, self.size);
+            self.content = operation.read_memory(pid, self.address, self.size);
+        }
+
+        fn to_json(&self) -> String {
+            format!("{{\"type\":\"buffer\",\"value\":{{\"address\":{},\"size\":{},\"content\":{:?}}}}}", self.address, self.size, self.content)
         }
 
         fn print(&self) {
             println!("address: {:#x}", self.address);
             println!("size: {:#x}", self.size);
-            println!("content: {:#x?}", self.value);
+            println!("content: {:#x?}", self.content);
         }
     }
 
     pub struct NullBuf {
         address: u64,
         size: u64,
-        value: Vec<u32>,
+        content: Vec<u32>,
     }
     impl NullBuf {
         pub fn new(address: u64) -> Self {
             Self { 
                 address: address,
                 size: 0,
-                value: Vec::new(),  // TODO: initialize with a default size?
+                content: Vec::new(),  // TODO: initialize with a default size?
             }
         }
     }
@@ -176,7 +213,7 @@ pub mod ArgumentType {
                         match x {
                             _ => {
                                 self.size += 1;
-                                self.value.push(x.clone());
+                                self.content.push(x.clone());
                             },
                             0 => break,
                         }
@@ -186,10 +223,14 @@ pub mod ArgumentType {
             }
         }
 
+        fn to_json(&self) -> String {
+            format!("{{\"type\":\"buffer\",\"value\":{{\"address\":{},\"size\":{},\"content\":{:?}}}}}", self.address, self.size, self.content)
+        }
+
         fn print(&self) {
             println!("address: {:#x}", self.address);
             println!("size: {:#x}", self.size);
-            println!("content: {:#x?}", self.value);
+            println!("content: {:#x?}", self.content);
         }
     }
 
@@ -197,22 +238,26 @@ pub mod ArgumentType {
     pub struct Struct {
         address: u64,
         name: String,
-        value: Vec<u32>,
+        content: Vec<u32>,
     }
     impl Struct {
         pub fn new(address: u64, name: &str) -> Self {
             Self { 
                 address: address,
                 name: name.to_string(),
-                value: Vec::new(),  // TODO: initialize with a default size?
+                content: Vec::new(),  // TODO: initialize with a default size?
             }
         }
     }
     impl Decode for Struct {
+        fn to_json(&self) -> String {
+            format!("{{\"type\":\"buffer\",\"value\":{{\"address\":{},\"name\":{},\"content\":{:?}}}}}", self.address, self.name, self.content)
+        }
+
         fn print(&self) {
             println!("name: {}", self.name);
             println!("address: {:#x}", self.address);
-            println!("content: {:#x?}", self.value);
+            println!("content: {:#x?}", self.content);
         }
     }
 

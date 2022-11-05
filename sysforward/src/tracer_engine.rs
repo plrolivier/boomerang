@@ -5,6 +5,7 @@ pub mod tracer {
 
     use core::ffi::c_void;
     use std::collections::VecDeque;
+    use std::fmt;
 
     use nix::unistd::Pid;
     use nix::libc::user_regs_struct;
@@ -30,7 +31,12 @@ pub mod tracer {
                 errno: 0,
             }
         }
+
+        fn to_json(&self) -> String {
+            format!("{{\"no\":{},\"args\":{:?},\"retval\":{},\"errno\":{}}}", self.no, self.args, self.retval, self.errno)
+        }
     }
+
 
     struct Syscall {
         raw: RawSyscall,
@@ -68,9 +74,30 @@ pub mod tracer {
                 }
             }
         }
+
+        fn args_to_json(&self) -> String {
+            // TODO: improve format here
+            let mut s = String::new();
+            s.push('[');
+            for arg in self.args.iter() {
+                match arg {
+                    Some(a) => s.push_str(&a.to_json()),
+                    None => break,
+                }
+                s.push(',');    //TODO: always add a trailing comma...
+            }
+            s.push(']');
+            s
+        }
+
+        fn to_json(&self) -> String {
+            // TODO: replace 0 with self.decision
+            format!("{{\"raw\":{},\"name\":\"{}\",\"args\":{},\"decision\":{}}}", self.raw.to_json(), self.name, self.args_to_json(), 0)
+        }
+
     }
 
-    #[derive(Clone, Copy)]
+    #[derive(Clone, Copy, Debug)]
     enum Decision {
         Continue,
         FwdEntry,
@@ -271,7 +298,8 @@ pub mod tracer {
                 }
             }
 
-            self.syscall.print();
+            //self.syscall.print();
+            println!("{}", self.syscall.to_json());
         }
 
         fn log_exit(&self) {

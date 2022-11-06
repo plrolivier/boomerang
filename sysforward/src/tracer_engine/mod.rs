@@ -114,12 +114,12 @@ pub struct Tracer {
 
     interceptor: Box<dyn Operation>,
     decoder: Rc<Decoder>,
-    connection: Client,
+    //connection: Client,
 }
 
 impl Tracer {
 
-    pub fn new(&self, pid: Pid, target_arch: TargetArch) -> Self {
+    pub fn new(pid: Pid, target_arch: TargetArch) -> Self {
         let arch = Rc::new(Architecture::new(target_arch));
         let decoder = Rc::new(Decoder::new(Rc::clone(&arch)));
 
@@ -162,7 +162,7 @@ impl Tracer {
             filter: Filter::new(String::from("filtername")),
             interceptor: Box::new(Ptrace {}),
             decoder: decoder,
-            connection: Client::new(),
+            //connection: Client::new(),
         }
     }
 
@@ -231,30 +231,27 @@ impl Tracer {
         self.syscall.raw.errno = errno;
     }
 
+
     fn trace_entry(&mut self) {
-        //self.log_raw_entry();
+        self.log_raw_entry();
+
         self.decoder.decode_entry(&mut self.syscall, self.pid, &self.interceptor);
 
-        match self.filter_entry() {
-            Some(Decision::Continue) => (),
-            _ => panic!("Decision not implemented")
-        }
+        self.filter_entry();
+        self.carry_out_entry_decision();
 
-        // TODO: implement execute_decision()
         //self.log_entry();
-        self.send_syscall_entry();
 
         self.insyscall = true;
     }
 
     fn trace_exit(&mut self) {
-        //self.log_raw_exit();
+        self.log_raw_exit();
+
         self.decoder.decode_exit();
 
-        match self.filter_exit() {
-            Some(Decision::Continue) => (),
-            _ => panic!("Decision not implemented")
-        }
+        self.filter_exit();
+        self.carry_out_exit_decision();
 
         //self.log_exit();
 
@@ -263,13 +260,13 @@ impl Tracer {
 
 
     fn log_raw_entry(&self) {
-        println!("[ENTRY] no: {:#x} args: {:x?}", 
-                 self.syscall.raw.no as usize, self.syscall.raw.args)
+        println!("[{}] [ENTRY] no: {:#x} args: {:x?}", 
+                 self.pid, self.syscall.raw.no as usize, self.syscall.raw.args)
     }
 
     fn log_raw_exit(&self) {
-        println!("[EXIT] retval: {:#x}", 
-                 self.syscall.raw.retval as usize)
+        println!("[{}] [EXIT] retval: {:#x}", 
+                 self.pid, self.syscall.raw.retval as usize)
     }
 
     fn log_entry(&self) {
@@ -280,15 +277,6 @@ impl Tracer {
         println!("{:#?}", self.syscall.to_json());
     }
 
-    fn send_syscall_entry(&mut self) {
-        let mut response = [0; 256];
-        let request = format!("{{\"command\": {:?}, \"pid\": {}, \"payload\": {}}}", 
-                              Command::SendSyscallEntry, self.pid, self.syscall.to_json());
-        //println!("{}", request);
-        self.connection.send(request.as_bytes());
-        self.connection.receive(&mut response);
-    }
-
     fn filter_entry(&mut self) -> Option<Decision> {
         self.syscall.decision = Some(self.filter.filter(&self.syscall));
         self.syscall.decision
@@ -296,6 +284,34 @@ impl Tracer {
 
     fn filter_exit(&self) -> Option<Decision> {
         self.syscall.decision
+    }
+
+    fn carry_out_entry_decision(&mut self) {
+        match self.syscall.decision {
+            Some(Decision::Continue) => (),
+            _ => panic!("Decision not implemented")
+        }
+
+        // TODO: implement execute_decision()
+        self.send_syscall_entry();
+    }
+
+    // TODO: move this to protocol/mod.rs
+    fn send_syscall_entry(&mut self) {
+        let mut response = [0; 256];
+        let request = format!("{{\"command\": {:?}, \"pid\": {}, \"payload\": {}}}", 
+                              Command::SendSyscallEntry, self.pid, self.syscall.to_json());
+        println!("{}", request);
+        // TODO: send syscall
+        //self.connection.send(request.as_bytes());
+        //self.connection.receive(&mut response);
+    }
+
+    fn carry_out_exit_decision(&mut self) {
+        match self.syscall.decision {
+            Some(Decision::Continue) => (),
+            _ => panic!("Decision not implemented")
+        }
     }
 
 

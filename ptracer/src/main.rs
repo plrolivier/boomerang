@@ -1,22 +1,36 @@
-use std::os::unix::process::CommandExt;
-use std::process::{exit, Command};
-use std::collections::VecDeque;
-
+/*
+ * Example to use libsysforward
+ */
 use core::ffi::c_void;
-
-use nix::sys::ptrace;
-use nix::sys::wait::{wait, WaitStatus};
-use nix::sys::signal::Signal;
-use nix::unistd::{fork, ForkResult, Pid};
-
-use sysforward::tracer_engine::tracer::Tracer;
-use sysforward::arch::TargetArch;
+use std::{
+    os::unix::process::CommandExt,
+    process::{exit, Command},
+    collections::VecDeque,
+    thread,
+    time,
+};
+use nix::{
+    sys::{
+        ptrace,
+        wait::{wait, WaitStatus},
+        signal::Signal,
+        signal::kill,
+    },
+    unistd::{fork, ForkResult, Pid},
+};
+use sysforward::{
+    tracer_engine::Tracer,
+    arch::TargetArch,
+};
 
 
 
 fn main() {
 
-    match unsafe {fork()} {
+    //start_server();
+    //thread::sleep(time::Duration::from_millis(2000));   // XXX
+
+    match unsafe { fork() } {
 
         Ok(ForkResult::Child) => {
             run_child();
@@ -107,3 +121,13 @@ fn wait_for_syscall(child: Pid) -> bool {
 }
 
 
+/*
+fn start_server() {
+
+    thread::spawn(|| {
+        let server = Server {};
+        server.listen();
+        println!("Server process exitting");
+    });
+}
+*/

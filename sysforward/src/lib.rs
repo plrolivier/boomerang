@@ -1,11 +1,13 @@
 /*
- * The lib public API
+ * The lib API
  */
 
-mod syscall;
+mod operation;
+
+mod protocol;
 
 pub mod arch;
 pub mod tracer_engine;
 
-pub use crate::tracer_engine::tracer::Tracer;
+pub use crate::tracer_engine::Tracer;
 

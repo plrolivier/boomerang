@@ -7,7 +7,7 @@ use crate::tracer_engine::Syscall;
 
 #[derive(Clone, Copy, Debug)]
 pub enum Decision {
-    Continue,
+    Continue = 0,
     FwdEntry,
     FwdExit,
     InspectExit,

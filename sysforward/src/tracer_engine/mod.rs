@@ -1,8 +1,8 @@
 /*
  * The tracer engine takes care of handling syscalls.
  */
-mod decoder;
-mod filtering;
+pub mod decoder;
+pub mod filtering;
 
 
 use core::ffi::c_void;
@@ -10,94 +10,21 @@ use std::{
     collections::VecDeque,
     rc::Rc,
 };
+use std::{thread, time::Duration};
 use nix::{
     unistd::Pid,
     libc::user_regs_struct,
 };
 use crate::{
+    { RawSyscall, Syscall },
     arch::{ TargetArch, Architecture },
     operation::{ Operation, Ptrace },
-    protocol::{ Command, Client },
+    protocol::{ Command, Packet, Header, SendSyscallEntryPayload, Client },
     tracer_engine::{
         decoder::{ Decoder, Decode, Int, Fd, Size, Offset, Flag, Prot, Signal, Address, Buffer, NullBuf, Struct },
         filtering::{ Decision, Filter },
     },
 };
-
-
-
-struct RawSyscall {
-    no: u64,
-    args: Vec<u64>,
-    retval: u64,
-    errno: u64,
-}
-
-impl RawSyscall {
-    fn new() -> Self {
-        Self {
-            no: 0,
-            args: vec![0; 7],
-            retval: 0,
-            errno: 0,
-        }
-    }
-
-    fn to_json(&self) -> String {
-        format!("{{\"no\": {}, \"args\": {:?}, \"retval\": {}, \"errno\": {}}}", self.no, self.args, self.retval, self.errno)
-    }
-}
-
-
-pub struct Syscall {
-    raw: RawSyscall,
-    name: String,
-    args: Vec<Option<Box<dyn Decode>>>,
-    decision: Option<Decision>,
-}
-
-impl Syscall {
-    fn new() -> Self {
-        Self {
-            raw: RawSyscall::new(),
-            name: String::with_capacity(25),
-            //args: vec![&None; 7],
-            args: Vec::from([None, None, None, None, None, None, None]),
-            //decision: None,
-            decision: Some(Decision::Continue), //Once the filtering implemented, put None 
-        }
-    }
-
-    fn print(&self) {
-        for arg in self.args.iter() {
-            match arg {
-                Some(a) => a.print(),
-                None => break,
-            }
-        }
-    }
-
-    fn args_to_json(&self) -> String {
-        // TODO: improve format here
-        let mut s = String::new();
-        s.push('[');
-        for arg in self.args.iter() {
-            match arg {
-                Some(a) => s.push_str(&a.to_json()),
-                None => break,
-            }
-            s.push(',');    //TODO: always add a trailing comma...
-        }
-        s.push(']');
-        s
-    }
-
-    fn to_json(&self) -> String {
-        // TODO: replace 0 with self.decision
-        format!("{{\"raw\": {}, \"name\": \"{}\", \"args\": {}, \"decision\": {}}}", self.raw.to_json(), self.name, self.args_to_json(), 0)
-    }
-
-}
 
 
 
@@ -114,7 +41,7 @@ pub struct Tracer {
 
     interceptor: Box<dyn Operation>,
     decoder: Rc<Decoder>,
-    //connection: Client,
+    connection: Client,
 }
 
 impl Tracer {
@@ -125,7 +52,6 @@ impl Tracer {
 
         Self {
             pid: pid,
-            //arch: Architecture::new(target_arch),
             arch: arch,
             //regs: vec![0; 33],
             regs: user_regs_struct {
@@ -162,7 +88,7 @@ impl Tracer {
             filter: Filter::new(String::from("filtername")),
             interceptor: Box::new(Ptrace {}),
             decoder: decoder,
-            //connection: Client::new(),
+            connection: Client::new(),
         }
     }
 
@@ -296,15 +222,27 @@ impl Tracer {
         self.send_syscall_entry();
     }
 
-    // TODO: move this to protocol/mod.rs
+    // TODO: move this to protocol/mod.rs?
     fn send_syscall_entry(&mut self) {
-        let mut response = [0; 256];
-        let request = format!("{{\"command\": {:?}, \"pid\": {}, \"payload\": {}}}", 
-                              Command::SendSyscallEntry, self.pid, self.syscall.to_json());
-        println!("{}", request);
-        // TODO: send syscall
-        //self.connection.send(request.as_bytes());
-        //self.connection.receive(&mut response);
+
+        //let mut response = [0; 256];
+        let mut response = String::new();
+
+        /* Craft packet */
+        let header = Header::new(Command::SendSyscallEntry, self.pid);
+        let payload = SendSyscallEntryPayload::new(self.syscall.to_json());
+        let mut packet = Packet::new(header, payload);
+        let request = packet.to_json();
+        println!("SEND REQUEST:\n{}", request);
+
+        /* Send packet */
+        self.connection.send(request);
+
+        /* Wait for reply and parse it to continue */
+        self.connection.receive(&mut response);
+        println!("RECEIVE:\n{}", response);
+
+        thread::sleep(Duration::from_millis(5000));
     }
 
     fn carry_out_exit_decision(&mut self) {

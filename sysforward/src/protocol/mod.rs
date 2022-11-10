@@ -154,6 +154,7 @@ impl Server {
             let request_header: Header = serde_json::from_str(&header).unwrap();
             let response_header = Header::new(request_header.pid, Command::Ack, 0);
             let str_response_header = serde_json::to_string(&response_header).unwrap();
+            // TODO: deserialize payload
 
             /* Proceed request */
             let response = format!("{}\n", str_response_header);

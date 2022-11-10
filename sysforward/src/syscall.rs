@@ -92,6 +92,9 @@ impl Syscall {
 
 }
 
+/*
+ * https://stackoverflow.com/questions/50021897/how-to-implement-serdeserialize-for-a-boxed-trait-object
+ */
 impl Serialize for Box<dyn Decode> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: Serializer {
@@ -197,12 +200,24 @@ impl Serialize for Box<dyn Decode> {
 }
 
 /*
+ * TODO
  * see https://serde.rs/impl-deserialize.html
+ * and https://serde.rs/deserialize-struct.html
 impl Deserialize for Box<dyn Decode>
 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> 
         where D: Deserializer<'de> {
+            #[derive(Deserialize)]
+            #[serde(field_identifier, rename_all = "lowercase")]
+            enum Field { Int, Fd, Size, Offset, Flag, Prot, Signal, Address, Buffer, NullBuf, Struct };
 
+
+            struct SCArguments;
+
+            impl<'de> Visitor<'de> for SCArguments {
+                type Value = Duration;
+            }
     }
 }
  */
+

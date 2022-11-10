@@ -12,11 +12,10 @@ use std::{
 };
 use std::{thread, time::Duration};
 use nix::{
-    unistd::Pid,
     libc::user_regs_struct,
 };
 use crate::{
-    { RawSyscall, Syscall },
+    syscall::{ RawSyscall, Syscall },
     arch::{ TargetArch, Architecture },
     operation::{ Operation, Ptrace },
     protocol::{ Command, Packet, Header, SendSyscallEntryPayload, Client },
@@ -30,7 +29,7 @@ use crate::{
 
 pub struct Tracer {
 
-    pub pid: Pid,
+    pub pid: i32,
     pub arch: Rc<Architecture>,
     //pub regs: Vec<u64>,
     pub regs: user_regs_struct,     // only for x86_64
@@ -46,7 +45,7 @@ pub struct Tracer {
 
 impl Tracer {
 
-    pub fn new(pid: Pid, target_arch: TargetArch) -> Self {
+    pub fn new(pid: i32, target_arch: TargetArch) -> Self {
         let arch = Rc::new(Architecture::new(target_arch));
         let decoder = Rc::new(Decoder::new(Rc::clone(&arch)));
 
@@ -228,11 +227,12 @@ impl Tracer {
         //let mut response = [0; 256];
         let mut response = String::new();
 
-        /* Craft packet */
-        let header = Header::new(Command::SendSyscallEntry, self.pid);
-        let payload = SendSyscallEntryPayload::new(self.syscall.to_json());
-        let mut packet = Packet::new(header, payload);
-        let request = packet.to_json();
+        let payload = SendSyscallEntryPayload::new(&self.syscall);
+        let str_payload = serde_json::to_string(&payload).unwrap();
+        let header = Header::new(self.pid, Command::SendSyscallEntry, str_payload.len());
+        let str_header = serde_json::to_string(&header).unwrap();
+        let request = format!("{}\n{}\n", str_header, str_payload);
+
         println!("SEND REQUEST:\n{}", request);
 
         /* Send packet */
@@ -242,7 +242,7 @@ impl Tracer {
         self.connection.receive(&mut response);
         println!("RECEIVE:\n{}", response);
 
-        thread::sleep(Duration::from_millis(5000));
+        //thread::sleep(Duration::from_millis(1000));
     }
 
     fn carry_out_exit_decision(&mut self) {

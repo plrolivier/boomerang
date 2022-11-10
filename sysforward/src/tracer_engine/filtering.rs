@@ -1,19 +1,22 @@
 /*
  * TODO: use eBPF to filter syscall and output the decision.
  */
+use serde::{Serialize, Deserialize};
 use crate::tracer_engine::Syscall;
 
 
 
 #[derive(Clone, Copy, Debug)]
+#[derive(Serialize, Deserialize)]
+#[repr(u8)]
 pub enum Decision {
-    Continue = 0,
-    FwdEntry,
-    FwdExit,
-    InspectExit,
-    LogLocal,
-    NoExec,
-    Kill,
+    Continue    = 0,
+    FwdEntry    = 1,
+    FwdExit     = 2,
+    InspectExit = 3,
+    LogLocal    = 4,
+    NoExec      = 5,
+    Kill        = 6,
 }
 
 pub struct Filter {

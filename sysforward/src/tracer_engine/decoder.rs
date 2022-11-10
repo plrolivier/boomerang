@@ -2,10 +2,11 @@
  * Decode syscall arguments.
  */
 use std::rc::Rc;
-use nix::unistd::Pid;
+use std::any::Any;
+use serde::{Serialize, Deserialize};
 use crate::{
     arch::{ TargetArch, Architecture },
-    tracer_engine::Syscall,
+    syscall::Syscall,
     operation::Operation,
 };
 
@@ -23,7 +24,7 @@ impl Decoder {
         }
     }
 
-    pub fn decode_entry(&self, syscall: &mut Syscall, pid: Pid, operation: &Box<dyn Operation>) {
+    pub fn decode_entry(&self, syscall: &mut Syscall, pid: i32, operation: &Box<dyn Operation>) {
 
         // TODO: improve the match by using number instead of strings
         match self.arch.syscall_table.get_syscall_name(&syscall.raw.no) {
@@ -42,7 +43,7 @@ impl Decoder {
         self.decode_args(syscall, pid, operation);
     }
 
-    fn decode_args(&self, syscall: &mut Syscall, pid: Pid, operation: &Box<dyn Operation>) {
+    fn decode_args(&self, syscall: &mut Syscall, pid: i32, operation: &Box<dyn Operation>) {
         for arg in syscall.args.iter_mut() {
             match arg {
                 Some(x) => x.decode(pid, operation),
@@ -95,22 +96,49 @@ impl Decoder {
 
 
 
-pub trait Decode {
-    fn decode(&mut self, pid: Pid, operation: &Box<dyn Operation>) { }
+pub trait Decode: CloneDecode {
+    fn as_any(&self) -> &dyn Any;
+    fn decode(&mut self, pid: i32, operation: &Box<dyn Operation>) { }
     fn to_json(&self) -> String { format!("{{\"type\": none, \"value\": 0}}") }
     fn print(&self) { }
+}
+
+/*
+ * https://users.rust-lang.org/t/solved-is-it-possible-to-clone-a-boxed-trait-object/1714/7
+ */
+pub trait CloneDecode {
+    fn clone_decode<'a>(&self) -> Box<dyn Decode>;
+}
+
+impl<T> CloneDecode for T
+where T: Decode + Clone + 'static, {
+    fn clone_decode(&self) -> Box<dyn Decode> {
+        Box::new(self.clone())
+    }
+}
+
+impl Clone for Box<dyn Decode> {
+    fn clone(&self) -> Self {
+        self.clone_decode()
+    }
 }
 
 /* 
  * Direct value 
  */
-pub struct Int { value: u64 }
+#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone)]
+pub struct Int { pub value: u64 }
 impl Int {
     pub fn new(value: u64) -> Self {
         Self { value: value }
     }
 }
 impl Decode for Int { 
+    fn as_any(&self) ->&dyn Any {
+        self
+    }
+
     fn to_json(&self) -> String {
         format!("{{\"type\": \"integer\", \"value\": {}}}", self.value)
     }
@@ -120,13 +148,19 @@ impl Decode for Int {
     }
 }
 
-pub struct Fd { value: u16 }
+#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone)]
+pub struct Fd { pub value: u16 }
 impl Fd {
     pub fn new(value: u64) -> Self {
         Self { value: value as u16 }
     }
 }
 impl Decode for Fd {
+    fn as_any(&self) ->&dyn Any {
+        self
+    }
+
     fn to_json(&self) -> String {
         format!("{{\"type\": \"fd\", \"value\": {}}}", self.value)
     }
@@ -135,14 +169,19 @@ impl Decode for Fd {
         println!("fd: {:#x}", self.value);
     }
 }
-
-pub struct Size { value: u64 }
+#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone)]
+pub struct Size { pub value: u64 }
 impl Size {
     pub fn new(value: u64) -> Self {
         Self { value: value }
     }
 }
 impl Decode for Size {
+    fn as_any(&self) ->&dyn Any {
+        self
+    }
+
     fn to_json(&self) -> String {
         format!("{{\"type\": \"size\", \"value\": {}}}", self.value)
     }
@@ -152,13 +191,19 @@ impl Decode for Size {
     }
 }
 
-pub struct Offset { value: u64 }
+#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone)]
+pub struct Offset { pub value: u64 }
 impl Offset {
     pub fn new(value: u64) -> Self {
         Self { value: value }
     }
 }
 impl Decode for Offset {
+    fn as_any(&self) ->&dyn Any {
+        self
+    }
+
     fn to_json(&self) -> String {
         format!("{{\"type\": \"offset\", \"value\": {}}}", self.value)
     }
@@ -168,13 +213,19 @@ impl Decode for Offset {
     }
 }
 
-pub struct Flag { value: u8 }
+#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone)]
+pub struct Flag { pub value: u8 }
 impl Flag {
     pub fn new(value: u64) -> Self {
         Self { value: value as u8 }
     }
 }
 impl Decode for Flag {
+    fn as_any(&self) ->&dyn Any {
+        self
+    }
+
     fn to_json(&self) -> String {
         format!("{{\"type\": \"flag\", \"value\": {}}}", self.value)
     }
@@ -184,13 +235,19 @@ impl Decode for Flag {
     }
 }
 
-pub struct Prot { value: u8 }
+#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone)]
+pub struct Prot { pub value: u8 }
 impl Prot {
     pub fn new(value: u64) -> Self {
         Self { value: value as u8 }
     }
 }
 impl Decode for Prot {
+    fn as_any(&self) ->&dyn Any {
+        self
+    }
+
     fn to_json(&self) -> String {
         format!("{{\"type\": \"prot\", \"value\": {}}}", self.value)
     }
@@ -200,8 +257,10 @@ impl Decode for Prot {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone)]
 pub struct Signal {
-    value: u8,
+    pub value: u8,
     /*
     sig: NixSignal,
     */
@@ -212,6 +271,10 @@ impl Signal {
     }
 }
 impl Decode for Signal {
+    fn as_any(&self) ->&dyn Any {
+        self
+    }
+
     fn to_json(&self) -> String {
         format!("{{\"type\": \"signal\", \"value\": {}}}", self.value)
     }
@@ -225,8 +288,10 @@ impl Decode for Signal {
 /* 
  * Pointers 
  */
+#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone)]
 pub struct Address {
-    value: u64
+    pub value: u64
 }
 impl Address {
     pub fn new(value: u64) -> Self {
@@ -234,6 +299,10 @@ impl Address {
     }
 }
 impl Decode for Address {
+    fn as_any(&self) ->&dyn Any {
+        self
+    }
+
     fn to_json(&self) -> String {
         format!("{{\"type\": \"address\", \"value\": {}}}", self.value)
     }
@@ -243,10 +312,12 @@ impl Decode for Address {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone)]
 pub struct Buffer {
-    address: u64,
-    size: u64,
-    content: Vec<u32>,
+    pub address: u64,
+    pub size: u64,
+    pub content: Vec<u32>,
 }
 impl Buffer {
     pub fn new(address: u64, size: u64) -> Self {
@@ -258,7 +329,11 @@ impl Buffer {
     }
 }
 impl Decode for Buffer {
-    fn decode(&mut self, pid: Pid, operation: &Box<dyn Operation>) { 
+    fn as_any(&self) ->&dyn Any {
+        self
+    }
+
+    fn decode(&mut self, pid: i32, operation: &Box<dyn Operation>) { 
         self.content = operation.read_memory(pid, self.address, self.size);
     }
 
@@ -273,10 +348,12 @@ impl Decode for Buffer {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone)]
 pub struct NullBuf {
-    address: u64,
-    size: u64,
-    content: Vec<u32>,
+    pub address: u64,
+    pub size: u64,
+    pub content: Vec<u32>,
 }
 impl NullBuf {
     pub fn new(address: u64) -> Self {
@@ -288,7 +365,11 @@ impl NullBuf {
     }
 }
 impl Decode for NullBuf {
-    fn decode(&mut self, pid: Pid, operation: &Box<dyn Operation>) { 
+    fn as_any(&self) ->&dyn Any {
+        self
+    }
+
+    fn decode(&mut self, pid: i32, operation: &Box<dyn Operation>) { 
         //TODO: does not work when the Null terminated buffer is greater than READ_SIZE bytes.
         let READ_SIZE = 1024;
         let buf = operation.read_memory(pid, self.address, READ_SIZE);
@@ -322,27 +403,36 @@ impl Decode for NullBuf {
 }
 
 
+#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone)]
 pub struct Struct {
-    address: u64,
-    name: String,
-    content: Vec<u32>,
+    pub address: u64,
+    pub size: u64,
+    pub name: String,
+    pub content: Vec<u32>,
 }
 impl Struct {
     pub fn new(address: u64, name: &str) -> Self {
         Self { 
             address: address,
+            size: 0,
             name: name.to_string(),
             content: Vec::new(),  // TODO: initialize with a default size?
         }
     }
 }
 impl Decode for Struct {
+    fn as_any(&self) ->&dyn Any {
+        self
+    }
+
     fn to_json(&self) -> String {
-        format!("{{\"type\":\"buffer\",\"value\":{{\"address\":{},\"name\":{},\"content\":{:?}}}}}", self.address, self.name, self.content)
+        format!("{{\"type\":\"struct\",\"value\":{{\"address\":{},\"size\":{},\"name\":{},\"content\":{:?}}}}}", self.address, self.size, self.name, self.content)
     }
 
     fn print(&self) {
         println!("name: {}", self.name);
+        println!("size: {:#x}", self.size);
         println!("address: {:#x}", self.address);
         println!("content: {:#x?}", self.content);
     }

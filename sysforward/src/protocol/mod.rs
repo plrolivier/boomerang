@@ -4,62 +4,43 @@
 use std::{
     io::{prelude::*, BufReader, BufWriter, Result},
     net::{TcpListener, TcpStream},
+    os::unix::io::AsRawFd,
 };
-use nix::unistd::Pid;
+use nix::sys::socket::{self, sockopt::ReusePort};
+use serde::{Serialize, Deserialize};
 use crate::{
-    { Syscall },
+    syscall::{ Syscall },
 
 };
 
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug)]
+#[derive(Serialize, Deserialize)]
+#[repr(u8)]
 pub enum Command {
-    Ack,    // ack a command or signal an error with a command
+    Ack = 0,    // ack a command or signal an error with a command
 
-    NotifyNewProcess,
-    SendSyscallEntry,
-    NotifySyscallExit,
-    ReturnSyscallExit,
-    ReturnDecision,
-    NotifySignal,
+    NotifyNewProcess    = 1,
+    SendSyscallEntry    = 2,
+    NotifySyscallExit   = 3,
+    ReturnSyscallExit   = 4,
+    ReturnDecision      = 5,
+    NotifySignal        = 6,
 
-    ReadArguments,
-    WriteArgument,
-    WriteArguments,
+    ReadArguments       = 7,
+    WriteArgument       = 8,
+    WriteArguments      = 9,
 
-    ReadRegisters,
-    WriteRegister,
-    WriteRegisters,
+    ReadRegisters       = 10,
+    WriteRegister       = 11,
+    WriteRegisters      = 12,
 
-    ReadMemory,
-    ReadString,
-    WriteMemory,
+    ReadMemory          = 13,
+    ReadString          = 14,
+    WriteMemory         = 15,
 }
 
 
-pub struct Header {
-    command: Command,
-    pid: Pid,
-    size: usize,
-}
-
-impl Header {
-    pub fn new(command: Command, pid: Pid) -> Self {
-        Self {
-            command: command,
-            pid: pid,
-            size: 0,
-        }
-    }
-
-    pub fn set_size(&mut self, len: usize) {
-        self.size = len
-    }
-
-    pub fn to_json(&self) -> String {
-        format!("{{\"command\": {:?}, \"pid\": {}, \"size\": {}}}\n", self.command, self.pid, self.size)
-    }
-}
-
+#[derive(Serialize)]
 pub struct Packet {
     header: Header,
     payload: SendSyscallEntryPayload, // TODO: place generic here
@@ -69,30 +50,55 @@ impl Packet {
     pub fn new(header: Header, payload: SendSyscallEntryPayload) -> Self {
         Self {
             header: header,
-            payload: payload,
+            payload: payload 
         }
     }
 
     pub fn to_json(&mut self) -> String {
-        let payload = self.payload.to_json();
-        self.header.set_size(payload.len());
-        format!("{}{}", self.header.to_json(), payload)
+        format!("{{\"header\":{},\"payload\":{}}}", self.header.to_json(), self.payload.to_json())
     }
 }
 
-pub struct SendSyscallEntryPayload {
-    syscall: String
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Header {
+    pid: i32,
+    //#[serde(rename="cmd")]
+    command: Command,
+    size: usize,
 }
 
-impl SendSyscallEntryPayload {
-    pub fn new(syscall: String) -> Self {
+impl Header {
+    pub fn new(pid: i32, command: Command, size: usize) -> Self {
         Self {
-            syscall: syscall,
+            pid: pid,
+            command: command,
+            size: size,
         }
     }
 
     pub fn to_json(&self) -> String {
-        format!("{{\"syscall\": {}}}\n", self.syscall)
+        // the header is always 49 bytes
+        format!("{{\"pid\":{:07},\"command\":{:0>2},\"size\":{:#08x}}}", self.command as u8, self.pid, self.size)
+    }
+}
+
+
+#[derive(Serialize)]
+pub struct SendSyscallEntryPayload {
+    syscall: Syscall
+}
+
+impl SendSyscallEntryPayload {
+    //pub fn new(syscall: String) -> Self {
+    pub fn new(syscall: &Syscall) -> Self {
+        Self {
+            syscall: syscall.clone(),
+        }
+    }
+
+    pub fn to_json(&self) -> String {
+        format!("{{\"syscall\": {}}}\n", self.syscall.to_json())
     }
 }
 
@@ -108,6 +114,7 @@ impl Server {
     
     pub fn listen(&self) {
         let listener = TcpListener::bind("127.0.0.1:33000").unwrap();
+        socket::setsockopt(listener.as_raw_fd(), ReusePort, &true).unwrap();
 
         /*
         for stream in listener.incoming() {
@@ -127,26 +134,29 @@ impl Server {
         println!("[server] Connection established");
 
         let mut writer = BufWriter::new(stream.try_clone().unwrap());
-        let mut reader = BufReader::new(stream.try_clone().unwrap()); // XXX: there is not way to
+        let mut reader = BufReader::new(stream.try_clone().unwrap()); // XXX: there is no way to
                                                                       // flush the reader....
-        let mut buf = String::new();
 
         loop {
             /* Receive request */
-            match reader.read_line(&mut buf) {
+            let mut header = String::new();
+            match reader.read_line(&mut header) {
                 Ok(0) => break,
-                Ok(x) => (),
+                Ok(_) => (),
                 Err(_) => break,
             }
-            println!("[server] Received header:\n{}", buf);
-            reader.read_line(&mut buf);
-            println!("[server] Received payload:\n{}", buf);
+            println!("[server] Received header: {}", header);
+            let mut payload = String::new();
+            reader.read_line(&mut payload);
+            println!("[server] Received payload: {}", payload);
 
             /* Parse request */
-            // ...
+            let request_header: Header = serde_json::from_str(&header).unwrap();
+            let response_header = Header::new(request_header.pid, Command::Ack, 0);
+            let str_response_header = serde_json::to_string(&response_header).unwrap();
 
             /* Proceed request */
-            let response = format!("{{\"command\": {:?}, \"pid\": {}, \"size\": {}}}\n", Command::Ack, 0, 0);
+            let response = format!("{}\n", str_response_header);
 
             /* Send response */
             writer.write(response.as_bytes());

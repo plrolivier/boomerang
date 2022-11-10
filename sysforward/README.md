@@ -5,7 +5,6 @@
 
 - add structure for MemoryRange / MemoryBuffer / MemorySegment
 - protocol module: json protocol to send syscall info
-- Protocol: use serde for serializer or reimplement a custom one.
 - MACRO to help definining the argument type during decoding
 - executor module
 
@@ -16,10 +15,16 @@
 - filtering: Filtering should be similar to what seccomp-bpf does with filter written in eBPF, therefore (JIT) compiling the eBPF when loading the filter or interpreting it.
 - Architecture independent:
     1. Replace u64 with usize
+- Add tracing for qemu user mode
+- Process migration
+    1. snapshot + dump in ELF file
+    2. custom loader with qemu
+
 
 ## Eventually
 
 - switch case on syscall to parse their arguments: how possible it is to reuse syzkaller syscall interface definition to be able to correctly parse them?
+- Protocol: use serde for serializer or reimplement a custom one.
 - replace json protocol with protobuf or custum binary protocol
 
 
@@ -38,6 +43,5 @@
     2. Decode the `payload` length
     3. Receive the `payload` as we know its length
     4. Decode the `payload`
-
 - Example: https://krpc.github.io/krpc/communication-protocols/tcpip.html
 

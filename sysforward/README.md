@@ -7,6 +7,7 @@
 - protocol module: json protocol to send syscall info
 - MACRO to help definining the argument type during decoding
 - executor module
+- rework argument data structure classification
 
 ## Second priority
 
@@ -19,6 +20,7 @@
 - Process migration
     1. snapshot + dump in ELF file
     2. custom loader with qemu
+- Decoding: use pattern matching on syscall definition to associate arguments type
 
 
 ## Eventually

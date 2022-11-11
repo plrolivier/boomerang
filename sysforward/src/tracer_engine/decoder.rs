@@ -70,6 +70,7 @@ impl Decoder {
         //
         // TODO:
         // 1. Produce a list of system calls with their definition
+        //    Use something similar to https://github.com/panda-re/panda/blob/dev/panda/plugins/syscalls2/scripts/syscall_parser.py
         // 2. Craft a macro which parse each argument and associate it to a type
         //    e.g., integer, address, fd, size_t, offset_t, enum, struct, array, string
 

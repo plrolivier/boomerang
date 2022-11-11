@@ -44,6 +44,7 @@ impl RawSyscall {
 #[derive(Clone)]
 pub struct Syscall {
     pub raw: RawSyscall,
+    pub entry_decoded: bool,
     pub name: String,
     pub args: Vec<Option<Box<dyn Decode>>>,         // TODO: serde !
     pub decision: Option<Decision>,
@@ -53,6 +54,7 @@ impl Syscall {
     pub fn new() -> Self {
         Self {
             raw: RawSyscall::new(),
+            entry_decoded: false,
             name: String::with_capacity(25),
             //args: vec![&None; 7],
             args: Vec::from([None, None, None, None, None, None, None]),
@@ -109,6 +111,7 @@ impl Serialize for Box<dyn Decode> {
                 return // serialize
             }
              */
+            // TODO: add a field name indicating the struct type
             if any.is::<Int>() {
                 let obj = any.downcast_ref::<Int>().unwrap();
                 let mut state = serializer.serialize_struct("Int", 1).unwrap();

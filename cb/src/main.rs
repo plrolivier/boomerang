@@ -136,7 +136,7 @@ fn executor() {
 
     let mut executor = Executor::new(TargetArch::X86_64);
 
-    executor.listen();
+    executor.run();
 }
 
 

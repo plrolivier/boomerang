@@ -5,6 +5,7 @@ use std::any::Any;
 
 use serde::{ Serialize, Deserialize };
 use serde::ser::{ Serializer, SerializeStruct };
+use serde::de::{ self, Deserialize, Deserializer, Visitor, MapAccess };
 
 use crate::{
     tracer_engine::{
@@ -115,6 +116,7 @@ impl Serialize for Box<dyn Decode> {
             if any.is::<Int>() {
                 let obj = any.downcast_ref::<Int>().unwrap();
                 let mut state = serializer.serialize_struct("Int", 1).unwrap();
+                state.serialize_field("name", "integer").unwrap();
                 state.serialize_field("value", &obj.value).unwrap();
                 return state.end()
             }
@@ -122,6 +124,7 @@ impl Serialize for Box<dyn Decode> {
             if any.is::<Size>() {
                 let obj = any.downcast_ref::<Size>().unwrap();
                 let mut state = serializer.serialize_struct("Size", 1).unwrap();
+                state.serialize_field("name", "size").unwrap();
                 state.serialize_field("value", &obj.value).unwrap();
                 return state.end()
             }
@@ -129,6 +132,7 @@ impl Serialize for Box<dyn Decode> {
             if any.is::<Fd>() {
                 let obj = any.downcast_ref::<Fd>().unwrap();
                 let mut state = serializer.serialize_struct("Fd", 1).unwrap();
+                state.serialize_field("name", "fd").unwrap();
                 state.serialize_field("value", &obj.value).unwrap();
                 return state.end()
             }
@@ -136,6 +140,7 @@ impl Serialize for Box<dyn Decode> {
             if any.is::<Offset>() {
                 let obj = any.downcast_ref::<Offset>().unwrap();
                 let mut state = serializer.serialize_struct("Offset", 1).unwrap();
+                state.serialize_field("name", "offset").unwrap();
                 state.serialize_field("value", &obj.value).unwrap();
                 return state.end()
             }
@@ -143,6 +148,7 @@ impl Serialize for Box<dyn Decode> {
             if any.is::<Flag>() {
                 let obj = any.downcast_ref::<Flag>().unwrap();
                 let mut state = serializer.serialize_struct("Flag", 1).unwrap();
+                state.serialize_field("name", "flag").unwrap();
                 state.serialize_field("value", &obj.value).unwrap();
                 return state.end()
             }
@@ -150,6 +156,7 @@ impl Serialize for Box<dyn Decode> {
             if any.is::<Prot>() {
                 let obj = any.downcast_ref::<Prot>().unwrap();
                 let mut state = serializer.serialize_struct("Prot", 1).unwrap();
+                state.serialize_field("name", "prot").unwrap();
                 state.serialize_field("value", &obj.value).unwrap();
                 return state.end()
             }
@@ -157,6 +164,7 @@ impl Serialize for Box<dyn Decode> {
             if any.is::<Signal>() {
                 let obj = any.downcast_ref::<Signal>().unwrap();
                 let mut state = serializer.serialize_struct("Signal", 1).unwrap();
+                state.serialize_field("name", "signal").unwrap();
                 state.serialize_field("value", &obj.value).unwrap();
                 return state.end()
             }
@@ -164,6 +172,7 @@ impl Serialize for Box<dyn Decode> {
             if any.is::<Address>() {
                 let obj = any.downcast_ref::<Address>().unwrap();
                 let mut state = serializer.serialize_struct("Address", 1).unwrap();
+                state.serialize_field("name", "address").unwrap();
                 state.serialize_field("value", &obj.value).unwrap();
                 return state.end()
             }
@@ -171,6 +180,7 @@ impl Serialize for Box<dyn Decode> {
             if any.is::<Buffer>() {
                 let obj = any.downcast_ref::<Buffer>().unwrap();
                 let mut state = serializer.serialize_struct("Buffer", 1).unwrap();
+                state.serialize_field("name", "buffer").unwrap();
                 state.serialize_field("address", &obj.address).unwrap();
                 state.serialize_field("size", &obj.size).unwrap();
                 state.serialize_field("content", &obj.content).unwrap();
@@ -180,6 +190,7 @@ impl Serialize for Box<dyn Decode> {
             if any.is::<NullBuf>() {
                 let obj = any.downcast_ref::<NullBuf>().unwrap();
                 let mut state = serializer.serialize_struct("NullBuf", 1).unwrap();
+                state.serialize_field("name", "nullbuf").unwrap();
                 state.serialize_field("address", &obj.address).unwrap();
                 state.serialize_field("size", &obj.size).unwrap();
                 state.serialize_field("content", &obj.content).unwrap();
@@ -189,6 +200,7 @@ impl Serialize for Box<dyn Decode> {
             if any.is::<Struct>() {
                 let obj = any.downcast_ref::<Struct>().unwrap();
                 let mut state = serializer.serialize_struct("Struct", 1).unwrap();
+                state.serialize_field("name", "struct").unwrap();
                 state.serialize_field("address", &obj.address).unwrap();
                 state.serialize_field("size", &obj.size).unwrap();
                 state.serialize_field("name", &obj.name).unwrap();
@@ -206,6 +218,7 @@ impl Serialize for Box<dyn Decode> {
  * TODO
  * see https://serde.rs/impl-deserialize.html
  * and https://serde.rs/deserialize-struct.html
+ */
 impl Deserialize for Box<dyn Decode>
 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> 
@@ -219,8 +232,110 @@ impl Deserialize for Box<dyn Decode>
 
             impl<'de> Visitor<'de> for SCArguments {
                 type Value = Duration;
+
+                fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                    formatter.write_str("struct SCArguments")
+                }
+
+                fn visit_map<V>(self, mut map: V) -> Result<Box<dyn Decode>, V::Error>
+                    where V: MapAccess<'de> {
+                        let mut integer = None;
+                        let mut fd = None;
+                        let mut size = None;
+                        let mut offset = None;
+                        let mut flag = None;
+                        let mut prot = None;
+                        let mut signal = None;
+                        let mut address = None;
+                        let mut buffer = None;
+                        let mut nullbuf = None;
+                        let mut structure = None;
+
+                        //The first entry is considered to be name with the structure name
+                        while let Some(key) = map.next_key().unwrap() {
+                            match key {
+                                Field::Int => {
+                                    if integer.is_some() {
+                                        return Err(de::Error::duplicate_field("integer"));
+                                    }
+                                    integer = Some(map.next_value().unwrap());
+                                }
+                                Field::Fd => {
+                                    if .is_some() {
+                                        return Err(de::Error::duplicate_field("fd"));
+                                    }
+                                    fd = Some(map.next_value().unwrap());
+                                }
+                                Field::Size => {
+                                    if .is_some() {
+                                        return Err(de::Error::duplicate_field("size"));
+                                    }
+                                    size = Some(map.next_value().unwrap());
+                                }
+                                Field::Offset => {
+                                    if .is_some() {
+                                        return Err(de::Error::duplicate_field("offset"));
+                                    }
+                                    offset = Some(map.next_value().unwrap());
+                                }
+                                Field::Flag => {
+                                    if .is_some() {
+                                        return Err(de::Error::duplicate_field("Flag"));
+                                    }
+                                    flag = Some(map.next_value().unwrap());
+                                }
+                                Field::Prot => {
+                                    if .is_some() {
+                                        return Err(de::Error::duplicate_field("prot"));
+                                    }
+                                    prot = Some(map.next_value().unwrap());
+                                }
+                                Field::Signal => {
+                                    if .is_some() {
+                                        return Err(de::Error::duplicate_field("signal"));
+                                    }
+                                    signal = Some(map.next_value().unwrap());
+                                }
+                                Field::Address => {
+                                    if .is_some() {
+                                        return Err(de::Error::duplicate_field("address"));
+                                    }
+                                    address = Some(map.next_value().unwrap());
+                                }
+                                Field::Buffer => {
+                                    if .is_some() {
+                                        return Err(de::Error::duplicate_field("buffer"));
+                                    }
+                                    buffer = Some(map.next_value().unwrap());
+                                }
+                                Field::NullBuf => {
+                                    if .is_some() {
+                                        return Err(de::Error::duplicate_field("nullbuf"));
+                                    }
+                                    nullbuf = Some(map.next_value().unwrap());
+                                }
+                                Field::Struct => {
+                                    if .is_some() {
+                                        return Err(de::Error::duplicate_field("structure"));
+                                    }
+                                    structure = Some(map.next_value().unwrap());
+                                }
+                            }
+                        }
+                        let integer = integer.ok_or_else(|| de::Error::missing_field("integer")).unwrap();
+                        let fd = fd.ok_or_else(|| de::Error::missing_field("fd")).unwrap();
+                        let size = size.ok_or_else(|| de::Error::missing_field("size")).unwrap();
+                        let offset = offset.ok_or_else(|| de::Error::missing_field("offset")).unwrap();
+                        let flag = flag.ok_or_else(|| de::Error::missing_field("flag")).unwrap();
+                        let prot = prot.ok_or_else(|| de::Error::missing_field("prot")).unwrap();
+                        let signal = signal.ok_or_else(|| de::Error::missing_field("signal")).unwrap();
+                        let address = address.ok_or_else(|| de::Error::missing_field("address")).unwrap();
+                        let buffer = buffer.ok_or_else(|| de::Error::missing_field("buffer")).unwrap();
+                        let nullbuf = nullbuf.ok_or_else(|| de::Error::missing_field("nullbuf")).unwrap();
+                        let structure = structure.ok_or_else(|| de::Error::missing_field("struct")).unwrap();
+                        Ok()
+                }
             }
     }
 }
- */
 

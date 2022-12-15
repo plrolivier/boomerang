@@ -3,14 +3,17 @@
 
 ## First priority
 
-- add structure for MemoryRange / MemoryBuffer / MemorySegment
+- For decoding, create a struct for each syscall where the arguments are a vector with Int, Address, etc.. it's then going easier to store syscall related data there.
+- Add a structure to represent memory ranges and memory blocks: MemoryRange; MemoryBlock
+- Deserialize for protocol
 - protocol module: json protocol to send syscall info
 - MACRO to help definining the argument type during decoding
 - executor module
-- rework argument data structure classification
+- rework argument data structure classification: take inspiration from Syzkaller
 
 ## Second priority
 
+- Serialize enum as number: https://serde.rs/enum-number.html
 - ring buffer for logging syscall instead of just printing
 - recover stackstrace for each syscall
 - filtering: Filtering should be similar to what seccomp-bpf does with filter written in eBPF, therefore (JIT) compiling the eBPF when loading the filter or interpreting it.

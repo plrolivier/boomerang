@@ -113,6 +113,7 @@ pub struct Server { }
 impl Server {
     
     pub fn listen(&self) {
+    //pub fn listen(&self) -> TcpStream {
         let listener = TcpListener::bind("127.0.0.1:33000").unwrap();
         socket::setsockopt(listener.as_raw_fd(), ReusePort, &true).unwrap();
 
@@ -125,7 +126,8 @@ impl Server {
         */
         let (stream, addr) = listener.accept().unwrap();
         //println!("[server] Connection established with {addr:?}");
-        self.handle_connection(stream);
+        self.handle_connection(stream); 
+        //stream
     }
 
 
@@ -152,11 +154,13 @@ impl Server {
 
             /* Parse request */
             let request_header: Header = serde_json::from_str(&header).unwrap();
-            let response_header = Header::new(request_header.pid, Command::Ack, 0);
-            let str_response_header = serde_json::to_string(&response_header).unwrap();
             // TODO: deserialize payload
 
             /* Proceed request */
+
+            /* Prepare response */
+            let response_header = Header::new(request_header.pid, Command::Ack, 0);
+            let str_response_header = serde_json::to_string(&response_header).unwrap();
             let response = format!("{}\n", str_response_header);
 
             /* Send response */
@@ -165,6 +169,36 @@ impl Server {
         }
         println!("[server] Connection closed");
     }
+
+    /*
+    fn receive_syscall(&self) -> Packet {
+        let mut reader = BufReader::new(stream.try_clone().unwrap()); // XXX: there is no way to
+                                                                      //
+        /* Receive request */
+        let mut header = String::new();
+        match reader.read_line(&mut header) {
+            Ok(0) => break,
+            Ok(_) => (),
+            Err(_) => break,
+        }
+        println!("[server] Received header: {}", header);
+        let mut payload = String::new();
+        reader.read_line(&mut payload);
+        println!("[server] Received payload: {}", payload);
+
+        /* Parse request */
+        let request_header: Header = serde_json::from_str(&header).unwrap();
+
+        // TODO: deserialize payload
+        // let request_payload: SendSyscallEntryPayload = serde_json::from_str(&payload).unwrap();
+        let request_payload
+        let request = {
+            header: request_header,
+            payload: request_payload.syscall,
+        }
+        request
+    }
+    */
 }
 
 /*

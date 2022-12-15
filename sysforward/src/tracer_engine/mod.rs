@@ -35,6 +35,7 @@ pub struct Tracer {
     pub regs: user_regs_struct,     // only for x86_64
 
     syscall: Syscall,
+    remote_syscall: Syscall,
     insyscall: bool,
     filter: Filter,
 
@@ -83,6 +84,7 @@ impl Tracer {
                 gs: 0,
             },
             syscall: Syscall::new(),
+            remote_syscall: Syscall::new(),
             insyscall: false,   // Hypothesis: we do the tracing from the start!
             filter: Filter::new(String::from("filtername")),
             interceptor: Box::new(Ptrace {}),
@@ -224,9 +226,6 @@ impl Tracer {
     // TODO: move this to protocol/mod.rs?
     fn send_syscall_entry(&mut self) {
 
-        //let mut response = [0; 256];
-        let mut response = String::new();
-
         let payload = SendSyscallEntryPayload::new(&self.syscall);
         let str_payload = serde_json::to_string(&payload).unwrap();
         let header = Header::new(self.pid, Command::SendSyscallEntry, str_payload.len());
@@ -239,10 +238,19 @@ impl Tracer {
         self.connection.send(request);
 
         /* Wait for reply and parse it to continue */
-        self.connection.receive(&mut response);
-        println!("RECEIVE:\n{}", response);
+        self.receive_remote_syscall();
 
         //thread::sleep(Duration::from_millis(1000));
+    }
+
+    fn receive_remote_syscall(&mut self) {
+        let mut response = String::new();
+
+        self.connection.receive(&mut response);
+        println!("RECEIVE:\n{}", response);
+        // TODO: parse and deserialize remote_syscall
+        // self.remote_syscall = ...
+
     }
 
     fn carry_out_exit_decision(&mut self) {

@@ -32,22 +32,22 @@ impl Filter {
         }
     }
 
-    pub fn filter(&self, syscall: &Syscall) -> Decision {
-        let mut decision = Decision::Continue;
+    pub fn filter(&self, _syscall: &Syscall) -> Decision {
+        let decision = Decision::Continue;
 
-        /*
-        if syscall.entry_decoded {
-            match syscall.name {
-                _ => { decision = self.decision; },
+        /* TODO
+        match &syscall.decoded {
+            Some(_sc) => match syscall.name {
+                // TODO
+                _ => { decision = self.decision },
+            },
+            None => match syscall.raw.no {
+                // TODO
+                _ => { decision = self.decision },
             }
 
-        } else {
-            match syscall.raw.no {
-                _ => { decision = self.decision; },
-            }
         }
         */
-
         decision
     }
 }

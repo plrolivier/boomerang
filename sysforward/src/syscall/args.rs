@@ -2,7 +2,7 @@
  * Syscall decoded arguments data structures
  */
 use core::fmt;
-use std::any::Any;
+//use std::any::Any;
 
 use serde::{ Serialize, Deserialize };
 
@@ -406,6 +406,7 @@ impl Decode for NullBuffer {
 
     fn decode(&mut self, pid: i32, operation: &Box<dyn Operation>) { 
         //TODO: does not work when the Null terminated buffer is greater than READ_SIZE bytes.
+        #[allow(non_snake_case)]
         let READ_SIZE = 1024;
         let buf = operation.read_memory(pid, self.address, READ_SIZE);
 
@@ -414,11 +415,11 @@ impl Decode for NullBuffer {
             match iter.next() {
                 Some(x) => {
                     match x {
+                        0 => break,
                         _ => {
                             self.size += 1;
                             self.content.push(x.clone());
                         },
-                        0 => break,
                     }
                 }
                 None => break,

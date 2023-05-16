@@ -57,8 +57,11 @@ impl Operation for Ptrace {
     fn write_registers(&self, pid: i32, regs: user_regs_struct) -> bool {
         let pid = Pid::from_raw(pid);
         match ptrace::setregs(pid, regs) {
-            Result => return true,
-            Error => return false,
+            Ok(()) => return true,
+            Err(e) => {
+                eprintln!("Error setting registers for process {}: {}", pid, e);
+                return false
+            },
         }
     }
 

@@ -8,13 +8,12 @@ use std::rc::Rc;
 use serde::{Serialize, Deserialize};
 
 use crate::{
-    arch::{ TargetArch, Architecture },
+    arch::{ Architecture },
     syscall::{ Syscall },
     syscall,
     operation::Operation,
     syscall::{
         filesystem::{ Close, Creat, Open, Openat, Openat2, Read, Write },
-        args::{ ArgType },
     },
 };
 
@@ -182,43 +181,42 @@ impl Decoder {
             //    define_arg!(4, Offset);
             //},
 
-#[warn(unused_doc_comments)]
-            ///* 
-            // * Filesystem 
-            // */
-            ///* File operations */
-            //"close" => {
-            //    // int close(int fd)
-            //    define_arg!(0, Fd);
-            //},
-            //"creat" => { 
-            //    // int creat(const char *pathname, mode_t mode)
-            //    define_arg!(0, NullBuf);
-            //    define_arg!(1, Int);
-            //},
-            //"open" => {
-            //    // int open(const char *pathname, int flags)
-            //    // int open(const char *pathname, int flags, mode_t mode)
-            //    define_arg!(0, NullBuf);
-            //    define_arg!(1, Flag);
-            //    define_arg!(2, Int);
-            //},
-            //"openat" => {
-            //    // int openat(int dirfd, const char *pathname, int flags)
-            //    // int openat(int dirfd, const char *pathname, int flags, mode_t mode)
-            //    define_arg!(0, Int);
-            //    define_arg!(1, NullBuf);
-            //    define_arg!(2, Flag);
-            //    define_arg!(3, Int);
-            //},
-            //"openat2" => {
-            //    // int openat2(int dirfd, const char *pathname, const struct open_how *how, size_t size)
-            //    define_arg!(0, Fd);
-            //    define_arg!(1, NullBuf);
-            //    define_arg!(2, Struct);     // XXX: the size argument is needed to know the size of
-            //                                // the struct!!!
-            //    define_arg!(3, Size);
-            //}
+            // /* 
+            //  * Filesystem 
+            //  */
+            // /* File operations */
+            // "close" => {
+            //     // int close(int fd)
+            //     define_arg!(0, Fd);
+            // },
+            // "creat" => { 
+            //     // int creat(const char *pathname, mode_t mode)
+            //     define_arg!(0, NullBuf);
+            //     define_arg!(1, Int);
+            // },
+            // "open" => {
+            //     // int open(const char *pathname, int flags)
+            //     // int open(const char *pathname, int flags, mode_t mode)
+            //     define_arg!(0, NullBuf);
+            //     define_arg!(1, Flag);
+            //     define_arg!(2, Int);
+            // },
+            // "openat" => {
+            //     // int openat(int dirfd, const char *pathname, int flags)
+            //     // int openat(int dirfd, const char *pathname, int flags, mode_t mode)
+            //     define_arg!(0, Int);
+            //     define_arg!(1, NullBuf);
+            //     define_arg!(2, Flag);
+            //     define_arg!(3, Int);
+            // },
+            // "openat2" => {
+            //     // int openat2(int dirfd, const char *pathname, const struct open_how *how, size_t size)
+            //     define_arg!(0, Fd);
+            //     define_arg!(1, NullBuf);
+            //     define_arg!(2, Struct);     // XXX: the size argument is needed to know the size of
+            //                                 // the struct!!!
+            //     define_arg!(3, Size);
+            // }
             //"name_to_handle_at" => {
             //    // int name_to_handle_at(int dirfd, const char *pathname, struct file_handle *handle, int *mount_id, int flags)
             //    define_arg!(0, Int);
@@ -291,7 +289,7 @@ impl Decoder {
             //    define_arg!(3, Offset);
             //},
 
-            ///* Directory operations */
+            // /* Directory operations */
             //"mkdir" => {
             //    // int mkdir(const char *pathname, mode_t mode)
             //    define_arg!(0, NullBuf);
@@ -343,7 +341,7 @@ impl Decoder {
             //    define_arg!(2, Size);
             //},
 
-            ///* Link operations */
+            // /* Link operations */
             //"link" => {
             //    // int link(const char *oldpath, const char *newpath)
             //    define_arg!(0, NullBuf);
@@ -392,7 +390,7 @@ impl Decoder {
             //    define_arg!(4, Size);
             //},
 
-            ///* Basic file attributes */
+            // /* Basic file attributes */
             //"umask" => {
             //    // mode_t umask(mode_t mask)
             //    define_arg!(0, Int);
@@ -508,7 +506,7 @@ impl Decoder {
             //    define_arg!(3, Flag);
             //},
 
-            ///* Extended file attributes */
+            // /* Extended file attributes */
             //"setxattr" => {
             //    // int setxattr(const char *path, const char *name, const void *value, size_t size, int flags)
             //    define_arg!(0, NullBuf);
@@ -588,7 +586,7 @@ impl Decoder {
             //    define_arg!(1, NullBuf);
             //},
 
-            ///* File descriptor manipulations */
+            // /* File descriptor manipulations */
             //"ioctl" => {    // XXX
             //    // int ioctl(int fd, unsigned long request, ...)
             //    define_arg!(0, Fd);
@@ -630,7 +628,7 @@ impl Decoder {
             //    define_arg!(1, Int);
             //},
 
-            ///* Read / Write */
+            // /* Read / Write */
             //"read" => {
             //    // ssize_t read(int fd, void *buf, size_t count)
             //    define_arg!(0, Fd);
@@ -713,7 +711,7 @@ impl Decoder {
             //    define_arg!(3, Size);
             //},
 
-            ///* Synchronized I/O */
+            // /* Synchronized I/O */
             //"fdatasync" => {
             //    // int fdatasync(int fd)
             //    define_arg!(0, Fd);
@@ -744,7 +742,7 @@ impl Decoder {
             //    define_arg!(0, Fd);
             //},
 
-            ///* Asynchronous I/O */
+            // /* Asynchronous I/O */
             //"io_setup" => {
             //    // long io_setup(unsigned int nr_events, aio_context_t *ctx_idp)
             //    define_arg!(0, Int);
@@ -775,7 +773,7 @@ impl Decoder {
             //    define_arg!(2, Struct);
             //},
 
-            ///* Multiplexed I/O */
+            // /* Multiplexed I/O */
             //"select" => {       // XXX: redo the argument parsing
             //    // int select(int nfds, fd_set *restrict readfds, fd_set *restrict writefds, fd_set *restrict exceptfds, struct timeval *restrict timeout)
             //    define_arg!(0, Int);
@@ -847,7 +845,7 @@ impl Decoder {
             //    define_arg!(4, Struct);
             //},
 
-            ///* Monitorng file events */
+            // /* Monitorng file events */
             //"inotify_init" => {
             //    // int inotify_init(void)
             //},
@@ -880,7 +878,7 @@ impl Decoder {
             //    define_arg!(4, NullBuf);
             //},
 
-            ///* Miscellaneous */
+            // /* Miscellaneous */
             //"fadvise64" => {
             //    //  int posix_fadvise(int fd, off_t offset, off_t len, int advice)
             //    define_arg!(0, Fd);
@@ -901,7 +899,7 @@ impl Decoder {
             //    define_arg!(2, Flag);
             //},
 
-            ///*  
+            // /*  
             //"" => {
             //    // 
             //    define_arg!(0, );
@@ -910,11 +908,11 @@ impl Decoder {
             //},
             //*/
 
-            ///* 
-            // * Network
-            // */
+            // /* 
+            //  * Network
+            //  */
 
-            ///* Socket operations */
+            // /* Socket operations */
             //"socket" => {
             //    // int socket(int domain, int type, int protocol)
             //    define_arg!(0, Int);
@@ -992,7 +990,7 @@ impl Decoder {
             //    define_arg!(1, Int);
             //},
             //
-            ///* Send / Receive */
+            // /* Send / Receive */
             //"recv" => {
             //    // ssize_t recv(int sockfd, void *buf, size_t len, int flags)
             //    define_arg!(0, Fd);
@@ -1053,7 +1051,7 @@ impl Decoder {
             //    define_arg!(3, Flag);
             //},
 
-            ///* Naming */
+            // /* Naming */
             //"sethostname" => {
             //    //  int sethostname(const char *name, size_t len)
             //    define_buffer!(0, 1);
@@ -1075,7 +1073,7 @@ impl Decoder {
             //    define_arg!(1, Size);
             //},
 
-            ///* Packet filtering */
+            // /* Packet filtering */
             //"bpf" => {
             //    //  int bpf(int cmd, union bpf_attr *attr, unsigned int size)
             //    define_arg!(0, Int);
@@ -1083,15 +1081,15 @@ impl Decoder {
             //    define_arg!(2, Size);
             //},
 
-            ///* 
-            // * TODO Time
-            // */
+            // /* 
+            //  * TODO Time
+            //  */
             //
-            ///* 
-            // * Process management
-            // */
+            // /* 
+            //  * Process management
+            //  */
             //
-            ///* Creation and termination */
+            // /* Creation and termination */
             //"fork" => {
             //    // pid_t fork(void)
             //},
@@ -1135,7 +1133,7 @@ impl Decoder {
             //    define_arg!(3, Int);
             //},
 
-            ///* Process id */
+            // /* Process id */
             //"getpid" => {
             //    // pid_t getpid(void)
             //},
@@ -1146,7 +1144,7 @@ impl Decoder {
             //    // pid_t gettid(void)
             //},
 
-            ///* Session id */
+            // /* Session id */
             //"setsid" => {
             //    // pid_t setsid(void)
             //},
@@ -1155,7 +1153,7 @@ impl Decoder {
             //    define_arg!(0, Int);
             //},
 
-            ///* Process group id */
+            // /* Process group id */
             //"setpgid" => {
             //    // int setpgid(pid_t pid, pid_t pgid)
             //    define_arg!(0, Int);
@@ -1169,13 +1167,13 @@ impl Decoder {
             //    // pid_t getpgrp(void)
             //},
 
-            ///* TODO ... */
+            // /* TODO ... */
             //
-            ///* 
-            // * Signals
-            // */
+            // /* 
+            //  * Signals
+            //  */
             //
-            ///* Standard signals */
+            // /* Standard signals */
             //"kill" => {
             //    //  int kill(pid_t pid, int sig)
             //    define_arg!(0, Int);
@@ -1196,7 +1194,7 @@ impl Decoder {
             //    //  int pause(void)
             //},
 
-            ///* Real-time signals */
+            // /* Real-time signals */
             //"rt_sigaction" => {
             //    //  int sigaction(int signum, const struct sigaction *restrict act, struct sigaction *restrict oldact)
             //    define_arg!(0, Int);
@@ -1246,7 +1244,7 @@ impl Decoder {
             //    define_arg!(1, Address);
             //},
 
-            ///* File descriptor based signals */
+            // /* File descriptor based signals */
             //"signalfd" => {
             //    //  int signalfd(int fd, const sigset_t *mask, int flags)
             //    define_arg!(0, Fd);
@@ -1263,13 +1261,13 @@ impl Decoder {
             //"eventfd2" => {
             //},
 
-            ///* TODO Miscellaneous */
+            // /* TODO Miscellaneous */
 
-            ///* 
-            // * IPC
-            // */
+            // /* 
+            //  * IPC
+            //  */
             //
-            ///* Pipe */
+            // /* Pipe */
             //"pipe" => {
             //    //  int pipe(int pipefd[2])
             //    define_arg!(0, Address);
@@ -1303,7 +1301,7 @@ impl Decoder {
             //},
 
 
-            ///* Shared memory */
+            // /* Shared memory */
             //"shmget" => {
             //    //  int shmget(key_t key, size_t size, int shmflg)
             //    define_arg!(0, Int);
@@ -1327,9 +1325,9 @@ impl Decoder {
             //    define_arg!(0, Address);
             //},
 
-            ///* TODO: Semaphores */
+            // /* TODO: Semaphores */
 
-            ///* Futexes */
+            // /* Futexes */
             //"futex" => {
             //    //  long syscall(SYS_futex, uint32_t *uaddr, int futex_op, uint32_t val, const struct timespec *timeout,   /* or: uint32_t val2 */ uint32_t *uaddr2, uint32_t val3)
             //    define_arg!(0, Address);
@@ -1352,19 +1350,19 @@ impl Decoder {
             //    define_arg!(2, Size);
             //},
 
-            ///* TODO Message queues */
+            // /* TODO Message queues */
             //
-            ///* 
-            // * TODO Non-uniform memory access
-            // */
+            // /* 
+            //  * TODO Non-uniform memory access
+            //  */
             //
-            ///* 
-            // * TODO Linux key-management 
-            // */
+            // /* 
+            //  * TODO Linux key-management 
+            //  */
 
-            ///* 
-            // * TODO System-wide
-            // */
+            // /* 
+            //  * TODO System-wide
+            //  */
             _ => (),
         }
     }
@@ -1378,8 +1376,8 @@ impl Decoder {
 //pub trait Decode: CloneDecode {
 pub trait Decode: {
     //fn as_any(&self) -> &dyn Any;
+    #[allow(unused_variables)]
     fn decode(&mut self, pid: i32, operation: &Box<dyn Operation>) { }
-    //fn to_json(&self) -> String { format!("{{\"type\": none, \"value\": 0}}") }
     fn print(&self) { }
 }
 

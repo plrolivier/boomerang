@@ -5,23 +5,23 @@ pub mod decoder;
 pub mod filtering;
 
 
-use core::ffi::c_void;
+//use core::ffi::c_void;
 use std::{
-    collections::VecDeque,
+    //collections::VecDeque,
     rc::Rc,
 };
-use std::{thread, time::Duration};
+//use std::{thread, time::Duration};
 use nix::{
     libc::user_regs_struct,
 };
 use serde_json;
 use crate::{
-    syscall::{ RawSyscall, Syscall },
+    syscall::{ Syscall },
     arch::{ TargetArch, Architecture },
     operation::{ Operation, Ptrace },
     //protocol::{ Command, Packet, Header, SendSyscallEntryPayload, Client },
     tracer_engine::{
-        decoder::{ Decoder, Decode, },
+        decoder::{ Decoder },
         filtering::{ Decision, Filter },
     },
 };
@@ -36,7 +36,7 @@ pub struct Tracer {
     pub regs: user_regs_struct,     // only for x86_64
 
     syscall: Syscall,
-    remote_syscall: Syscall,
+    //remote_syscall: Syscall,
     insyscall: bool,
     filter: Filter,
 
@@ -85,7 +85,7 @@ impl Tracer {
                 gs: 0,
             },
             syscall: Syscall::new(),
-            remote_syscall: Syscall::new(),
+            //remote_syscall: Syscall::new(),
             insyscall: false,   // Hypothesis: we do the tracing from the start!
             filter: Filter::new(String::from("filtername")),
             interceptor: Box::new(Ptrace {}),
@@ -169,7 +169,7 @@ impl Tracer {
         self.filter_entry();
         self.carry_out_entry_decision();
 
-        //self.log_entry();
+        self.log_entry();
 
         self.insyscall = true;
     }
@@ -182,7 +182,7 @@ impl Tracer {
         self.filter_exit();
         self.carry_out_exit_decision();
 
-        //self.log_exit();
+        self.log_exit();
 
         self.insyscall = false;
     }

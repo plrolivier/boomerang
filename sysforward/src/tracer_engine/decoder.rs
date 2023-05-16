@@ -1,9 +1,7 @@
 /*
  * Decode syscall arguments.
  */
-//use core::num::flt2dec::Decoded;
 use std::rc::Rc;
-//use std::any::Any;
 
 use serde::{Serialize, Deserialize};
 
@@ -56,63 +54,9 @@ impl Decoder {
                 decoded_sc.decode(pid, operation);
             }
     }
-    /*
-    fn decode_args(&self, syscall: &mut Syscall, pid: i32, operation: &Box<dyn Operation>) {
-        if let Some(decoded_sc) = &syscall.decoded {
-            if let Some(args) = decoded_sc.args() {
-                for arg in args {
-                    arg.decode(pid, operation);
-                }
-            }
-        }
-    }
-
-    fn decode_args(&self, syscall: &mut Syscall, pid: i32, operation: &Box<dyn Operation>) {
-        if let Some(decoded_syscall) = &mut syscall.decoded {
-            for arg in &mut decoded_syscall.args {
-                arg.decode(pid, operation);
-            }
-        }
-    }
-    */
 
     fn parse_args(&self, syscall: &mut Syscall) {
         
-        /*
-        macro_rules! define_arg {
-            ($n:expr, $type:ident) => {
-                syscall.args[$n] = Some(Box::new($type::new(syscall.raw.args[$n])))
-            }
-        }
-
-        macro_rules! define_buffer {
-            ($n:expr, $m:expr) => {
-                syscall.args[$n] = Some(Box::new(Buffer::new(syscall.raw.args[$n], syscall.raw.args[$m])))
-            }
-        }
-        macro_rules! decode_integer {
-            ($n:expr, $type:ident) => {
-                //syscall.args.push(SyscallArg::$type($type::new(syscall.raw.args[$n])))
-                syscall.args.push(SyscallArg::$type($type { value: syscall.raw.args[$n] }))
-            }
-        }
-
-        macro_rules! decode_buffer {
-            ($n:expr, $m:expr) => {
-                syscall.args.push(Box::new(Buffer::new(syscall.raw.args[$n], syscall.raw.args[$m])))
-            }
-        }
-
-        macro_rules! decode_string {
-            ($n:expr, $d:expr) => {
-                syscall.args.push(SyscallArg::NullBuffer(NullBuffer { 
-                    address: syscall.raw.args[$n],
-                    direction: $d
-                }))
-            }
-        }
-        */
-
         let raw = syscall.raw.clone();
         macro_rules! decode_syscall {
             ($name:ident, $category:ident) => {
@@ -120,16 +64,16 @@ impl Decoder {
             };
         }
 
-        //
-        // TODO:
-        // 1. Produce a list of system calls with their definition
-        //    Use something similar to https://github.com/panda-re/panda/blob/dev/panda/plugins/syscalls2/scripts/syscall_parser.py
-        // 2. Craft a macro which parse each argument and associate it to a type
-        //    e.g., integer, address, fd, size_t, offset_t, enum, struct, array, string
+        /*
+         * TODO:
+         * 1. Produce a list of system calls with their definition
+         *    Use something similar to https://github.com/panda-re/panda/blob/dev/panda/plugins/syscalls2/scripts/syscall_parser.py
+         * 2. Craft a macro which parse each argument and associate it to a type
+         *    e.g., integer, address, fd, size_t, offset_t, enum, struct, array, string
+         */
 
         match syscall.name.as_str() {
 
-            //"close" => { syscall.decoded = Some(DecodedSyscall::Close(syscall::filesystem::Close::new(syscall.raw))) },
             "close"     => { decode_syscall!(Close, filesystem) },
             "creat"     => { decode_syscall!(Creat, filesystem) },
             "open"      => { decode_syscall!(Open, filesystem) },
@@ -1373,43 +1317,12 @@ impl Decoder {
 
 
 
-//pub trait Decode: CloneDecode {
 pub trait Decode: {
     //fn as_any(&self) -> &dyn Any;
     #[allow(unused_variables)]
     fn decode(&mut self, pid: i32, operation: &Box<dyn Operation>) { }
     fn print(&self) { }
 }
-
-/*
- * https://users.rust-lang.org/t/solved-is-it-possible-to-clone-a-boxed-trait-object/1714/7
-pub trait CloneDecode {
-    fn clone_decode<'a>(&self) -> Box<dyn Decode>;
-}
-
-impl<T> CloneDecode for T
-where T: Decode + Clone + 'static, {
-    fn clone_decode(&self) -> Box<dyn Decode> {
-        Box::new(self.clone())
-    }
-}
-
-impl Clone for Box<dyn Decode> {
-    fn clone(&self) -> Self {
-        self.clone_decode()
-    }
-}
- */
-
-
-/* The trait is used to iterate over all the decoded syscall arguments 
-#[derive(Serialize, Deserialize)]
-#[derive(Clone, Debug)]
-pub trait DecodeSyscall {
-    //fn args(&self) -> &Vec<ArgType>;
-    fn decode(&mut self, pid: i32, operation: &Box<dyn Operation>);
-}
-*/
 
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]

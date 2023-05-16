@@ -103,10 +103,37 @@ impl Operation for Ptrace {
 
 }
 
+
+/*
+pub struct QemuUser { }
+
+impl Operation for QemuUser {
+
+    fn read_registers(&self, pid: i32) -> Option<user_regs_struct> {
+        // TODO
+    }
+
+    fn write_registers(&self, pid: i32, regs: user_regs_struct) -> bool; {
+        // TODO
+    }
+
+    fn read_memory(&self, pid: i32, addr: u64, size: u64) -> Vec<u8> {
+        // TODO
+    }
+
+    fn write_memory(&self, pid: i32, addr: u64, mem: Vec<u8>) -> u64 {
+        // TODO
+    }
+
+}
+*/
+
+
 /*
  * XXX 
  * Another way to had more flexibility between the interceptors would be to have a structure
- * which divide each trait Operations in subgroups (register, memory, syscall, etc.)
+ * which divide each trait Operations in subgroups (register, memory, syscall, etc.).
+ * In a similary way that avatar2 does.
  *
 struct Interceptor {
     register: Option<Box<dyn RegisterOperation>>,

@@ -5,12 +5,9 @@ pub mod decoder;
 pub mod filtering;
 
 
-//use core::ffi::c_void;
 use std::{
-    //collections::VecDeque,
     rc::Rc,
 };
-//use std::{thread, time::Duration};
 use nix::{
     libc::user_regs_struct,
 };

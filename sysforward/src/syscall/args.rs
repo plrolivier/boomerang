@@ -2,7 +2,6 @@
  * Syscall decoded arguments data structures
  */
 use core::fmt;
-//use std::any::Any;
 
 use serde::{ Serialize, Deserialize };
 
@@ -27,16 +26,12 @@ pub enum ArgType {
     Signal(Signal),
     Address(Address),
     Buffer(Buffer),
-    NullBuffer(NullBuffer),     // a string
+    NullBuffer(NullBuffer),     // i.e., string
     Array(Array),
     Struct(Struct),
 }
 
-impl Decode for ArgType {
-    //fn as_any(&self) -> &dyn Any {
-        //self
-    //}
-}
+impl Decode for ArgType { }
 
 
 /* 
@@ -55,14 +50,6 @@ impl Integer {
 }
 
 impl Decode for Integer { 
-    //fn as_any(&self) ->&dyn Any {
-        //self
-    //}
-
-    //fn to_json(&self) -> String {
-    //    format!("{{\"type\": \"integer\", \"value\": {}}}", self.value)
-    //}
-
     fn print(&self) {
         println!("integer: {:#x}", self.value);
     }
@@ -85,14 +72,6 @@ impl Fd {
 }
 
 impl Decode for Fd {
-    //fn as_any(&self) ->&dyn Any {
-        //self
-    //}
-
-    //fn to_json(&self) -> String {
-    //    format!("{{\"type\": \"fd\", \"value\": {}}}", self.value)
-    //}
-
     fn print(&self) {
         println!("fd: {:#x}", self.value);
     }
@@ -119,14 +98,6 @@ impl Size {
 }
 
 impl Decode for Size {
-    //fn as_any(&self) ->&dyn Any {
-        //self
-    //}
-
-    //fn to_json(&self) -> String {
-    //    format!("{{\"type\": \"size\", \"value\": {}}}", self.value)
-    //}
-
     fn print(&self) {
         println!("size: {:#x}", self.value);
     }
@@ -151,14 +122,6 @@ impl Offset {
 }
 
 impl Decode for Offset {
-    //fn as_any(&self) ->&dyn Any {
-        //self
-    //}
-
-    //fn to_json(&self) -> String {
-    //    format!("{{\"type\": \"offset\", \"value\": {}}}", self.value)
-    //}
-
     fn print(&self) {
         println!("offset: {:#x}", self.value);
     }
@@ -181,14 +144,6 @@ impl Flag {
 }
 
 impl Decode for Flag {
-    //fn as_any(&self) ->&dyn Any {
-        //self
-    //}
-
-    //fn to_json(&self) -> String {
-    //    format!("{{\"type\": \"flag\", \"value\": {}}}", self.value)
-    //}
-
     fn print(&self) {
         println!("flag: {:#x}", self.value);
     }
@@ -212,13 +167,6 @@ impl Protection {
 }
 
 impl Decode for Protection {
-    //fn as_any(&self) ->&dyn Any {
-        //self
-    //}
-
-    //fn to_json(&self) -> String {
-    //    format!("{{\"type\": \"prot\", \"value\": {}}}", self.value)
-    //}
 
     fn print(&self) {
         println!("protection: {:#x}", self.value);
@@ -246,13 +194,6 @@ impl Signal {
 }
 
 impl Decode for Signal {
-    //fn as_any(&self) ->&dyn Any {
-        //self
-    //}
-
-    //fn to_json(&self) -> String {
-    //    format!("{{\"type\": \"signal\", \"value\": {}}}", self.value)
-    //}
 
     fn print(&self) {
         println!("signo: {:#x}", self.value);
@@ -311,15 +252,6 @@ impl Address {
 }
 
 impl Decode for Address {
-    //fn as_any(&self) ->&dyn Any {
-        //self
-    //}
-
-    //fn to_json(&self) -> String {
-    //    format!("{{\"type\": \"address\", \"direction\": {}, \"value\": {}}}",
-    //            self.direction, self.value)
-    //}
-
     fn print(&self) {
         println!("address: {:#x}", self.value);
         println!("direction: {:#x}", self.direction);
@@ -354,18 +286,10 @@ impl Buffer {
 }
 
 impl Decode for Buffer {
-    //fn as_any(&self) ->&dyn Any {
-        //self
-    //}
 
     fn decode(&mut self, pid: i32, operation: &Box<dyn Operation>) { 
         self.content = operation.read_memory(pid, self.address, self.size);
     }
-
-    //fn to_json(&self) -> String {
-    //    format!("{{\"type\": \"buffer\", \"value\": {{\"address\": {}, \"direction\": {}, \"size\": {}, \"content\": {:?}}}}}", 
-    //            self.address, self.direction, self.size, self.content)
-    //}
 
     fn print(&self) {
         println!("address: {:#x}", self.address);
@@ -400,9 +324,6 @@ impl NullBuffer {
 }
 
 impl Decode for NullBuffer {
-    //fn as_any(&self) ->&dyn Any {
-        //self
-    //}
 
     fn decode(&mut self, pid: i32, operation: &Box<dyn Operation>) { 
         //TODO: does not work when the Null terminated buffer is greater than READ_SIZE bytes.
@@ -426,11 +347,6 @@ impl Decode for NullBuffer {
             }
         }
     }
-
-    //fn to_json(&self) -> String {
-    //    format!("{{\"type\":\"buffer\",\"value\":{{\"address\":{},\"direction\":{},\"size\":{},\"content\":{:?}}}}}",
-    //            self.address, self.direction, self.size, self.content)
-    //}
 
     fn print(&self) {
         println!("address: {:#x}", self.address);
@@ -469,11 +385,8 @@ impl Array {
 }
 
 impl Decode for Array {
-    //fn as_any(&self) ->&dyn Any {
-        //self
-    //}
 
-    fn decode(&mut self, pid: i32, operation: &Box<dyn Operation>) { 
+    fn decode(&mut self, _pid: i32, _operation: &Box<dyn Operation>) { 
        panic!("To implement"); 
     }
 }
@@ -506,18 +419,10 @@ impl Struct {
 }
 
 impl Decode for Struct {
-    //fn as_any(&self) ->&dyn Any {
-        //self
-    //}
 
-    fn decode(&mut self, pid: i32, operation: &Box<dyn Operation>) { 
+    fn decode(&mut self, _pid: i32, _operation: &Box<dyn Operation>) { 
        panic!("To implement"); 
     }
-
-    //fn to_json(&self) -> String {
-    //    format!("{{\"type\":\"struct\",\"value\":{{\"address\":{},\"direction\":{},\"size\":{},\"name\":{},\"content\":{:?}}}}}",
-    //            self.address, self.direction, self.size, self.name, self.content)
-    //}
 
     fn print(&self) {
         println!("name: {}", self.name);

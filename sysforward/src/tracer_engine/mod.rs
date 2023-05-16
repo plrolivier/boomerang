@@ -196,15 +196,14 @@ impl Tracer {
     }
 
     fn log_entry(&self) {
-        //println!("{:#?}", self.syscall.to_json());
         let json = serde_json::to_string(&self.syscall).unwrap();
         println!("{}", json)
     }
 
     fn log_exit(&self) {
-        //println!("{:#?}", self.syscall.to_json());
         let json = serde_json::to_string(&self.syscall).unwrap();
-        println!("{}", json)
+        println!("{}", json);
+        println!("");
     }
 
     fn filter_entry(&mut self) -> Option<Decision> {

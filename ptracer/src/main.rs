@@ -55,7 +55,7 @@ fn run_child() {
 
 fn run_parent(child: Pid) {
 
-    let mut tracer = Tracer::new(child, TargetArch::X86_64);
+    let mut tracer = Tracer::new(i32::from(child), TargetArch::X86_64);
 
     wait().unwrap();    // exit syscall
 
@@ -76,7 +76,7 @@ fn run_parent(child: Pid) {
 
 fn sync_registers(tracer: &mut Tracer) {
 
-    let regs = ptrace::getregs(tracer.pid).unwrap();
+    let regs = ptrace::getregs(Pid::from_raw(tracer.pid)).unwrap();
     tracer.sync_registers(regs);
 }
 

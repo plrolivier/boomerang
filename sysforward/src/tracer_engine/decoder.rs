@@ -1328,19 +1328,13 @@ pub trait Decode: {
 #[derive(Clone, Debug)]
 pub enum DecodedSyscall {
     /* Filesystem */
-    #[serde(rename = "close")]
+    //#[serde(rename = "close")]
     Close(Close),
-    #[serde(rename = "creat")]
     Creat(Creat),
-    #[serde(rename = "open")]
     Open(Open),
-    #[serde(rename = "openat")]
     Openat(Openat),
-    #[serde(rename = "openat2")]
     Openat2(Openat2),
-    #[serde(rename = "read")]
     Read(Read),
-    #[serde(rename = "write")]
     Write(Write),
     /* ... */
 }

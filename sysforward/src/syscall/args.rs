@@ -3,6 +3,7 @@
  */
 use core::fmt;
 
+//use nix::libc::printf;
 use serde::{ Serialize, Deserialize };
 
 use crate::{
@@ -31,7 +32,24 @@ pub enum ArgType {
     Struct(Struct),
 }
 
-impl Decode for ArgType { }
+impl Decode for ArgType {
+    fn decode(&mut self, pid: i32, operation: &Box<dyn Operation>) {
+        match self {
+            ArgType::Integer(integer)   => integer.decode(pid, operation),
+            ArgType::Fd(fd)                  => fd.decode(pid, operation),
+            ArgType::Size(size)            => size.decode(pid, operation),
+            ArgType::Offset(offset)      => offset.decode(pid, operation),
+            ArgType::Flag(flag)            => flag.decode(pid, operation),
+            ArgType::Protection(protection) => protection.decode(pid, operation),
+            ArgType::Signal(signal)      => signal.decode(pid, operation),
+            ArgType::Address(address)   => address.decode(pid, operation),
+            ArgType::Buffer(buffer)      => buffer.decode(pid, operation),
+            ArgType::NullBuffer(nullbuffer) => nullbuffer.decode(pid, operation),
+            ArgType::Array(array)         => array.decode(pid, operation),
+            ArgType::Struct(structure) => structure.decode(pid, operation),
+        }
+    }
+}
 
 
 /* 
@@ -72,6 +90,7 @@ impl Fd {
 }
 
 impl Decode for Fd {
+
     fn print(&self) {
         println!("fd: {:#x}", self.value);
     }

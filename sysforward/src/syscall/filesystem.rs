@@ -127,8 +127,8 @@ impl Read {
     pub fn new(raw: RawSyscall) -> Self {
         let mut args = Vec::new();
         args.push(ArgType::Fd(Fd::new(raw.args[0])));
-        args.push(ArgType::Buffer(Buffer::new(raw.args[1], Direction::In, raw.args[3])));
-        args.push(ArgType::Size(Size::new(raw.args[3])));
+        args.push(ArgType::Buffer(Buffer::new(raw.args[1], Direction::In, raw.args[2])));
+        args.push(ArgType::Size(Size::new(raw.args[2])));
         Self { args: args }
     }
 }
@@ -148,8 +148,8 @@ impl Write {
     pub fn new(raw: RawSyscall) -> Self {
         let mut args = Vec::new();
         args.push(ArgType::Fd(Fd::new(raw.args[0])));
-        args.push(ArgType::Buffer(Buffer::new(raw.args[1], Direction::Out, raw.args[3])));
-        args.push(ArgType::Size(Size::new(raw.args[3])));
+        args.push(ArgType::Buffer(Buffer::new(raw.args[1], Direction::Out, raw.args[2])));
+        args.push(ArgType::Size(Size::new(raw.args[2])));
         Self { args: args }
     }
 }

@@ -27,8 +27,8 @@ pub trait Operation {
     fn write_register(&self, pid: i32, name: str, value: u64) -> bool;
     */
 
-    fn read_memory(&self, pid: i32, addr: u64, size: u64) -> Vec<u32>;
-    fn write_memory(&self, pid: i32, addr: u64, mem: Vec<u32>) -> u64;
+    fn read_memory(&self, pid: i32, addr: u64, size: u64) -> Vec<u8>;
+    fn write_memory(&self, pid: i32, addr: u64, mem: Vec<u8>) -> u64;
 
     /*
      * SyscallOperation allow to interact with the syscall values when it does not need to pass
@@ -62,27 +62,29 @@ impl Operation for Ptrace {
         }
     }
 
-    fn read_memory(&self, pid: i32, addr: u64, size: u64) -> Vec<u32> {
+    fn read_memory(&self, pid: i32, addr: u64, size: u64) -> Vec<u8> {
         let pid = Pid::from_raw(pid);
-        let mut mem = Vec::new();
+        let mut mem: Vec<u8> = Vec::new();
         let mut addr = addr;
         let mut count = size + (4 - size % 4);
 
         while count > 0 {
             let address = addr as ptrace::AddressType;
-            mem.push(ptrace::read(pid, address).unwrap() as u32);
+            //mem.push(ptrace::read(pid, address).unwrap() as u32);
+            let word = ptrace::read(pid, address).unwrap() as u32;
+            mem.extend_from_slice(&word.to_le_bytes());
             addr += 4;
             count -= 4;
         }
         mem
     }
 
-    fn write_memory(&self, pid: i32, addr: u64, mem: Vec<u32>) -> u64 {
+    fn write_memory(&self, pid: i32, addr: u64, mem: Vec<u8>) -> u64 {
         let pid = Pid::from_raw(pid);
         let mut addr = addr;
         let size = mem.len() as u64;
         let mut count = mem.len() as u64;
-        let mut mem = VecDeque::from(mem);
+        let mut mem: VecDeque<u8> = VecDeque::from(mem);
 
         while count > 0 {
             let address = addr as ptrace::AddressType;

@@ -1,0 +1,151 @@
+syntax = "proto3";
+
+package proto.sysfwd;
+
+
+
+message Message {
+    oneof msg {
+        Ack ack = 1;
+        NotifyNewProcess notify_new_process = 2;
+        SendSyscallEntry send_syscall_entry = 3;
+        NotifySyscallExit notify_syscall_exit = 4;
+        ReturnSyscallExit return_syscall_exit = 5;
+        ReturnDecision return_decision = 6;
+        NotifySignal notify_signal = 7;
+
+        //ReadArguments read_args = 8;
+        //WriteArguments write_args = 9;
+        //ReadRegisters read_regs = 10;
+        //WriteRegisters write_regs = 11;
+        //ReadMemory read_mem = 12;
+        //ReadString read_str = 13;
+        //WriteMemory write_mem = 14;
+    }
+}
+
+
+message Ack {
+    AckCode code = 1;
+    optional string error_message = 2;
+ }
+
+message NotifyNewProcess {
+    uint32 pid = 1;
+    //uint32 flags = 2;
+}
+
+message SendSyscallEntry {
+    Syscall syscall = 1;
+}
+
+message NotifySyscallExit {
+    Syscall syscall = 1;
+}
+
+message ReturnSyscallExit {
+    Syscall syscall = 1;
+}
+
+message ReturnDecision {
+    Decision decision = 1;
+}
+
+message NotifySignal {
+    uint32 signo = 1;
+}
+
+
+enum AckCode {
+    SUCCESS = 0;
+    ERROR = 1;
+}
+
+enum Decision {
+    CONTINUE        = 0;
+    FORWARD_ENTRY   = 1;
+    FORWARD_EXIT    = 2;
+    INSPECT_EXIT    = 3;
+    NO_EXEC         = 4;
+    KILL            = 5;
+}
+
+/* Syscall arguments types */
+
+enum Direction {
+    IN      = 0;
+    OUT     = 1;
+    IN_OUT  = 2;
+}
+
+enum BufferType {
+    BLOCK   = 0;
+    STRING  = 1;
+    ARRAY   = 2;
+    STRUCT  = 3;
+}
+
+message Integer {
+    uint64 value = 1;
+    optional string name = 2;   /* for flags */
+    optional uint32 object = 3; /* for size, to refer to another arg */
+}
+
+message Pointer {
+    uint64 value = 1;
+    Direction direction = 2; /* */
+
+    message MemoryBlock {
+        BufferType type = 1;
+        uint64 length = 2;
+        repeated bytes content = 3;
+    }
+    optional MemoryBlock memory = 3;
+}
+
+message Arguments {
+    oneof arg1 {
+        Integer arg1_integer = 1;
+        Pointer arg1_pointer = 2;
+    }
+    oneof arg2 {
+        Integer arg2_integer = 3;
+        Pointer arg2_pointer = 4;
+    }
+    oneof arg3 {
+        Integer arg3_integer = 5;
+        Pointer arg3_pointer = 6;
+    }
+    oneof arg4 {
+        Integer arg4_integer = 7;
+        Pointer arg4_pointer = 8;
+    }
+    oneof arg5 {
+        Integer arg5_integer = 9;
+        Pointer arg5_pointer = 10;
+    }
+    oneof arg6 {
+        Integer arg6_integer = 11;
+        Pointer arg6_pointer = 12;
+    }
+    oneof arg7 {
+        Integer arg7_integer = 13;
+        Pointer arg7_pointer = 14;
+    }
+}
+
+message Syscall {
+
+    message RawSyscall {
+        uint32 no = 1;
+        repeated uint64 args = 2;
+        optional uint64 retval = 3;
+        optional uint64 errno = 4;
+    }
+    RawSyscall raw = 1;
+
+    optional string name = 2;
+    optional Decision decision = 3;
+    optional Arguments args = 4;
+} 
+

@@ -14,13 +14,14 @@ use std::{thread, time::Duration};
 use nix::{
     libc::user_regs_struct,
 };
+use serde_json;
 use crate::{
     syscall::{ RawSyscall, Syscall },
     arch::{ TargetArch, Architecture },
     operation::{ Operation, Ptrace },
-    protocol::{ Command, Packet, Header, SendSyscallEntryPayload, Client },
+    //protocol::{ Command, Packet, Header, SendSyscallEntryPayload, Client },
     tracer_engine::{
-        decoder::{ Decoder, Decode, Int, Fd, Size, Offset, Flag, Prot, Signal, Address, Buffer, NullBuf, Struct },
+        decoder::{ Decoder, Decode, },
         filtering::{ Decision, Filter },
     },
 };
@@ -41,7 +42,7 @@ pub struct Tracer {
 
     interceptor: Box<dyn Operation>,
     decoder: Rc<Decoder>,
-    connection: Client,
+    //connection: Client,
 }
 
 impl Tracer {
@@ -89,7 +90,7 @@ impl Tracer {
             filter: Filter::new(String::from("filtername")),
             interceptor: Box::new(Ptrace {}),
             decoder: decoder,
-            connection: Client::new(),
+            //connection: Client::new(),
         }
     }
 
@@ -162,6 +163,7 @@ impl Tracer {
     fn trace_entry(&mut self) {
         self.log_raw_entry();
 
+        // TODO: Add an option to decode only certain syscalls to increase speed.
         self.decoder.decode_entry(&mut self.syscall, self.pid, &self.interceptor);
 
         self.filter_entry();
@@ -197,11 +199,15 @@ impl Tracer {
     }
 
     fn log_entry(&self) {
-        println!("{:#?}", self.syscall.to_json());
+        //println!("{:#?}", self.syscall.to_json());
+        let json = serde_json::to_string(&self.syscall).unwrap();
+        println!("{}", json)
     }
 
     fn log_exit(&self) {
-        println!("{:#?}", self.syscall.to_json());
+        //println!("{:#?}", self.syscall.to_json());
+        let json = serde_json::to_string(&self.syscall).unwrap();
+        println!("{}", json)
     }
 
     fn filter_entry(&mut self) -> Option<Decision> {
@@ -220,10 +226,11 @@ impl Tracer {
         }
 
         // TODO: implement execute_decision()
-        self.send_syscall_entry();
+        //self.send_syscall_entry();
     }
 
     // TODO: move this to protocol/mod.rs?
+    /*
     fn send_syscall_entry(&mut self) {
 
         let payload = SendSyscallEntryPayload::new(&self.syscall);
@@ -252,6 +259,7 @@ impl Tracer {
         // self.remote_syscall = ...
 
     }
+    */
 
     fn carry_out_exit_decision(&mut self) {
         match self.syscall.decision {
@@ -272,11 +280,11 @@ impl Tracer {
         self.interceptor.write_registers(self.pid, regs)
     }
 
-    pub fn read_memory(&self, addr: u64, size: u64) -> Vec<u32> {
+    pub fn read_memory(&self, addr: u64, size: u64) -> Vec<u8> {
         self.interceptor.read_memory(self.pid, addr, size)
     }
 
-    pub fn write_memory(&self, addr: u64, mem: Vec<u32>) -> u64 {
+    pub fn write_memory(&self, addr: u64, mem: Vec<u8>) -> u64 {
         self.interceptor.write_memory(self.pid, addr, mem)
     }
 

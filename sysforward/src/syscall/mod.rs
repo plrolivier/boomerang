@@ -4,6 +4,16 @@
 pub mod args;
 pub mod filesystem;
 
+pub mod open;
+pub mod io;
+pub mod fallocate;
+pub mod truncate;
+pub mod renameat;
+pub mod memfd;
+pub mod mknod;
+pub mod file_handle;
+pub mod mmap;
+
 
 use serde::{ Serialize, Deserialize };
 

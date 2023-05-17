@@ -7,12 +7,9 @@ use serde::{Serialize, Deserialize};
 
 use crate::{
     arch::{ Architecture },
-    syscall::{ Syscall },
     syscall,
+    syscall::{ Syscall },
     operation::Operation,
-    syscall::{
-        filesystem::{ Close, Creat, Open, Openat, Openat2, Read, Write },
-    },
 };
 
 
@@ -74,13 +71,22 @@ impl Decoder {
 
         match syscall.name.as_str() {
 
-            "close"     => { decode_syscall!(Close, filesystem) },
-            "creat"     => { decode_syscall!(Creat, filesystem) },
-            "open"      => { decode_syscall!(Open, filesystem) },
-            "openat"    => { decode_syscall!(Openat, filesystem) },
-            "openat2"   => { decode_syscall!(Openat2, filesystem) },
-            "read"      => { decode_syscall!(Read, filesystem) },
-            "write"     => { decode_syscall!(Write, filesystem) },
+            "close"     => { decode_syscall!(Close, open) },
+            "creat"     => { decode_syscall!(Creat, open) },
+            "open"      => { decode_syscall!(Open, open) },
+            "openat"    => { decode_syscall!(Openat, open) },
+            "openat2"   => { decode_syscall!(Openat2, open) },
+
+            "read"      => { decode_syscall!(Read, io) },
+            "write"     => { decode_syscall!(Write, io) },
+    
+            "brk"       => { decode_syscall!(Brk, mmap) },
+            "sbrk"      => { decode_syscall!(Sbrk, mmap) },
+            "mmap"      => { decode_syscall!(Mmap, mmap) },
+            "mremap"    => { decode_syscall!(Mremap, mmap) },
+            "munmap"    => { decode_syscall!(Munmap, mmap) },
+            "mprotect"  => { decode_syscall!(Mprotect, mmap) },
+            "madvise"   => { decode_syscall!(Madvise, mmap) },
 
             //"close" => {
             //    // int close(int fd)
@@ -1329,27 +1335,69 @@ pub trait Decode: {
 pub enum DecodedSyscall {
     /* Filesystem */
     //#[serde(rename = "close")]
-    Close(Close),
-    Creat(Creat),
-    Open(Open),
-    Openat(Openat),
-    Openat2(Openat2),
-    Read(Read),
-    Write(Write),
+    Close(syscall::open::Close),
+    Creat(syscall::open::Creat),
+    Open(syscall::open::Open),
+    Openat(syscall::open::Openat),
+    Openat2(syscall::open::Openat2),
+
+    Read(syscall::io::Read),
+    Write(syscall::io::Write),
+
+    Brk(syscall::mmap::Brk),
+    Sbrk(syscall::mmap::Sbrk),
+    Mmap(syscall::mmap::Mmap),
+    Mremap(syscall::mmap::Mremap),
+    Munmap(syscall::mmap::Munmap),
+    Mprotect(syscall::mmap::Mprotect),
+    Madvise(syscall::mmap::Madvise),
+
+    Fallocate(syscall::fallocate::Fallocate),
+    NameToHandleAt(syscall::file_handle::NameToHandleAt),
+    OpenByHandleAt(syscall::file_handle::OpenByHandleAt),
+    MemfdCreate(syscall::memfd::MemfdCreate),
+    Mknod(syscall::mknod::Mknod),
+    Mknodat(syscall::mknod::Mknodat),
+
+    Rename(syscall::renameat::Rename),
+    Renameat(syscall::renameat::Renameat),
+    Renameat2(syscall::renameat::Renameat2),
+
+    Truncate(syscall::truncate::Truncate),
+    Ftruncate(syscall::truncate::Ftruncate),
+
     /* ... */
 }
 
 impl Decode for DecodedSyscall {
     fn decode(&mut self, pid: i32, operation: &Box<dyn Operation>) {
         match self {
-            DecodedSyscall::Close(close) => close.decode(pid, operation),
-            DecodedSyscall::Creat(creat) => creat.decode(pid, operation),
-            DecodedSyscall::Open(open) => open.decode(pid, operation),
-            DecodedSyscall::Openat(openat) => openat.decode(pid, operation),
-            DecodedSyscall::Openat2(openat2) => openat2.decode(pid, operation),
-            DecodedSyscall::Read(read) => read.decode(pid, operation),
-            DecodedSyscall::Write(write) => write.decode(pid, operation),
-            
+            DecodedSyscall::Close(x) => x.decode(pid, operation),
+            DecodedSyscall::Creat(x) => x.decode(pid, operation),
+            DecodedSyscall::Open(x) => x.decode(pid, operation),
+            DecodedSyscall::Openat(x) => x.decode(pid, operation),
+            DecodedSyscall::Openat2(x) => x.decode(pid, operation),
+            DecodedSyscall::Read(x) => x.decode(pid, operation),
+            DecodedSyscall::Write(x) => x.decode(pid, operation),
+            DecodedSyscall::Brk(x) => x.decode(pid, operation),
+            DecodedSyscall::Sbrk(x) => x.decode(pid, operation),
+            DecodedSyscall::Mmap(x) => x.decode(pid, operation),
+            DecodedSyscall::Mremap(x) => x.decode(pid, operation),
+            DecodedSyscall::Munmap(x) => x.decode(pid, operation),
+            DecodedSyscall::Mprotect(x) => x.decode(pid, operation),
+            DecodedSyscall::Madvise(x) => x.decode(pid, operation),
+            DecodedSyscall::Fallocate(x) => x.decode(pid, operation),
+            DecodedSyscall::NameToHandleAt(x) => x.decode(pid, operation),
+            DecodedSyscall::OpenByHandleAt(x) => x.decode(pid, operation),
+            DecodedSyscall::MemfdCreate(x) => x.decode(pid, operation),
+            DecodedSyscall::Mknod(x) => x.decode(pid, operation),
+            DecodedSyscall::Mknodat(x) => x.decode(pid, operation),
+            DecodedSyscall::Rename(x) => x.decode(pid, operation),
+            DecodedSyscall::Renameat(x) => x.decode(pid, operation),
+            DecodedSyscall::Renameat2(x) => x.decode(pid, operation),
+            DecodedSyscall::Truncate(x) => x.decode(pid, operation),
+            DecodedSyscall::Ftruncate(x) => x.decode(pid, operation),
+            //DecodedSyscall::(x) => x.decode(pid, operation),
         }
     }
 }

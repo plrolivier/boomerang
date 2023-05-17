@@ -79,7 +79,19 @@ impl Decoder {
 
             "read"      => { decode_syscall!(Read, io) },
             "write"     => { decode_syscall!(Write, io) },
-    
+
+            "fallocate" => { decode_syscall!(Fallocate, fallocate) },
+            "name_to_handle_at" => { decode_syscall!(NameToHandleAt, file_handle) },
+            "open_by_handle_at" => { decode_syscall!(OpenByHandleAt, file_handle) },
+            "memfd_create" => { decode_syscall!(MemfdCreate, memfd) },
+            "mknod" => { decode_syscall!(Mknod, mknod) },
+            "mknodat" => { decode_syscall!(Mknodat, mknod) },
+            "rename" => { decode_syscall!(Rename, renameat) },
+            "renameat" => { decode_syscall!(Renameat, renameat) },
+            "renameat2" => { decode_syscall!(Renameat2, renameat) },
+            "truncate" => { decode_syscall!(Truncate, truncate) },
+            "ftruncate" => { decode_syscall!(Ftruncate, truncate) },
+
             "brk"       => { decode_syscall!(Brk, mmap) },
             "sbrk"      => { decode_syscall!(Sbrk, mmap) },
             "mmap"      => { decode_syscall!(Mmap, mmap) },
@@ -1344,18 +1356,13 @@ pub enum DecodedSyscall {
     Read(syscall::io::Read),
     Write(syscall::io::Write),
 
-    Brk(syscall::mmap::Brk),
-    Sbrk(syscall::mmap::Sbrk),
-    Mmap(syscall::mmap::Mmap),
-    Mremap(syscall::mmap::Mremap),
-    Munmap(syscall::mmap::Munmap),
-    Mprotect(syscall::mmap::Mprotect),
-    Madvise(syscall::mmap::Madvise),
-
     Fallocate(syscall::fallocate::Fallocate),
+
     NameToHandleAt(syscall::file_handle::NameToHandleAt),
     OpenByHandleAt(syscall::file_handle::OpenByHandleAt),
+
     MemfdCreate(syscall::memfd::MemfdCreate),
+
     Mknod(syscall::mknod::Mknod),
     Mknodat(syscall::mknod::Mknodat),
 
@@ -1365,6 +1372,14 @@ pub enum DecodedSyscall {
 
     Truncate(syscall::truncate::Truncate),
     Ftruncate(syscall::truncate::Ftruncate),
+
+    Brk(syscall::mmap::Brk),
+    Sbrk(syscall::mmap::Sbrk),
+    Mmap(syscall::mmap::Mmap),
+    Mremap(syscall::mmap::Mremap),
+    Munmap(syscall::mmap::Munmap),
+    Mprotect(syscall::mmap::Mprotect),
+    Madvise(syscall::mmap::Madvise),
 
     /* ... */
 }

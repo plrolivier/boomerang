@@ -21,6 +21,8 @@ use crate::{
         decoder::{ Decoder },
         filtering::{ Decision, Filter },
     },
+    //network::client::Client,
+    network::udpclient::UdpClient,
 };
 
 
@@ -39,7 +41,7 @@ pub struct Tracer {
 
     interceptor: Box<dyn Operation>,
     decoder: Rc<Decoder>,
-    //connection: Client,
+    connection: UdpClient,
 }
 
 impl Tracer {
@@ -87,7 +89,7 @@ impl Tracer {
             filter: Filter::new(String::from("filtername")),
             interceptor: Box::new(Ptrace {}),
             decoder: decoder,
-            //connection: Client::new(),
+            connection: UdpClient::new().expect("Fail to create UDP Client"),
         }
     }
 
@@ -164,9 +166,9 @@ impl Tracer {
         self.decoder.decode_entry(&mut self.syscall, self.pid, &self.interceptor);
 
         self.filter_entry();
-        self.carry_out_entry_decision();
-
         self.log_entry();
+
+        self.carry_out_entry_decision();
 
         self.insyscall = true;
     }
@@ -177,9 +179,9 @@ impl Tracer {
         self.decoder.decode_exit();
 
         self.filter_exit();
-        self.carry_out_exit_decision();
-
         self.log_exit();
+
+        self.carry_out_exit_decision();
 
         self.insyscall = false;
     }
@@ -197,12 +199,12 @@ impl Tracer {
 
     fn log_entry(&self) {
         let json = serde_json::to_string(&self.syscall).unwrap();
-        println!("{}", json)
+        println!("[TRACER] {}", json)
     }
 
     fn log_exit(&self) {
         let json = serde_json::to_string(&self.syscall).unwrap();
-        println!("{}", json);
+        println!("[TRACER] {}", json);
         println!("");
     }
 
@@ -222,46 +224,50 @@ impl Tracer {
         }
 
         // TODO: implement execute_decision()
-        //self.send_syscall_entry();
+        self.send_syscall_entry();
     }
 
-    // TODO: move this to protocol/mod.rs?
-    /*
     fn send_syscall_entry(&mut self) {
 
-        let payload = SendSyscallEntryPayload::new(&self.syscall);
-        let str_payload = serde_json::to_string(&payload).unwrap();
-        let header = Header::new(self.pid, Command::SendSyscallEntry, str_payload.len());
-        let str_header = serde_json::to_string(&header).unwrap();
-        let request = format!("{}\n{}\n", str_header, str_payload);
-
-        println!("SEND REQUEST:\n{}", request);
+        let message = serde_json::to_string(&self.syscall).unwrap();
 
         /* Send packet */
-        self.connection.send(request);
+        println!("[TRACER: SEND] {}", message);
+        self.connection.send(&message);
 
         /* Wait for reply and parse it to continue */
-        self.receive_remote_syscall();
+        self.wait_executor();
 
         //thread::sleep(Duration::from_millis(1000));
     }
 
-    fn receive_remote_syscall(&mut self) {
-        let mut response = String::new();
+    fn wait_executor(&mut self) {
 
-        self.connection.receive(&mut response);
-        println!("RECEIVE:\n{}", response);
+        let (ack, _) = self.connection.receive().expect("Fail to receive ack");
+        println!("[TRACER: RECEIVE] {}", String::from_utf8_lossy(&ack));
+
         // TODO: parse and deserialize remote_syscall
         // self.remote_syscall = ...
-
     }
-    */
 
     fn carry_out_exit_decision(&mut self) {
         match self.syscall.decision {
             Some(Decision::Continue) => (),
             _ => panic!("Decision not implemented")
         }
+
+        // TODO
+        self.send_syscall_exit();
+    }
+
+    fn send_syscall_exit(&mut self) {
+
+        let message = serde_json::to_string(&self.syscall).unwrap();
+
+        println!("[TRACER: SEND] {}", message);
+        self.connection.send(&message);
+
+        self.wait_executor();
     }
 
 

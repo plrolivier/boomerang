@@ -150,6 +150,9 @@ fn main() {
 
     let executor_handler = thread::spawn(|| { executor(); });
 
+    // sleep 1sec
+    //thread::sleep(std::time::Duration::from_secs(1));
+
     let tracer_handler = thread::spawn(|| { ptracer(); });
 
     tracer_handler.join().unwrap();

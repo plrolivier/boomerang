@@ -12,12 +12,13 @@ use std::{
 use nix::{
     sys::{
         ptrace,
-        wait::{wait, WaitStatus},
+        wait::{wait, waitpid, WaitStatus, WaitPidFlag},
         signal::Signal,
         signal::kill,
     },
     unistd::{fork, ForkResult, Pid},
 };
+
 use sysforward::{
     arch::TargetArch,
     tracer_engine::Tracer,
@@ -34,6 +35,7 @@ use sysforward::{
 fn ptracer() {
 
     println!("[ptracer] Start tracing...");
+    //thread::sleep(std::time::Duration::from_secs(1));
 
     match unsafe { fork() } {
 
@@ -133,6 +135,7 @@ fn wait_for_syscall(child: Pid) -> bool {
 
 fn executor() {
     println!("[executor] Start listening...");
+    //thread::sleep(std::time::Duration::from_secs(2));
 
     let mut executor = Executor::new(TargetArch::X86_64);
 
@@ -141,22 +144,64 @@ fn executor() {
 
 
 
-
-
-fn main() {
-    /*
-     * Start the executor and tracer in 2 different threads, and wait them to finish.
-     */
-
-    let executor_handler = thread::spawn(|| { executor(); });
-
-    // sleep 1sec
-    //thread::sleep(std::time::Duration::from_secs(1));
-
-    let tracer_handler = thread::spawn(|| { ptracer(); });
-
-    tracer_handler.join().unwrap();
-    /* Note: the executor should stop after its TCP connection is closed */
-    executor_handler.join().unwrap(); 
+/*
+ * Parent code
+ */
+fn wait_children() {
+    for _ in 0..2 {
+        match waitpid(None, Some(WaitPidFlag::empty())) {
+            Ok(WaitStatus::Exited(_, _)) => {}
+            Err(err) => {
+                println!("Error occurred while waiting for child process: {}", err);
+            }
+            _ => {
+                println!("Unexpected result while waiting for child process");
+            }
+        }
+    }
 }
+
+/*
+ * Start the tracer and executor 2 different processes, 
+ * and wait for them to finish.
+ */
+ fn main() {
+    match unsafe { fork() } {
+        Ok(ForkResult::Parent { child: executor_pid }) => {
+            println!("Created Executor process with PID {}", executor_pid);
+
+            match unsafe { fork() } {
+                Ok(ForkResult::Parent { child: tracer_pid }) => {
+                    println!("Created Tracer process with PID {}", tracer_pid);
+                    // Wait for both processes to finish
+                    wait_children();
+                }
+
+                Ok(ForkResult::Child) => {
+                    // Tracer process
+                    ptracer();
+                    exit(0);
+                }
+
+                Err(err) => {
+                    println!("Failed to fork for Tracer process: {}", err);
+                    exit(1);
+                }
+            }
+        }
+
+        Ok(ForkResult::Child) => {
+            // Execurot process
+            executor();
+            exit(0);
+        }
+
+        Err(err) => {
+            println!("Failed to fork for Executor process: {}", err);
+            exit(1);
+        }
+    }
+}
+
+
 

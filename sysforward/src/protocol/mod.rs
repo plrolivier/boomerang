@@ -1,47 +1,39 @@
 /*
-use prost::Message;
+ *
+ */
+//pub mod client;
+//pub mod server;
 
-//pub use crate::proto::messages::*;
-pub mod psf {
-    include!(concat!(env!("OUT_DIR"), "/proto.sysfwd.rs"));
-}
+//pub mod udpclient;
+//pub mod udpserver;
 
+pub mod udp;
+//pub mod tcp;
 
+//use std::{
+//    io::{prelude::*, BufReader, BufWriter, Result},
+//    net::{TcpListener, TcpStream},
+//    os::unix::io::AsRawFd,
+//};
+//use nix::sys::socket::{self, sockopt::ReusePort};
 
-// Helper function to serialize a message into a byte array
-pub fn serialize_message<M>(message: &M) -> Vec<u8>
-where
-    M: Message,
-{
-    let mut buf = Vec::new();
-    message.encode(&mut buf).unwrap();
-    buf
-}
+//use serde::{Serialize, Deserialize};
 
-// Helper function to parse a message from a byte array
-pub fn parse_message<M>(bytes: &[u8]) -> Result<M, prost::DecodeError>
-where
-    M: Message + Default,
-{
-    M::decode(bytes)
-}
+//use crate::{
+//    syscall::{ Syscall },
+//
+//};
 
 
-
-fn create_ack_msg(code: u32, error_message: String) -> psf::Message {
-    let mut message = psf::Message::default();
-    message.msg = Some(psf::message::Msg::Ack(psf::Ack {
-        code: code as i32,
-        error: Some(error_message),
-    }));
-    message
-}
-
-fn create_notify_new_process_msg(pid: u32) -> psf::Message {
-    let mut message = psf::Message::default();
-    message.msg = Some(psf::message::Msg::NewProcess(psf::NotifyNewProcess {
-        pid: pid,
-    }));
-    message
-}
-*/
+// /* Tracer */
+// fn send_syscall_entry(self, Syscall) { }
+// 
+// fn wait_syscall_entry(self) { }
+// 
+// fn send_syscall_exit(self, Syscall) { }
+// 
+// fn wait_syscall_exit(self) { }
+// 
+// 
+// /* Executor */
+// fn receive_syscall_entry(self) -> Syscall { }

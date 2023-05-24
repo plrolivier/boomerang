@@ -4,7 +4,7 @@
 use crate::{
     arch::{ TargetArch, Architecture },
     syscall::{ Syscall },
-    network::udpserver::UdpServer,
+    protocol::udp::server::UdpServer,
 };
 
 

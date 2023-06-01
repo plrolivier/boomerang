@@ -25,37 +25,12 @@ use sysforward::{
 
 
 
-fn main() {
+/* Tracer process */
 
-    //start_server();
-    //thread::sleep(time::Duration::from_millis(2000));   // XXX
-
-    match unsafe { fork() } {
-
-        Ok(ForkResult::Child) => {
-            run_child();
-        }
-
-        Ok(ForkResult::Parent {child}) => {
-            run_parent(child);
-        }
-
-        Err(err) => {
-            panic!("[main] fork() failed: {}", err);
-        }
-    };
-}
-
-
-fn run_child() {
-    ptrace::traceme().unwrap();
-    Command::new("ls").exec();
-    exit(0);
-}
-
-fn run_parent(child: Pid) {
-
-    let mut tracer = Tracer::new(i32::from(child), TargetArch::X86_64);
+fn run_parent(child: Pid)
+{
+    let pid = child.as_raw();
+    let mut tracer = Tracer::new(pid, TargetArch::X86_64);
 
     wait().unwrap();    // exit syscall
 
@@ -73,15 +48,15 @@ fn run_parent(child: Pid) {
 }
 
 
-
-fn sync_registers(tracer: &mut Tracer) {
-
-    let regs = ptrace::getregs(Pid::from_raw(tracer.pid)).unwrap();
+fn sync_registers(tracer: &mut Tracer) 
+{
+    let child = Pid::from_raw(tracer.pid);
+    let regs = ptrace::getregs(child).unwrap();
     tracer.sync_registers(regs);
 }
 
-fn wait_for_syscall(child: Pid) -> bool {
-
+fn wait_for_syscall(child: Pid) -> bool
+{
     ptrace::syscall(child, None).unwrap();
 
     match wait() {
@@ -121,13 +96,38 @@ fn wait_for_syscall(child: Pid) -> bool {
 }
 
 
-/*
-fn start_server() {
+/* Tracee process */
 
-    thread::spawn(|| {
-        let server = Server {};
-        server.listen();
-        println!("Server process exitting");
-    });
+fn run_child()
+{
+    ptrace::traceme().unwrap();
+    Command::new("ls").exec();
+    exit(0);
 }
-*/
+
+
+fn start_ptracer()
+{
+    println!("[PTRACER] Start tracing...");
+    //thread::sleep(std::time::Duration::from_secs(1));
+
+    match unsafe { fork() } {
+
+        Ok(ForkResult::Child) => {
+            run_child();
+        }
+
+        Ok(ForkResult::Parent {child}) => {
+            run_parent(child);
+        }
+
+        Err(err) => {
+            panic!("[PTRACER] fork() failed: {}", err);
+        }
+    };
+}
+
+
+fn main() {
+    start_ptracer();
+}

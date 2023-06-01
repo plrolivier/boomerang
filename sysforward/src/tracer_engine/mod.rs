@@ -21,7 +21,7 @@ use crate::{
         decoder::{ Decoder },
         filtering::{ Decision, Filter },
     },
-    protocol::udp::client::UdpClient,
+    protocol::dispatcher::Dispatcher,
 };
 
 
@@ -40,7 +40,7 @@ pub struct Tracer {
 
     interceptor: Box<dyn Operation>,
     decoder: Rc<Decoder>,
-    connection: UdpClient,
+    protocol: Dispatcher,
 }
 
 impl Tracer {
@@ -88,7 +88,7 @@ impl Tracer {
             filter: Filter::new(String::from("filtername")),
             interceptor: Box::new(Ptrace {}),
             decoder: decoder,
-            connection: UdpClient::new().expect("Fail to create UDP Client"),
+            protocol: Dispatcher::new(),
         }
     }
 
@@ -223,30 +223,7 @@ impl Tracer {
         }
 
         // TODO: implement execute_decision()
-        self.send_syscall_entry();
-    }
-
-    fn send_syscall_entry(&mut self) {
-
-        let message = serde_json::to_string(&self.syscall).unwrap();
-
-        /* Send packet */
-        println!("[TRACER: SEND] {}", message);
-        self.connection.send(&message);
-
-        /* Wait for reply and parse it to continue */
-        self.wait_executor();
-
-        //thread::sleep(Duration::from_millis(1000));
-    }
-
-    fn wait_executor(&mut self) {
-
-        let (ack, _) = self.connection.receive().expect("Fail to receive ack");
-        println!("[TRACER: RECEIVE] {}", String::from_utf8_lossy(&ack));
-
-        // TODO: parse and deserialize remote_syscall
-        // self.remote_syscall = ...
+        self.protocol.send_syscall_entry(&self.syscall);
     }
 
     fn carry_out_exit_decision(&mut self) {
@@ -255,18 +232,6 @@ impl Tracer {
             _ => panic!("Decision not implemented")
         }
 
-        // TODO
-        self.send_syscall_exit();
-    }
-
-    fn send_syscall_exit(&mut self) {
-
-        let message = serde_json::to_string(&self.syscall).unwrap();
-
-        println!("[TRACER: SEND] {}", message);
-        self.connection.send(&message);
-
-        self.wait_executor();
     }
 
 

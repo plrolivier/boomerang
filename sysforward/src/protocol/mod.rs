@@ -1,39 +1,23 @@
 /*
  *
  */
-//pub mod client;
-//pub mod server;
 
-//pub mod udpclient;
-//pub mod udpserver;
+pub mod message;
+pub mod dispatcher;
+pub mod worker;
 
-pub mod udp;
-//pub mod tcp;
-
-//use std::{
-//    io::{prelude::*, BufReader, BufWriter, Result},
-//    net::{TcpListener, TcpStream},
-//    os::unix::io::AsRawFd,
-//};
-//use nix::sys::socket::{self, sockopt::ReusePort};
-
-//use serde::{Serialize, Deserialize};
-
-//use crate::{
-//    syscall::{ Syscall },
-//
-//};
+mod udp;
+//mod tcp;
 
 
-// /* Tracer */
-// fn send_syscall_entry(self, Syscall) { }
-// 
-// fn wait_syscall_entry(self) { }
-// 
-// fn send_syscall_exit(self, Syscall) { }
-// 
-// fn wait_syscall_exit(self) { }
-// 
-// 
-// /* Executor */
-// fn receive_syscall_entry(self) -> Syscall { }
+
+/* Static variable to change */
+static IP_ADDRESS: &str = "127.0.0.1";
+static TRACER_PORT: u16 = 31000;
+static EXECUTOR_PORT: u16 = 31001;
+
+
+pub trait Peer {
+    fn send(&self, data: &[u8]) -> Result<(), std::io::Error>;
+    fn receive(&self, buffer: &mut [u8]) -> Result<usize, std::io::Error>;
+}

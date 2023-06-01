@@ -30,20 +30,3 @@ impl UdpClient {
         Ok((data, src))
     }
 }
-
-//fn main() {
-    //let client = Client::new().expect("Failed to create client");
-
-    //let server_addr = "127.0.0.1:8080";
-    //let message = json!({
-        //"username": "Alice",
-        //"password": "secret123"
-    //});
-    //let message_str = message.to_string();
-
-    //client.send(server_addr, &message_str).expect("Failed to send data");
-
-    //let (ack, _) = client.receive().expect("Failed to receive acknowledgment");
-    //let ack_str = String::from_utf8_lossy(&ack);
-    //println!("Received acknowledgment: {}", ack_str);
-//}

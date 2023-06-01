@@ -71,7 +71,7 @@ impl Peer {
 
         // Send the message
         let size: usize = self.local_socket.send_to(&message, self.remote_address)?;
-        println!("Sent {} bytes", size);
+        //println!("Sent {} bytes", size);
         Ok(())
     }
 
@@ -98,7 +98,7 @@ impl Peer {
         // Read the payload
         let mut message: Vec<u8> = vec![0u8; HEADER_SIZE + size];
         let (size, _addr): (usize, SocketAddr) = self.local_socket.recv_from(&mut message)?;
-        println!("Received {} bytes", size);
+        //println!("Received {} bytes", size);
         let payload = message.split_off(HEADER_SIZE);
         Ok((payload, size))
     }
@@ -133,14 +133,14 @@ impl Client {
     {
         // Craft the message
         let data: String = serde_json::to_string(syscall).expect("Fail to serialize syscall to JSON");
-        println!("[TRACER] Send syscall: {:?}", data);
+        //println!("[TRACER] Send syscall: {:?}", data);
 
         // Send the message
         self.connection.send(&data.as_bytes()).expect("Fail to send syscall entry");
 
         // Wait for the reply
         let (buffer, len): (Vec<u8>, usize) = self.connection.receive().expect("Error receiving syscall reply message");
-        println!("[TRACER] Received {} bytes: {:?}", len, buffer);
+        //println!("[TRACER] Received {} bytes: {:?}", len, buffer);
 
         let _remote_syscall: Syscall = serde_json::from_slice(&buffer).expect("Fail to deserialize Syscall from JSON");
         //remote_syscall
@@ -176,7 +176,7 @@ impl Server {
         // Read socket
         //let mut buffer: Vec<u8> = vec![0; 1024];
         let (buffer, len): (Vec<u8>, usize)  = self.connection.receive().expect("Error receiving syscall message");
-        println!("[EXECUTOR] Received {} bytes: {:?}", len, buffer);
+        //println!("[EXECUTOR] Received {} bytes: {:?}", len, buffer);
 
         // Parse syscall
         let syscall = serde_json::from_slice(&buffer).expect("Fail to deserialize Syscall from JSON");
@@ -189,7 +189,7 @@ impl Server {
         // Craft the message
         let message: String = serde_json::to_string(syscall).expect("Fail to serialize syscall to JSON");
         let data: &[u8] = message.as_bytes();
-        println!("[EXECUTOR] Send syscall: {:?}", message);
+        //println!("[EXECUTOR] Send syscall: {:?}", message);
 
         // Send the message
         self.connection.send(&data).expect("Failt to return syscall exit");

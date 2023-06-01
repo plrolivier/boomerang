@@ -18,7 +18,8 @@ use crate::{
 
 
 pub struct Dispatcher { 
-    connection: Box<dyn Peer>,
+    //connection: Box<dyn Peer>,
+    connection: Peer,
 }
 
 impl Dispatcher {

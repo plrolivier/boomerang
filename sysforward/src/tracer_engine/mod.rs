@@ -21,7 +21,7 @@ use crate::{
         decoder::{ Decoder },
         filtering::{ Decision, Filter },
     },
-    protocol::dispatcher::Dispatcher,
+    protocol::Client,
 };
 
 
@@ -40,7 +40,7 @@ pub struct Tracer {
 
     interceptor: Box<dyn Operation>,
     decoder: Rc<Decoder>,
-    protocol: Dispatcher,
+    protocol: Client,
 }
 
 impl Tracer {
@@ -88,7 +88,7 @@ impl Tracer {
             filter: Filter::new(String::from("filtername")),
             interceptor: Box::new(Ptrace {}),
             decoder: decoder,
-            protocol: Dispatcher::new(),
+            protocol: Client::new(),
         }
     }
 

@@ -1353,8 +1353,19 @@ pub enum DecodedSyscall {
     Openat(syscall::open::Openat),
     Openat2(syscall::open::Openat2),
 
+    /* io */
     Read(syscall::io::Read),
     Write(syscall::io::Write),
+    Readv(syscall::io::Readv),
+    Writev(syscall::io::Writev),
+    Pread(syscall::io::Pread),
+    Pwrite(syscall::io::Pwrite),
+    Preadv(syscall::io::Preadv),
+    Pwritev(syscall::io::Pwritev),
+    Preadv2(syscall::io::Preadv2),
+    Pwritev2(syscall::io::Pwritev2),
+
+    Ioctl(syscall::ioctl::Ioctl),
 
     Fallocate(syscall::fallocate::Fallocate),
 
@@ -1373,6 +1384,11 @@ pub enum DecodedSyscall {
     Truncate(syscall::truncate::Truncate),
     Ftruncate(syscall::truncate::Ftruncate),
 
+    Access(syscall::access::Access),
+    Faccessat(syscall::access::Faccessat),
+    Faccessat2(syscall::access::Faccessat2),
+
+    /* mmap */
     Brk(syscall::mmap::Brk),
     Sbrk(syscall::mmap::Sbrk),
     Mmap(syscall::mmap::Mmap),
@@ -1380,6 +1396,27 @@ pub enum DecodedSyscall {
     Munmap(syscall::mmap::Munmap),
     Mprotect(syscall::mmap::Mprotect),
     Madvise(syscall::mmap::Madvise),
+
+    Execve(syscall::execve::Execve),
+    Execveat(syscall::execve::Execveat),
+
+    Prctl(syscall::prctl::Prctl),
+    ArchPrctl(syscall::prctl::ArchPrctl),
+
+    Getdents(syscall::dirent::Getdents),
+    Getdents64(syscall::dirent::Getdents64),
+    Readdir(syscall::dirent::Readdir),
+
+    Stat(syscall::stat::Stat),
+    Fstat(syscall::stat::Fstat),
+    Lstat(syscall::stat::Lstat),
+    Fstatat(syscall::stat::Fstatat),
+
+    Getrlimit(syscall::resource::Getrlimit),
+    Setrlimit(syscall::resource::Setrlimit),
+    Prlimit(syscall::resource::Prlimit),
+    Getrusage(syscall::resource::Getrusage),
+
 
     /* ... */
 }
@@ -1394,6 +1431,15 @@ impl Decode for DecodedSyscall {
             DecodedSyscall::Openat2(x) => x.decode(pid, operation),
             DecodedSyscall::Read(x) => x.decode(pid, operation),
             DecodedSyscall::Write(x) => x.decode(pid, operation),
+            DecodedSyscall::Readv(x) => x.decode(pid, operation),
+            DecodedSyscall::Writev(x) => x.decode(pid, operation),
+            DecodedSyscall::Pread(x) => x.decode(pid, operation),
+            DecodedSyscall::Pwrite(x) => x.decode(pid, operation),
+            DecodedSyscall::Preadv(x) => x.decode(pid, operation),
+            DecodedSyscall::Pwritev(x) => x.decode(pid, operation),
+            DecodedSyscall::Preadv2(x) => x.decode(pid, operation),
+            DecodedSyscall::Pwritev2(x) => x.decode(pid, operation),
+            DecodedSyscall::Ioctl(x) => x.decode(pid, operation),
             DecodedSyscall::Brk(x) => x.decode(pid, operation),
             DecodedSyscall::Sbrk(x) => x.decode(pid, operation),
             DecodedSyscall::Mmap(x) => x.decode(pid, operation),
@@ -1401,6 +1447,8 @@ impl Decode for DecodedSyscall {
             DecodedSyscall::Munmap(x) => x.decode(pid, operation),
             DecodedSyscall::Mprotect(x) => x.decode(pid, operation),
             DecodedSyscall::Madvise(x) => x.decode(pid, operation),
+            DecodedSyscall::Execve(x) => x.decode(pid, operation),
+            DecodedSyscall::Execveat(x) => x.decode(pid, operation),
             DecodedSyscall::Fallocate(x) => x.decode(pid, operation),
             DecodedSyscall::NameToHandleAt(x) => x.decode(pid, operation),
             DecodedSyscall::OpenByHandleAt(x) => x.decode(pid, operation),
@@ -1412,6 +1460,22 @@ impl Decode for DecodedSyscall {
             DecodedSyscall::Renameat2(x) => x.decode(pid, operation),
             DecodedSyscall::Truncate(x) => x.decode(pid, operation),
             DecodedSyscall::Ftruncate(x) => x.decode(pid, operation),
+            DecodedSyscall::Access(x) => x.decode(pid, operation),
+            DecodedSyscall::Faccessat(x) => x.decode(pid, operation),
+            DecodedSyscall::Faccessat2(x) => x.decode(pid, operation),
+            DecodedSyscall::Prctl(x) => x.decode(pid, operation),
+            DecodedSyscall::ArchPrctl(x) => x.decode(pid, operation),
+            DecodedSyscall::Getdents(x) => x.decode(pid, operation),
+            DecodedSyscall::Getdents64(x) => x.decode(pid, operation),
+            DecodedSyscall::Readdir(x) => x.decode(pid, operation),
+            DecodedSyscall::Stat(x) => x.decode(pid, operation),
+            DecodedSyscall::Fstat(x) => x.decode(pid, operation),
+            DecodedSyscall::Lstat(x) => x.decode(pid, operation),
+            DecodedSyscall::Fstatat(x) => x.decode(pid, operation),
+            DecodedSyscall::Getrlimit(x) => x.decode(pid, operation),
+            DecodedSyscall::Setrlimit(x) => x.decode(pid, operation),
+            DecodedSyscall::Prlimit(x) => x.decode(pid, operation),
+            DecodedSyscall::Getrusage(x) => x.decode(pid, operation),
             //DecodedSyscall::(x) => x.decode(pid, operation),
         }
     }

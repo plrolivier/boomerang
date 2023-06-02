@@ -70,7 +70,7 @@ impl Peer {
         let message: Vec<u8> = [&header[..HEADER_SIZE], data].concat();
 
         // Send the message
-        let size: usize = self.local_socket.send_to(&message, self.remote_address)?;
+        let _size: usize = self.local_socket.send_to(&message, self.remote_address)?;
         //println!("Sent {} bytes", size);
         Ok(())
     }
@@ -139,7 +139,7 @@ impl Client {
         self.connection.send(&data.as_bytes()).expect("Fail to send syscall entry");
 
         // Wait for the reply
-        let (buffer, len): (Vec<u8>, usize) = self.connection.receive().expect("Error receiving syscall reply message");
+        let (buffer, _len): (Vec<u8>, usize) = self.connection.receive().expect("Error receiving syscall reply message");
         //println!("[TRACER] Received {} bytes: {:?}", len, buffer);
 
         let _remote_syscall: Syscall = serde_json::from_slice(&buffer).expect("Fail to deserialize Syscall from JSON");
@@ -175,7 +175,7 @@ impl Server {
     {
         // Read socket
         //let mut buffer: Vec<u8> = vec![0; 1024];
-        let (buffer, len): (Vec<u8>, usize)  = self.connection.receive().expect("Error receiving syscall message");
+        let (buffer, _len): (Vec<u8>, usize)  = self.connection.receive().expect("Error receiving syscall message");
         //println!("[EXECUTOR] Received {} bytes: {:?}", len, buffer);
 
         // Parse syscall

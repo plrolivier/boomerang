@@ -21,11 +21,17 @@ pub struct Executor {
 
 impl Executor {
 
-    pub fn new(target_arch: TargetArch) -> Self {
+    pub fn new(
+        target_arch: TargetArch,
+        ipv4_address: &str,
+        executor_port: u16,
+        tracer_port: u16,
+    ) -> Self
+    {
         Self {
             arch: Architecture::new(target_arch),
             syscall: Syscall::new(),
-            protocol: Server::new(),
+            protocol: Server::new(ipv4_address, executor_port, tracer_port),
         }
     }
 

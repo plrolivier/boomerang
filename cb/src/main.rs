@@ -14,6 +14,7 @@ use std::{
 
 
     let mut tracer = Command::new("./target/debug/ptracer")
+        .args(["ls"])
         .stdout(Stdio::inherit())
         .spawn()
         .expect("Failt to spawn the tracer");

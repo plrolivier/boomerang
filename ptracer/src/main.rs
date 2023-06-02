@@ -1,14 +1,15 @@
 /*
  * Example to use libsysforward
  */
-use core::ffi::c_void;
 use std::{
+    env,
     os::unix::process::CommandExt,
     process::{exit, Command},
     collections::VecDeque,
     thread,
     time,
 };
+
 use nix::{
     sys::{
         ptrace,
@@ -18,10 +19,18 @@ use nix::{
     },
     unistd::{fork, ForkResult, Pid},
 };
+
 use sysforward::{
     tracer_engine::Tracer,
     arch::TargetArch,
 };
+
+
+
+/* Static variable to change */
+static IP_ADDRESS: &str = "127.0.0.1";
+static TRACER_PORT: u16 = 31000;
+static EXECUTOR_PORT: u16 = 31001;
 
 
 
@@ -30,7 +39,7 @@ use sysforward::{
 fn run_parent(child: Pid)
 {
     let pid = child.as_raw();
-    let mut tracer = Tracer::new(pid, TargetArch::X86_64);
+    let mut tracer = Tracer::new(pid, TargetArch::X86_64, IP_ADDRESS, TRACER_PORT, EXECUTOR_PORT);
 
     wait().unwrap();    // exit syscall
 
@@ -98,23 +107,35 @@ fn wait_for_syscall(child: Pid) -> bool
 
 /* Tracee process */
 
-fn run_child()
+fn run_child(program: &str, prog_args: &[String])
 {
     ptrace::traceme().unwrap();
-    Command::new("ls").exec();
-    exit(0);
+    Command::new(program)
+        .args(prog_args)
+        .exec();
+    panic!("Error starting {} {:?}", program, prog_args);
 }
 
 
-fn start_ptracer()
+fn main()
 {
-    println!("[PTRACER] Start tracing...");
-    //thread::sleep(std::time::Duration::from_secs(1));
+    // TODO: add more argument to configure the tracer
+    let args: Vec<String> = env::args().collect();
 
+    if args.len() < 2 {
+        println!("Usage: ./ptracer <program> <arguments>");
+        return;
+    }
+
+    let program = &args[1];
+    let prog_args = &args[2..];
+
+
+    println!("[PTRACER] Start tracing...");
     match unsafe { fork() } {
 
         Ok(ForkResult::Child) => {
-            run_child();
+            run_child(program, prog_args);
         }
 
         Ok(ForkResult::Parent {child}) => {
@@ -125,9 +146,5 @@ fn start_ptracer()
             panic!("[PTRACER] fork() failed: {}", err);
         }
     };
-}
 
-
-fn main() {
-    start_ptracer();
 }

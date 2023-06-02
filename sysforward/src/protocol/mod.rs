@@ -11,10 +11,11 @@ use crate::{
 
 
 
-/* Static variable to change */
+/* Static variable to change 
 static IP_ADDRESS: &str = "127.0.0.1";
 static TRACER_PORT: u16 = 31000;
 static EXECUTOR_PORT: u16 = 31001;
+*/
 
 
 /* 
@@ -117,13 +118,17 @@ pub struct Client {
 
 impl Client {
 
-    pub fn new() -> Self 
+    pub fn new(
+        ipv4_addr: &str,
+        tracer_port: u16,
+        executor_port: u16,
+    ) -> Self 
     {
         // For now use hardcoded address and UDP
-        let ip = IP_ADDRESS.parse::<Ipv4Addr>().expect("Invalid IPv4 address");
+        let ip = ipv4_addr.parse::<Ipv4Addr>().expect("Invalid IPv4 address");
 
-        let local_addr = SocketAddr::new(ip.into(), TRACER_PORT);
-        let remote_addr = SocketAddr::new(ip.into(), EXECUTOR_PORT);
+        let local_addr = SocketAddr::new(ip.into(), tracer_port);
+        let remote_addr = SocketAddr::new(ip.into(), executor_port);
 
         let connection = Peer::new(local_addr, remote_addr);
         Client { connection }
@@ -158,13 +163,17 @@ pub struct Server {
 
 impl Server {
 
-    pub fn new() -> Self
+    pub fn new(
+        ipv4_addr: &str,
+        executor_port: u16,
+        tracer_port: u16,
+    ) -> Self
     {
         // For now use hardcoded address and UDP
-        let ip: Ipv4Addr = IP_ADDRESS.parse::<Ipv4Addr>().expect("Invalid IPv4 address");
+        let ip: Ipv4Addr = ipv4_addr.parse::<Ipv4Addr>().expect("Invalid IPv4 address");
 
-        let local_addr = SocketAddr::new(ip.into(), EXECUTOR_PORT);
-        let remote_addr = SocketAddr::new(ip.into(), TRACER_PORT);
+        let local_addr = SocketAddr::new(ip.into(), executor_port);
+        let remote_addr = SocketAddr::new(ip.into(), tracer_port);
 
         let connection = Peer::new(local_addr, remote_addr);
         Server { connection }

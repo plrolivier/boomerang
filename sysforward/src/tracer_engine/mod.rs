@@ -45,7 +45,14 @@ pub struct Tracer {
 
 impl Tracer {
 
-    pub fn new(pid: i32, target_arch: TargetArch) -> Self {
+    pub fn new(
+        pid: i32,
+        target_arch: TargetArch,
+        ipv4_address: &str,
+        tracer_port: u16,
+        executor_port: u16,
+    ) -> Self 
+    {
         let arch = Rc::new(Architecture::new(target_arch));
         let decoder = Rc::new(Decoder::new(Rc::clone(&arch)));
 
@@ -88,7 +95,7 @@ impl Tracer {
             filter: Filter::new(String::from("filtername")),
             interceptor: Box::new(Ptrace {}),
             decoder: decoder,
-            protocol: Client::new(),
+            protocol: Client::new(ipv4_address, tracer_port, executor_port),
         }
     }
 

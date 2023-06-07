@@ -39,7 +39,13 @@ impl Executor {
 
         /* The main loop */
         loop {
-            /* Wait for new syscall */
+            /* Wait for new syscall
+             * Note:
+             * There is no timeout or keep-alive mechanisms to know when the tracer is finished.
+             * Instead, the executor should run in another thread a listining loop to receive
+             * remote commands (TODO).
+             * For now, it needs to be stopped manually or via a signal.
+             */
             self.syscall = self.protocol.receive_syscall();
 
             /* Carry out syscall's decision */

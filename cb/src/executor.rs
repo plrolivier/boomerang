@@ -6,11 +6,7 @@ use sysforward::{
     executor_engine::Executor,
 };
 
-
-/* Static variable to change */
-static IP_ADDRESS: &str = "127.0.0.1";
-static TRACER_PORT: u16 = 31000;
-static EXECUTOR_PORT: u16 = 31001;
+use crate::{ IP_ADDRESS, TRACER_PORT, EXECUTOR_PORT };
 
 
 

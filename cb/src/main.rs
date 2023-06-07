@@ -18,6 +18,11 @@ use nix::{
 
 
 
+/* Static variable to change */
+static IP_ADDRESS: &str = "127.0.0.1";
+static TRACER_PORT: u16 = 31000;
+static EXECUTOR_PORT: u16 = 31001;
+
 
 
 fn fork_tracer(program: &str, prog_args: &[String]) -> Pid

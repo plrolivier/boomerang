@@ -7,7 +7,8 @@
 use crate::{
     arch::{ TargetArch, Architecture },
     syscall::{ Syscall },
-    protocol::{ Server },
+    operation::{ Operation, Ptrace },
+    protocol::data::Server,
 };
 
 
@@ -17,6 +18,7 @@ pub struct Executor {
     protocol: Server,
 
     syscall: Syscall,
+    interceptor: Box<dyn Operation>,
 }
 
 impl Executor {
@@ -30,12 +32,15 @@ impl Executor {
     {
         Self {
             arch: Architecture::new(target_arch),
-            syscall: Syscall::new(),
             protocol: Server::new(ipv4_address, executor_port, tracer_port),
+            syscall: Syscall::new(),
+            interceptor: Box::new(Ptrace {}),
         }
     }
 
     pub fn run(&mut self) {
+
+        self.init();
 
         /* The main loop */
         loop {
@@ -55,6 +60,11 @@ impl Executor {
             /* Return syscall */
             self.protocol.return_syscall_exit(&self.syscall);
         }
+    }
+    
+    fn init(&mut self)
+    {
+        //self.protocol.init();
     }
 
     fn log_syscall(&self) {

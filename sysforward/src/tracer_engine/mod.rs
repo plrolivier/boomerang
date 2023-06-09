@@ -6,7 +6,7 @@ pub mod filtering;
 
 
 use std::{
-    rc::Rc,
+    sync::{ Arc },
 };
 use nix::{
     libc::user_regs_struct,
@@ -21,7 +21,7 @@ use crate::{
         decoder::{ Decoder },
         filtering::{ Decision, Filter },
     },
-    protocol::Client,
+    protocol::data::Client,
 };
 
 
@@ -29,7 +29,7 @@ use crate::{
 pub struct Tracer {
 
     pub pid: i32,
-    pub arch: Rc<Architecture>,
+    pub arch: Arc<Architecture>,
     //pub regs: Vec<u64>,
     pub regs: user_regs_struct,     // only for x86_64
 
@@ -39,7 +39,7 @@ pub struct Tracer {
     filter: Filter,
 
     interceptor: Box<dyn Operation>,
-    decoder: Rc<Decoder>,
+    decoder: Arc<Decoder>,
     protocol: Client,
 }
 
@@ -53,8 +53,8 @@ impl Tracer {
         executor_port: u16,
     ) -> Self 
     {
-        let arch = Rc::new(Architecture::new(target_arch));
-        let decoder = Rc::new(Decoder::new(Rc::clone(&arch)));
+        let arch = Arc::new(Architecture::new(target_arch));
+        let decoder = Arc::new(Decoder::new(arch.clone()));
 
         Self {
             pid: pid,

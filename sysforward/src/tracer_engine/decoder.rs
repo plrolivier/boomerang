@@ -1,7 +1,7 @@
 /*
  * Decode syscall arguments.
  */
-use std::rc::Rc;
+use std::sync::Arc;
 
 use serde::{Serialize, Deserialize};
 
@@ -15,11 +15,11 @@ use crate::{
 
 
 pub struct Decoder {
-    arch: Rc<Architecture>,
+    arch: Arc<Architecture>,
 }
 
 impl Decoder {
-    pub fn new(arch: Rc<Architecture>) -> Self {
+    pub fn new(arch: Arc<Architecture>) -> Self {
         Self { 
             //arch: Architecture::new(arch),
             arch: arch,

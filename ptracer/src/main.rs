@@ -23,7 +23,7 @@ use nix::{
 
 use sysforward::{
     arch::TargetArch,
-    protocol::control::{ Configuration, ControlThread },
+    protocol::control::{ Configuration, ControlChannel },
     tracer_engine::Tracer,
 };
 
@@ -41,7 +41,7 @@ static EXECUTOR_PORT: u16 = 31002;
  * The debugger is the high-level structure which manage the tracing threads and connection with the executor.
  */
 struct TraceDebugger {
-    control_thread: ControlThread,
+    control_channel: ControlChannel,
     handler_map: HashMap<Pid, Option<JoinHandle<()>>>,
     thread_map: HashMap<Pid, TracingThread>,
 }
@@ -52,7 +52,7 @@ impl TraceDebugger {
     {
         // TODO: configure with ptrace?
         Self {
-            control_thread: ControlThread::new(Configuration::Tracer),
+            control_channel: ControlChannel::new(Configuration::Tracer),
             handler_map: HashMap::new(),
             thread_map: HashMap::new(),
         }
@@ -64,7 +64,7 @@ impl TraceDebugger {
         let ip = Ipv4Addr::new(127, 0, 0, 1);
         let port: u16 = 31000;
 
-        self.control_thread.listen(ip, port);
+        self.control_channel.listen(ip, port);
     }
 
 

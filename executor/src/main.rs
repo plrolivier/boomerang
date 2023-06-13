@@ -22,7 +22,7 @@ use nix::{
 use sysforward::{
     arch::TargetArch,
     memory::{ read_process_memory_maps, print_memory_regions },
-    protocol::control::{ Configuration, ControlThread },
+    protocol::control::{ Configuration, ControlChannel },
     executor_engine::Executor,
 };
 
@@ -39,7 +39,7 @@ static EXECUTOR_PORT: u16 = 31002;
  *
  */
 struct ExecDebugger {
-    control_thread: ControlThread,
+    control_channel: ControlChannel,
     handler_map: HashMap<Pid, Option<JoinHandle<()>>>,
     thread_map: HashMap<Pid, ExecThread>,
 }
@@ -50,7 +50,7 @@ impl ExecDebugger {
     {
         // TODO: configure with ptrace?
         Self {
-            control_thread: ControlThread::new(Configuration::Executor),
+            control_channel: ControlChannel::new(Configuration::Executor),
             handler_map: HashMap::new(),
             thread_map: HashMap::new(),
         }
@@ -62,7 +62,7 @@ impl ExecDebugger {
         let ip = Ipv4Addr::new(127, 0, 0, 1);
         let port: u16 = 31000;
 
-        self.control_thread.listen(ip, port);
+        self.control_channel.listen(ip, port);
     }
 }
 

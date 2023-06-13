@@ -23,14 +23,14 @@ pub enum Configuration {
     Executor,
 }
 
-pub struct ControlThread {
+pub struct ControlChannel {
     configuration: Configuration,
 
     reader: Option<BufReader<TcpStream>>,
     writer: Option<BufWriter<TcpStream>>,
 }
 
-impl ControlThread {
+impl ControlChannel {
 
     pub fn new(configuration: Configuration) -> Self
     {

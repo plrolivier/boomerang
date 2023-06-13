@@ -3,7 +3,7 @@
  */
 
 mod operation;
-mod protocol;
+pub mod protocol; // Should be private?
 
 pub mod arch;
 pub mod syscall;

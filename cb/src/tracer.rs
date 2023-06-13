@@ -6,7 +6,7 @@ use std::{
     thread::{ Builder, JoinHandle },
     os::unix::process::CommandExt,
     process::{ exit, Child, Command },
-    sync::{ Arc, Barrier }, hash::Hash,
+    sync::{ Arc, Barrier },
     io::{self, prelude::*, BufReader, BufWriter },
     net::{ TcpStream },
 };
@@ -24,9 +24,10 @@ use nix::{
 use sysforward::{
     tracer_engine::Tracer,
     arch::TargetArch,
+    protocol::{ self, control },
 };
 
-use crate::{ IP_ADDRESS, TRACER_PORT, EXECUTOR_PORT };
+use crate::{ IP_ADDRESS, CONTROL_PORT, TRACER_PORT, EXECUTOR_PORT };
 
 
 
@@ -120,8 +121,33 @@ impl TraceDebugger {
         self.handler_map.insert(pid, Some(handler));
 
         // Notify the executor
+        self.notify_new_process();
 
         Ok(pid)
+    }
+
+    fn notify_new_process(&self)
+    {
+        // TODO: the port depends on how many thread has been spawn
+        let payload = control::NewProcessRequestPayload { 
+            address_ipv4: IP_ADDRESS,
+            tracer_port: TRACER_PORT,
+            executor_port: EXECUTOR_PORT,
+        };
+
+        let payload = serde_json::to_string(&payload).unwrap();
+
+        let message = control::Message {
+            command: control::Command::NewProcess,
+            payload: payload,
+        };
+
+        let mut data = serde_json::to_string(&message).unwrap();
+        data.push_str("\n");
+        println!("[TRACER] Send message: {}", data);
+
+        let _ret = self.writer.expect("No TcpStream Writer found").write(data.as_bytes());
+        self.writer.expect("No TcpStream Writer found").flush();
     }
 
     

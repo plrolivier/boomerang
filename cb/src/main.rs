@@ -20,8 +20,9 @@ use nix::{
 
 /* Static variable to change */
 static IP_ADDRESS: &str = "127.0.0.1";
-static TRACER_PORT: u16 = 31000;
-static EXECUTOR_PORT: u16 = 31001;
+static CONTROL_PORT: u16 = 31000;
+static TRACER_PORT: u16 = 31001;
+static EXECUTOR_PORT: u16 = 31002;
 
 
 

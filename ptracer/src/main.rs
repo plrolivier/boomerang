@@ -64,7 +64,9 @@ impl TraceDebugger {
         let ip = Ipv4Addr::new(127, 0, 0, 1);
         let port: u16 = 31000;
 
-        self.control_channel.listen(ip, port);
+        self.control_channel.connect(ip, port).unwrap();
+
+        self.control_channel.listen();
     }
 
 

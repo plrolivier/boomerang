@@ -8,7 +8,7 @@ use std::{
     //process::{ exit, Child, Command },
     //sync::{ Arc, Barrier },
     io::{ BufRead, BufReader, BufWriter },
-    net::{TcpListener, TcpStream, Ipv4Addr}, fmt::format,
+    net::{TcpListener, TcpStream, Ipv4Addr, SocketAddr}, fmt::format,
 };
 
 
@@ -23,9 +23,10 @@ pub enum Configuration {
     Executor,
 }
 
+
 pub struct ControlChannel {
     configuration: Configuration,
-
+    //stream: Option<TcpStream>,
     reader: Option<BufReader<TcpStream>>,
     writer: Option<BufWriter<TcpStream>>,
 }
@@ -36,36 +37,34 @@ impl ControlChannel {
     {
         Self {
             configuration,
+            //stream: None,
             reader: None,
             writer: None,
         }
-
     }
 
-    pub fn listen(&mut self, ip: Ipv4Addr, port: u16)
+    pub fn connect(&mut self, ip: Ipv4Addr, port: u16) -> Result<(), String>
     {
-        println!("Listen for connections...");
-        let address = (ip, port);
-        let listener = TcpListener::bind(address).unwrap();
-
-        for stream in listener.incoming() {
-            match stream {
-                Ok(stream) => {
-                    self.handle_connection(stream);
-                }
-                Err(e) => {
-                    eprintln!("Fail to establish connection: {}", e);
-                }
+        let address = SocketAddr::new(ip.into(), port);
+        match TcpStream::connect(address) {
+            Ok(stream) => {
+                //self.stream = Some(stream);
+                self.reader = Some(BufReader::new(stream.try_clone().unwrap()));
+                self.writer = Some(BufWriter::new(stream));
+                println!("Connected with avatar2 on {:?}", address);
+                Ok(())
+            }
+            Err(err) => {
+                let msg = format!("Couldn't connect to avatar2: {}", err);
+                eprintln!("{}", msg);
+                Err(msg)
             }
         }
     }
 
-    fn handle_connection(&mut self, stream: TcpStream)
+    pub fn listen(&mut self)
     {
-        self.reader = Some(BufReader::new(stream.try_clone().unwrap()));
-        self.writer = Some(BufWriter::new(stream));
-
-        /* The main loop of the listening thread */
+        /* Main loop listening for commands from avatar2 */
         loop {
             let message = self.receive_message();
 
@@ -78,7 +77,7 @@ impl ControlChannel {
         let mut buffer = String::new();
 
         self.reader.as_mut().unwrap().read_line(&mut buffer).unwrap();
-        println!("[TRACER] Receive message: {}", buffer);
+        println!("Receive message: {}", buffer);
         buffer 
     }
 
@@ -224,4 +223,56 @@ impl ControlChannel {
 }
 
 
+
+/* 
+pub struct ControlChannelServer {
+    reader: Option<BufReader<TcpStream>>,
+    writer: Option<BufWriter<TcpStream>>,
+}
+
+impl ControlChannelServer {
+
+    pub fn new(configuration: Configuration) -> Self
+    {
+        Self {
+            configuration,
+            reader: None,
+            writer: None,
+        }
+
+    }
+
+    pub fn listen(&mut self, ip: Ipv4Addr, port: u16)
+    {
+        println!("Listen for connections...");
+        let address = (ip, port);
+        let listener = TcpListener::bind(address).unwrap();
+
+        for stream in listener.incoming() {
+            match stream {
+                Ok(stream) => {
+                    self.handle_connection(stream);
+                }
+                Err(e) => {
+                    eprintln!("Fail to establish connection: {}", e);
+                }
+            }
+        }
+    }
+
+    fn handle_connection(&mut self, stream: TcpStream)
+    {
+        self.reader = Some(BufReader::new(stream.try_clone().unwrap()));
+        self.writer = Some(BufWriter::new(stream));
+
+        /* The main loop of the listening thread */
+        loop {
+            let message = self.receive_message();
+
+            self.dispatch_message(message);
+        }
+    }
+
+}
+*/
 

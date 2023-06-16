@@ -191,8 +191,8 @@ impl ControlChannel {
     {
         // TODO
         match command[0] {
-            "spawn_process" => Err(format!("Not implemented")),
-            "kill_process" => Err(format!("Not implemented")),
+            "spawn_process" => self.executor_spawn_process(command),
+            "kill_process" => self.executor_kill_process(command),
             //"" => Err(format!("Not implemented")),
             _ => {
                 let msg = format!("[EXECUTOR] Command not implemented: {}", command[0]);
@@ -327,6 +327,44 @@ impl ControlChannel {
 
 
     /* Executor related functions */
+
+    fn executor_spawn_process(&mut self, command: Vec<&str>) -> Result<(), String>
+    {
+        // TODO
+        println!("Warning mockup function: command {} not implemented yet", command[0]);
+
+        let _program = command[1];
+        //let args = command[2..];
+
+        // TODO
+        let pid: i32 = 20;
+
+        // Reply
+        let buffer = pid.to_be_bytes();
+        self.writer.as_mut().unwrap().write(&buffer).unwrap();
+        self.writer.as_mut().unwrap().flush().unwrap();
+
+        Ok(())
+    }
+
+    fn executor_kill_process(&mut self, command: Vec<&str>) -> Result<(), String>
+    {
+        // TODO
+        println!("Warning mockup function: command {} not implemented yet", command[0]);
+
+        let _pid = command[1];
+
+        // TODO
+        let mut ack = String::new();
+        ack.push_str("ACK");
+
+        // Reply
+        let buffer = ack.as_bytes();
+        self.writer.as_mut().unwrap().write(&buffer).unwrap();
+        self.writer.as_mut().unwrap().flush().unwrap();
+
+        Ok(())
+    }
 
 
 }

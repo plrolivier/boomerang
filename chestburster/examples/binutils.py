@@ -30,35 +30,30 @@ logger.setLevel('DEBUG')
 
 def forward(program, args):
 
-    args = ['arg1', 'arg2']
-
     # Initialize
     cb = Chestburster();
-    #executor = cb.init_executor(executable_path=EXECUTOR_PATH, ip=EXECUTOR_IP, port=EXECUTOR_PORT)
+    executor = cb.init_executor(executable_path=EXECUTOR_PATH, ip=EXECUTOR_IP, port=EXECUTOR_PORT)
     tracer = cb.init_ptracer(executable_path=TRACER_PATH, ip=TRACER_IP, port=TRACER_PORT)
 
     # Setup processes
-    sleep(1)
-    #pid1 = executor.spawn_process('/path/one', args)
-    #print(pid1)
-    pid = tracer.spawn_process('/path/two', args)
-    print(f"Spawn process: {pid}")
+    pid1 = executor.spawn_process(program, args)
+    print(f"Executor spawn process: {pid1}")
+    pid2 = tracer.spawn_process(program, args)
+    print(f"Tracer spawn process: {pid2}")
 
     # Trace syscall
-    sleep(1)
-    ack = tracer.start_tracing([pid])
+    ack = tracer.start_tracing([pid2])
     print(f"Start tracing: {ack}")
 
-    sleep(1)
-    ack = tracer.stop_tracing([pid])
+    ack = tracer.stop_tracing([pid2])
     print(f"Stop tracing: {ack}")
 
     # Terminate processes
-    sleep(1)
-    ack = tracer.kill_process([pid])
-    print(f"Kill process {pid}: {ack}")
+    ack = tracer.kill_process([pid2])
+    print(f"Kill process {pid2}: {ack}")
 
-    #executor.kill_process([pid1])
+    ack = executor.kill_process([pid1])
+    print(f"Kill process {pid1}: {ack}")
 
     cb.shutdown()
 

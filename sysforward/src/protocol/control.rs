@@ -7,7 +7,7 @@ use std::{
     //os::unix::process::{ CommandExt },
     //process::{ exit, Child, Command },
     //sync::{ Arc, Barrier },
-    io::{ BufRead, BufReader, BufWriter },
+    io::{ self, BufRead, BufReader, BufWriter, Write },
     net::{TcpListener, TcpStream, Ipv4Addr, SocketAddr}, fmt::format,
 };
 
@@ -19,8 +19,8 @@ use std::{
  * It can be configured either as a tracer or executor and changed during runtime (TODO).
  */
 pub enum Configuration {
-    Tracer,
-    Executor,
+    Tracer = 0,
+    Executor = 1,
 }
 
 
@@ -43,6 +43,7 @@ impl ControlChannel {
         }
     }
 
+    /* 
     pub fn connect(&mut self, ip: Ipv4Addr, port: u16) -> Result<(), String>
     {
         let address = SocketAddr::new(ip.into(), port);
@@ -71,19 +72,65 @@ impl ControlChannel {
             self.dispatch_message(message);
         }
     }
+    */
 
-    fn receive_message(&mut self) -> String
+    pub fn listen(&mut self, ip: Ipv4Addr, port: u16)
     {
-        let mut buffer = String::new();
+        println!("Listen for connections...");
+        let address = (ip, port);
+        let listener = TcpListener::bind(address).unwrap();
 
-        self.reader.as_mut().unwrap().read_line(&mut buffer).unwrap();
-        println!("Receive message: {}", buffer);
-        buffer 
+        for stream in listener.incoming() {
+            match stream {
+                Ok(stream) => {
+                    self.handle_connection(stream);
+                }
+                Err(e) => {
+                    eprintln!("Fail to establish connection: {}", e);
+                }
+            }
+        }
+        println!("Finish listening")
+    }
+
+    fn handle_connection(&mut self, stream: TcpStream)
+    {
+        self.reader = Some(BufReader::new(stream.try_clone().unwrap()));
+        self.writer = Some(BufWriter::new(stream));
+
+
+        /* The main loop of the listening thread */
+        loop {
+            let mut buffer = String::new();
+
+            match self.receive_message(&mut buffer) {
+                Ok(_) => {
+                    if buffer.trim().is_empty() {
+                        println!("Connection closed");
+                        break;
+                    } else {
+                        self.dispatch_message(buffer);
+                    }
+                }
+                Err(err) => {
+                    eprintln!("Error: {}", err);
+                    break;
+                }
+            }
+        }
+    }
+
+    fn receive_message(&mut self, buffer: &mut String) -> io::Result<usize>
+    {
+
+        let result = self.reader.as_mut().unwrap().read_line(buffer);
+        println!("Message received: {:?}", buffer);
+        result
     }
 
     fn dispatch_message(&mut self, message: String)
     {
-        let command: Vec<&str> = message.trim().split_whitespace().collect();
+        let command: Vec<&str> = message.split_whitespace().collect();
 
         match self.dispatch_command(command) {
             Ok(_) => {
@@ -128,10 +175,10 @@ impl ControlChannel {
     {
         // TODO
         match command[0] {
-            "spawn_process" => Err(format!("Not implemented")),
-            "kill_process" => Err(format!("Not implemented")),
-            "start_tracing" => Err(format!("Not implemented")),
-            "stop_tracing" => Err(format!("Not implemented")),
+            "spawn_process" => self.tracer_spawn_process(command),
+            "kill_process" => self.tracer_kill_process(command),
+            "start_tracing" => self.tracer_start_tracing(command),
+            "stop_tracing" => self.tracer_stop_tracing(command),
             //"" => Err(format!("Not implemented")),
             _ => {
                 let msg = format!("[TRACER] Command not implemented: {}", command[0]);
@@ -208,13 +255,75 @@ impl ControlChannel {
 
     /* Tracer related functions */
     
-    fn tracer_start_process(&mut self, command: Vec<&str>) -> Result<(), String>
+    fn tracer_spawn_process(&mut self, command: Vec<&str>) -> Result<(), String>
     {
         // TODO
-        let msg = format!("Command start process not implemented yet");
-        Err(msg)
+        println!("Warning mockup function: command {} not implemented yet", command[0]);
+
+        let _program = command[1];
+        //let args = command[2..];
+
+        // TODO
+        let pid: i32 = 10;
+
+        // Reply
+        let buffer = pid.to_be_bytes();
+        self.writer.as_mut().unwrap().write(&buffer).unwrap();
+        self.writer.as_mut().unwrap().flush().unwrap();
+
+        Ok(())
+    }
+
+    fn tracer_kill_process(&mut self, command: Vec<&str>) -> Result<(), String>
+    {
+        // TODO
+        println!("Warning mockup function: command {} not implemented yet", command[0]);
+
+        let _pid = command[1];
+
+        // TODO
+        let mut ack = String::new();
+        ack.push_str("ACK");
+
+        // Reply
+        let buffer = ack.as_bytes();
+        self.writer.as_mut().unwrap().write(&buffer).unwrap();
+        self.writer.as_mut().unwrap().flush().unwrap();
+
+        Ok(())
+    }
+
+    fn tracer_start_tracing(&mut self, command: Vec<&str>) -> Result<(), String>
+    {
+        println!("Warning mockup function: command {} not implemented yet", command[0]);
+        let _pid = command[1];
+
+        // TODO
+        let mut ack = String::new();
+        ack.push_str("ACK");
+
+        let buffer = ack.as_bytes();
+        self.writer.as_mut().unwrap().write(&buffer).unwrap();
+        self.writer.as_mut().unwrap().flush().unwrap();
+
+        Ok(())
     }
     
+    fn tracer_stop_tracing(&mut self, command: Vec<&str>) -> Result<(), String>
+    {
+        println!("Warning mockup function: command {} not implemented yet", command[0]);
+        let _pid = command[1];
+
+        // TODO
+        let mut ack = String::new();
+        ack.push_str("ACK");
+
+        let buffer = ack.as_bytes();
+        self.writer.as_mut().unwrap().write(&buffer).unwrap();
+        self.writer.as_mut().unwrap().flush().unwrap();
+
+        Ok(())
+    }
 
 
     /* Executor related functions */
@@ -240,37 +349,6 @@ impl ControlChannelServer {
             writer: None,
         }
 
-    }
-
-    pub fn listen(&mut self, ip: Ipv4Addr, port: u16)
-    {
-        println!("Listen for connections...");
-        let address = (ip, port);
-        let listener = TcpListener::bind(address).unwrap();
-
-        for stream in listener.incoming() {
-            match stream {
-                Ok(stream) => {
-                    self.handle_connection(stream);
-                }
-                Err(e) => {
-                    eprintln!("Fail to establish connection: {}", e);
-                }
-            }
-        }
-    }
-
-    fn handle_connection(&mut self, stream: TcpStream)
-    {
-        self.reader = Some(BufReader::new(stream.try_clone().unwrap()));
-        self.writer = Some(BufWriter::new(stream));
-
-        /* The main loop of the listening thread */
-        loop {
-            let message = self.receive_message();
-
-            self.dispatch_message(message);
-        }
     }
 
 }

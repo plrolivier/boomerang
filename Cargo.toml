@@ -3,9 +3,10 @@ members = [
     "sysforward",
     "ptracer",
     "executor",
-    "cb",
 ]
 exclude = [
+    "cb",
+    "snapshotter",
 ]
 
 [workspace.package]

@@ -21,7 +21,7 @@ use crate::{
 
 
 pub trait ExecutorCallback {
-    fn spawn_process(&mut self, program: &str, prog_args: &[String]) -> Result<Pid, io::Error>;
+    fn spawn_process(&mut self, program: &str, prog_args: &[&str]) -> Result<Pid, io::Error>;
     fn kill_process(&self, pid: Pid) -> Result<(), io::Error>;
 }
 

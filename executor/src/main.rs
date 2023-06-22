@@ -17,7 +17,7 @@ use nix::{
         wait::{ waitpid, WaitStatus},
         signal::Signal,
     },
-    unistd::{ Pid },
+    unistd::{ Pid }, Error,
 };
 
 use sysforward::{
@@ -84,13 +84,15 @@ impl ExecDebuggerCallback {
 
 impl ExecutorCallback for ExecDebuggerCallback {
 
-    fn spawn_process(&mut self, program: &str, prog_args: &[String]) -> Result<Pid, io::Error>
+    fn spawn_process(&mut self, program: &str, prog_args: &[&str]) -> Result<Pid, io::Error>
     {
-        Ok(Pid::from_raw(10))
+        println!("* Spawn process: {} {:?} *", program, prog_args);
+        Ok(Pid::from_raw(20))
     }
 
     fn kill_process(&self, pid: Pid) -> Result<(), io::Error>
     {
+        println!("* Kill process {:?} *", pid);
         Ok(())
     }
 }

@@ -105,23 +105,28 @@ impl TraceDebuggerCallback {
 
 impl TracerCallback for TraceDebuggerCallback {
 
-    fn spawn_process(&mut self, program: &str, prog_args: &[String]) -> Result<Pid, io::Error>
+    //fn spawn_process(&mut self, program: &str, prog_args: String) -> Result<Pid, io::Error>
+    fn spawn_process(&mut self, program: &str, prog_args: &[&str]) -> Result<Pid, io::Error>
     {
+        println!("* Spawn process: {} {:?} *", program, prog_args);
         Ok(Pid::from_raw(10))
     }
 
     fn kill_process(&self, pid: Pid) -> Result<(), io::Error>
     {
+        println!("* Kill process {:?} *", pid);
         Ok(())
     }
 
     fn start_tracing(&self, pid: Pid) -> Result<(), io::Error>
     {
+        println!("* Trace process {:?} *", pid);
         Ok(())
     }
 
     fn stop_tracing(&self, pid: Pid) -> Result<(), io::Error>
     {
+        println!("* Stop process {:?} *", pid);
         Ok(())
     }
 

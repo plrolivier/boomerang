@@ -33,7 +33,7 @@ use crate::{
  * and controlled by avatar2.
  */
 pub trait TracerCallback {
-    fn spawn_process(&mut self, program: &str, prog_args: &[String]) -> Result<Pid, io::Error>;
+    fn spawn_process(&mut self, program: &str, prog_args: &[&str]) -> Result<Pid, io::Error>;
     fn kill_process(&self, pid: Pid) -> Result<(), io::Error>;
     fn start_tracing(&self, pid: Pid) -> Result<(), io::Error>;
     fn stop_tracing(&self, pid: Pid) -> Result<(), io::Error>;

@@ -2,6 +2,7 @@
  *
  */
 use std::{
+    str::FromStr,
     //collections::{ HashMap },
     //thread::{ Builder, JoinHandle },
     //os::unix::process::{ CommandExt },
@@ -9,6 +10,10 @@ use std::{
     //sync::{ Arc, Barrier },
     io::{ self, BufRead, BufReader, BufWriter, Write },
     net::{TcpListener, TcpStream, Ipv4Addr, SocketAddr}, fmt::format,
+};
+
+use nix::{
+    unistd::{ Pid },
 };
 
 use crate::{
@@ -265,71 +270,118 @@ impl ControlChannel {
     
     fn tracer_spawn_process(&mut self, command: Vec<&str>) -> Result<(), String>
     {
-        // TODO
-        println!("Warning mockup function: command {} not implemented yet", command[0]);
+        let program = command[1];
+        let args = &command[2..];
 
-        let _program = command[1];
-        //let args = command[2..];
+        match self.tracer.as_mut() {
+            Some(tracer) => {
+                // TODO: match on the value return by spawn_process
+                let pid = tracer.spawn_process(program, args).unwrap();
 
-        // TODO
-        let pid: i32 = 10;
+                let buffer = pid.as_raw().to_be_bytes();
+                self.writer.as_mut().unwrap().write(&buffer).unwrap();
+            },
+            None => {
+                let mut ack = String::new();
+                ack.push_str("ERR");
+                let buffer = ack.as_bytes();
+                self.writer.as_mut().unwrap().write(&buffer).unwrap();
+            }
+        }
 
-        // Reply
-        let buffer = pid.to_be_bytes();
-        self.writer.as_mut().unwrap().write(&buffer).unwrap();
         self.writer.as_mut().unwrap().flush().unwrap();
 
+        // when should we return an error ?
         Ok(())
     }
 
     fn tracer_kill_process(&mut self, command: Vec<&str>) -> Result<(), String>
     {
-        // TODO
-        println!("Warning mockup function: command {} not implemented yet", command[0]);
+        let pid = command[1];
+        let pid = FromStr::from_str(pid).unwrap();
+        let pid = Pid::from_raw(pid);
 
-        let _pid = command[1];
+        match self.tracer.as_mut() {
+            Some(tracer) => {
+                // TODO: match on the value return by spawn_process
+                tracer.kill_process(pid).unwrap();
 
-        // TODO
-        let mut ack = String::new();
-        ack.push_str("ACK");
+                let mut ack = String::new();
+                ack.push_str("ACK");
+                let buffer = ack.as_bytes();
+                self.writer.as_mut().unwrap().write(&buffer).unwrap();
+            },
+            None => {
+                let mut ack = String::new();
+                ack.push_str("ERR");
+                let buffer = ack.as_bytes();
+                self.writer.as_mut().unwrap().write(&buffer).unwrap();
+            }
+        }
 
-        // Reply
-        let buffer = ack.as_bytes();
-        self.writer.as_mut().unwrap().write(&buffer).unwrap();
         self.writer.as_mut().unwrap().flush().unwrap();
 
+        // when should we return an error ?
         Ok(())
     }
 
     fn tracer_start_tracing(&mut self, command: Vec<&str>) -> Result<(), String>
     {
-        println!("Warning mockup function: command {} not implemented yet", command[0]);
-        let _pid = command[1];
+        let pid = command[1];
+        let pid = FromStr::from_str(pid).unwrap();
+        let pid = Pid::from_raw(pid);
 
-        // TODO
-        let mut ack = String::new();
-        ack.push_str("ACK");
+        match self.tracer.as_mut() {
+            Some(tracer) => {
+                // TODO: match on the value return by spawn_process
+                tracer.start_tracing(pid).unwrap();
 
-        let buffer = ack.as_bytes();
-        self.writer.as_mut().unwrap().write(&buffer).unwrap();
+                let mut ack = String::new();
+                ack.push_str("ACK");
+                let buffer = ack.as_bytes();
+                self.writer.as_mut().unwrap().write(&buffer).unwrap();
+            },
+            None => {
+                let mut ack = String::new();
+                ack.push_str("ERR");
+                let buffer = ack.as_bytes();
+                self.writer.as_mut().unwrap().write(&buffer).unwrap();
+            }
+        }
+
         self.writer.as_mut().unwrap().flush().unwrap();
 
+        // when should we return an error ?
         Ok(())
     }
     
     fn tracer_stop_tracing(&mut self, command: Vec<&str>) -> Result<(), String>
     {
-        println!("Warning mockup function: command {} not implemented yet", command[0]);
-        let _pid = command[1];
+        let pid = command[1];
+        let pid = FromStr::from_str(pid).unwrap();
+        let pid = Pid::from_raw(pid);
 
-        // TODO
-        let mut ack = String::new();
-        ack.push_str("ACK");
+        match self.tracer.as_mut() {
+            Some(tracer) => {
+                // TODO: match on the value return by spawn_process
+                tracer.stop_tracing(pid).unwrap();
 
-        let buffer = ack.as_bytes();
-        self.writer.as_mut().unwrap().write(&buffer).unwrap();
+                let mut ack = String::new();
+                ack.push_str("ACK");
+                let buffer = ack.as_bytes();
+                self.writer.as_mut().unwrap().write(&buffer).unwrap();
+            },
+            None => {
+                let mut ack = String::new();
+                ack.push_str("ERR");
+                let buffer = ack.as_bytes();
+                self.writer.as_mut().unwrap().write(&buffer).unwrap();
+            }
+        }
+
         self.writer.as_mut().unwrap().flush().unwrap();
 
+        // when should we return an error ?
         Ok(())
     }
 
@@ -338,39 +390,58 @@ impl ControlChannel {
 
     fn executor_spawn_process(&mut self, command: Vec<&str>) -> Result<(), String>
     {
-        // TODO
-        println!("Warning mockup function: command {} not implemented yet", command[0]);
+        let program = command[1];
+        let args = &command[2..];
 
-        let _program = command[1];
-        //let args = command[2..];
+        match self.executor.as_mut() {
+            Some(executor) => {
+                // TODO: match on the value return by spawn_process
+                let pid = executor.spawn_process(program, args).unwrap();
 
-        // TODO
-        let pid: i32 = 20;
+                let buffer = pid.as_raw().to_be_bytes();
+                self.writer.as_mut().unwrap().write(&buffer).unwrap();
+            },
+            None => {
+                let mut ack = String::new();
+                ack.push_str("ERR");
+                let buffer = ack.as_bytes();
+                self.writer.as_mut().unwrap().write(&buffer).unwrap();
+            }
+        }
 
-        // Reply
-        let buffer = pid.to_be_bytes();
-        self.writer.as_mut().unwrap().write(&buffer).unwrap();
         self.writer.as_mut().unwrap().flush().unwrap();
 
+        // when should we return an error ?
         Ok(())
     }
 
     fn executor_kill_process(&mut self, command: Vec<&str>) -> Result<(), String>
     {
-        // TODO
-        println!("Warning mockup function: command {} not implemented yet", command[0]);
+        let pid = command[1];
+        let pid = FromStr::from_str(pid).unwrap();
+        let pid = Pid::from_raw(pid);
 
-        let _pid = command[1];
+        match self.executor.as_mut() {
+            Some(executor) => {
+                // TODO: match on the value return by spawn_process
+                executor.kill_process(pid).unwrap();
 
-        // TODO
-        let mut ack = String::new();
-        ack.push_str("ACK");
+                let mut ack = String::new();
+                ack.push_str("ACK");
+                let buffer = ack.as_bytes();
+                self.writer.as_mut().unwrap().write(&buffer).unwrap();
+            },
+            None => {
+                let mut ack = String::new();
+                ack.push_str("ERR");
+                let buffer = ack.as_bytes();
+                self.writer.as_mut().unwrap().write(&buffer).unwrap();
+            }
+        }
 
-        // Reply
-        let buffer = ack.as_bytes();
-        self.writer.as_mut().unwrap().write(&buffer).unwrap();
         self.writer.as_mut().unwrap().flush().unwrap();
 
+        // when should we return an error ?
         Ok(())
     }
 

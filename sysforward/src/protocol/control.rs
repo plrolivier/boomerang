@@ -11,6 +11,10 @@ use std::{
     net::{TcpListener, TcpStream, Ipv4Addr, SocketAddr}, fmt::format,
 };
 
+use crate::{
+    tracer_engine::{ TracerCallback },
+    executor_engine::{ ExecutorCallback },
+};
 
 
 
@@ -26,6 +30,8 @@ pub enum Configuration {
 
 pub struct ControlChannel {
     configuration: Configuration,
+    tracer: Option<Box<dyn TracerCallback>>,        // USe callbakc closure or trait ???
+    executor: Option<Box<dyn ExecutorCallback>>,
     //stream: Option<TcpStream>,
     reader: Option<BufReader<TcpStream>>,
     writer: Option<BufWriter<TcpStream>>,
@@ -33,10 +39,12 @@ pub struct ControlChannel {
 
 impl ControlChannel {
 
-    pub fn new(configuration: Configuration) -> Self
+    pub fn new(configuration: Configuration, tracer: Option<Box<dyn TracerCallback>>, executor: Option<Box<dyn ExecutorCallback>>) -> Self
     {
         Self {
-            configuration,
+            configuration: configuration,
+            tracer: tracer,
+            executor: executor,
             //stream: None,
             reader: None,
             writer: None,

@@ -7,9 +7,11 @@ pub mod filtering;
 
 use std::{
     sync::{ Arc },
+    io::{ self },
 };
 use nix::{
     libc::user_regs_struct,
+    unistd::{ Pid },
 };
 use serde_json;
 use crate::{
@@ -26,7 +28,22 @@ use crate::{
 
 
 
-pub struct Tracer {
+/*
+ * The tracer trait describes the interface a debugger should implement to be compatible with the control channel
+ * and controlled by avatar2.
+ */
+pub trait TracerCallback {
+    fn spawn_process(&mut self, program: &str, prog_args: &[String]) -> Result<Pid, io::Error>;
+    fn kill_process(&self, pid: Pid) -> Result<(), io::Error>;
+    fn start_tracing(&self, pid: Pid) -> Result<(), io::Error>;
+    fn stop_tracing(&self, pid: Pid) -> Result<(), io::Error>;
+}
+
+
+/*
+ * The tracer engine implements the instrumentation for tracing a system call.
+ */
+pub struct TracerEngine {
 
     pub pid: i32,
     pub arch: Arc<Architecture>,
@@ -43,7 +60,7 @@ pub struct Tracer {
     protocol: Client,
 }
 
-impl Tracer {
+impl TracerEngine {
 
     pub fn new(
         pid: i32,
@@ -279,4 +296,3 @@ impl Tracer {
     }
     */
 }
-

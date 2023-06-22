@@ -24,7 +24,7 @@ use nix::{
 use sysforward::{
     arch::TargetArch,
     protocol::control::{ Configuration, ControlChannel },
-    tracer_engine::Tracer,
+    tracer_engine::{ TracerCallback, TracerEngine },
 };
 
 
@@ -42,21 +42,32 @@ static EXECUTOR_PORT: u16 = 31002;
  */
 struct TraceDebugger {
     control_channel: ControlChannel,
-    handler_map: HashMap<Pid, Option<JoinHandle<()>>>,
-    thread_map: HashMap<Pid, TracingThread>,
 }
+
 
 impl TraceDebugger {
 
     pub fn new() -> Self
     {
         // TODO: configure with ptrace?
-        Self {
-            control_channel: ControlChannel::new(Configuration::Tracer),
-            handler_map: HashMap::new(),
-            thread_map: HashMap::new(),
-        }
 
+        /* HERE !!!
+         * The idea is to be able to call from the control channel some functions from the debugger,
+         * such as spawn_process, kill_process, start_tracing, read_mem, write_regs, set_breakpoint, etc.
+         * 
+         * For that, we need a callback mechanisms to "register" or refer to the right function within the 
+         * control_channel object.
+         * 
+         * We could use:
+         *      1. function pointers
+         *      2. callback with closure
+         *      3. Trait
+         *      4. Rc<RefCell<>>
+         * 
+         */
+        Self {
+            control_channel: ControlChannel::new(Configuration::Tracer, Some(Box::new(TraceDebuggerCallback::new())), None)
+        }
     }
 
     pub fn run(&mut self)
@@ -68,6 +79,54 @@ impl TraceDebugger {
 
         self.control_channel.listen(ip, port);
     }
+}
+
+impl Default for TraceDebugger {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+
+
+struct TraceDebuggerCallback {
+    handler_map: HashMap<Pid, Option<JoinHandle<()>>>,
+    thread_map: HashMap<Pid, TracingThread>,
+}
+
+impl TraceDebuggerCallback {
+    pub fn new() -> Self {
+        Self {
+            handler_map: HashMap::new(),
+            thread_map: HashMap::new(),
+        }
+    }
+}
+
+impl TracerCallback for TraceDebuggerCallback {
+
+    fn spawn_process(&mut self, program: &str, prog_args: &[String]) -> Result<Pid, io::Error>
+    {
+        Ok(Pid::from_raw(10))
+    }
+
+    fn kill_process(&self, pid: Pid) -> Result<(), io::Error>
+    {
+        Ok(())
+    }
+
+    fn start_tracing(&self, pid: Pid) -> Result<(), io::Error>
+    {
+        Ok(())
+    }
+
+    fn stop_tracing(&self, pid: Pid) -> Result<(), io::Error>
+    {
+        Ok(())
+    }
+
+
+
 
 
     /*
@@ -187,14 +246,14 @@ impl TracingThread {
     fn boot_thread(&self, tracee: Child)
     {
         // Setup the tracer
-        let tracer = Tracer::new(tracee.id() as i32, TargetArch::X86_64, IP_ADDRESS, TRACER_PORT, EXECUTOR_PORT);
+        let tracer = TracerEngine::new(tracee.id() as i32, TargetArch::X86_64, IP_ADDRESS, TRACER_PORT, EXECUTOR_PORT);
         
         // Wait for the main thread to start tracing
         self.boot_barrier.wait();
         self.run_thread(tracee, tracer);
     }
 
-    fn run_thread(&self, tracee: Child, mut tracer: Tracer)
+    fn run_thread(&self, tracee: Child, mut tracer: TracerEngine)
     {
         let pid = Pid::from_raw(tracee.id() as i32);
         /*
@@ -212,7 +271,7 @@ impl TracingThread {
         }
     }
 
-    fn sync_registers(&self, pid: Pid, tracer: &mut Tracer) 
+    fn sync_registers(&self, pid: Pid, tracer: &mut TracerEngine) 
     {
         let regs: nix::libc::user_regs_struct = ptrace::getregs(pid).unwrap();
         tracer.sync_registers(regs);

@@ -8,6 +8,7 @@ use std::{
     thread::{ Builder, JoinHandle },
     sync::{ Arc, Barrier },
     net::{ Ipv4Addr },
+    io,
 };
 
 use nix::{
@@ -23,7 +24,7 @@ use sysforward::{
     arch::TargetArch,
     memory::{ read_process_memory_maps, print_memory_regions },
     protocol::control::{ Configuration, ControlChannel },
-    executor_engine::Executor,
+    executor_engine::{ ExecutorEngine, ExecutorCallback },
 };
 
 
@@ -40,8 +41,6 @@ static EXECUTOR_PORT: u16 = 31002;
  */
 struct ExecDebugger {
     control_channel: ControlChannel,
-    handler_map: HashMap<Pid, Option<JoinHandle<()>>>,
-    thread_map: HashMap<Pid, ExecThread>,
 }
 
 impl ExecDebugger {
@@ -50,9 +49,7 @@ impl ExecDebugger {
     {
         // TODO: configure with ptrace?
         Self {
-            control_channel: ControlChannel::new(Configuration::Executor),
-            handler_map: HashMap::new(),
-            thread_map: HashMap::new(),
+            control_channel: ControlChannel::new(Configuration::Executor, None, Some(Box::new(ExecDebuggerCallback::new()))),
         }
 
     }
@@ -65,6 +62,36 @@ impl ExecDebugger {
         //self.control_channel.connect(ip, port).unwrap();
 
         self.control_channel.listen(ip, port);
+    }
+}
+
+struct ExecDebuggerCallback {
+    handler_map: HashMap<Pid, Option<JoinHandle<()>>>,
+    thread_map: HashMap<Pid, ExecThread>,
+}
+
+impl ExecDebuggerCallback {
+
+    pub fn new() -> Self
+    {
+        Self {
+            handler_map: HashMap::new(),
+            thread_map: HashMap::new(),
+        }
+
+    }
+}
+
+impl ExecutorCallback for ExecDebuggerCallback {
+
+    fn spawn_process(&mut self, program: &str, prog_args: &[String]) -> Result<Pid, io::Error>
+    {
+        Ok(Pid::from_raw(10))
+    }
+
+    fn kill_process(&self, pid: Pid) -> Result<(), io::Error>
+    {
+        Ok(())
     }
 }
 
@@ -89,7 +116,7 @@ impl ExecThread {
     )
     {
         println!("[EXECUTOR] Start listening on {}:{}", IP_ADDRESS, EXECUTOR_PORT);
-        let mut executor = Executor::new(TargetArch::X86_64, address_ipv4, executor_port, tracer_port);
+        let mut executor = ExecutorEngine::new(TargetArch::X86_64, address_ipv4, executor_port, tracer_port);
 
         let mem = read_process_memory_maps(tracee.id());
         print_memory_regions(&mem);
@@ -97,7 +124,7 @@ impl ExecThread {
         self.run_thread(executor);
     }
 
-    fn run_thread(&self, mut executor: Executor)
+    fn run_thread(&self, mut executor: ExecutorEngine)
     {
         executor.run();
     }

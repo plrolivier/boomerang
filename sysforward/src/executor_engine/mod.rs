@@ -3,6 +3,13 @@
  */
 //pub mod invoker;
 
+use std::{
+    io::{ self },
+};
+
+use nix::{
+    unistd::{ Pid },
+};
 
 use crate::{
     arch::{ TargetArch, Architecture },
@@ -13,7 +20,13 @@ use crate::{
 
 
 
-pub struct Executor {
+pub trait ExecutorCallback {
+    fn spawn_process(&mut self, program: &str, prog_args: &[String]) -> Result<Pid, io::Error>;
+    fn kill_process(&self, pid: Pid) -> Result<(), io::Error>;
+}
+
+
+pub struct ExecutorEngine {
     pub arch: Architecture,
     protocol: Server,
 
@@ -21,7 +34,7 @@ pub struct Executor {
     interceptor: Box<dyn Operation>,
 }
 
-impl Executor {
+impl ExecutorEngine {
 
     pub fn new(
         target_arch: TargetArch,

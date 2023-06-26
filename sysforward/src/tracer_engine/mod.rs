@@ -34,9 +34,9 @@ use crate::{
  */
 pub trait TracerCallback {
     fn spawn_process(&mut self, program: &str, prog_args: &[&str]) -> Result<Pid, io::Error>;
-    fn kill_process(&self, pid: Pid) -> Result<(), io::Error>;
-    fn start_tracing(&self, pid: Pid) -> Result<(), io::Error>;
-    fn stop_tracing(&self, pid: Pid) -> Result<(), io::Error>;
+    fn kill_process(&mut self, pid: Pid) -> Result<(), io::Error>;
+    fn start_tracing(&mut self, pid: Pid) -> Result<(), io::Error>;
+    fn stop_tracing(&mut self, pid: Pid) -> Result<(), io::Error>;
 }
 
 

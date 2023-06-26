@@ -147,7 +147,7 @@ impl ControlChannel {
 
         match self.dispatch_command(command) {
             Ok(_) => {
-                // TODO: Send Ack to avatar2
+                // TODO: Send Ack to avatar2 ?
             },
             Err(msg) => {
                 eprintln!("{}", msg);
@@ -186,7 +186,6 @@ impl ControlChannel {
 
     fn dispatch_tracer(&mut self, command: Vec<&str>) -> Result<(), String>
     {
-        // TODO
         match command[0] {
             "spawn_process" => self.tracer_spawn_process(command),
             "kill_process" => self.tracer_kill_process(command),
@@ -202,7 +201,6 @@ impl ControlChannel {
 
     fn dispatch_executor(&mut self, command: Vec<&str>) -> Result<(), String>
     {
-        // TODO
         match command[0] {
             "spawn_process" => self.executor_spawn_process(command),
             "kill_process" => self.executor_kill_process(command),

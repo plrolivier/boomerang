@@ -87,12 +87,64 @@ impl ExecutorCallback for ExecDebuggerCallback {
     fn spawn_process(&mut self, program: &str, prog_args: &[&str]) -> Result<Pid, io::Error>
     {
         println!("* Spawn process: {} {:?} *", program, prog_args);
-        Ok(Pid::from_raw(20))
+        let child: Child = unsafe {
+            let mut command = Command::new(program);
+            command.args(prog_args);
+            command.pre_exec(|| {
+                ptrace::traceme().unwrap();
+                Ok(())
+            });
+
+            command.spawn().expect("Failed to spawn child process")
+        };
+
+        let pid = Pid::from_raw(child.id() as i32);
+
+        // Wait for first syscall
+        match waitpid(pid, None) {
+            Ok(WaitStatus::Stopped(_, Signal::SIGTRAP)) => { /* ??? */ },
+            _ => panic!("WaitStatus not handled"),
+        };
+
+        // Create the tracing thread
+        let boot_barrier = Arc::new(Barrier::new(2));
+
+        let executing_thread = ExecThread { boot_barrier };
+        let copy_executing_thread = executing_thread.clone();
+        self.thread_map.insert(pid, executing_thread);
+
+        let builder = Builder::new().name(child.id().to_string());
+        let handler = builder.spawn(move ||
+            copy_executing_thread.boot_thread(child)
+        ).unwrap();
+        self.handler_map.insert(pid, Some(handler));
+
+        // Notify the executor
+        //self.notify_new_process();
+
+        Ok(pid)
     }
 
-    fn kill_process(&self, pid: Pid) -> Result<(), io::Error>
+    fn kill_process(&mut self, pid: Pid) -> Result<(), io::Error>
     {
         println!("* Kill process {:?} *", pid);
+        
+        match self.handler_map.get_mut(&pid) {
+            Some(handler) => {
+                match handler.take() {
+                    Some(thread) => {
+                        ptrace::kill(pid).unwrap();
+                        thread.join().unwrap();
+                    },
+                    None => {
+                        // Error
+                    }
+                }
+            },
+            None => {
+                // Error
+            }
+        }
         Ok(())
     }
 }
@@ -112,19 +164,29 @@ impl ExecThread {
     fn boot_thread(
         &self, 
         tracee: Child,
-        address_ipv4: &str,
-        tracer_port: u16,
-        executor_port: u16,
+        //address_ipv4: &str,
+        //tracer_port: u16,
+        //executor_port: u16,
     )
     {
         println!("[EXECUTOR] Start listening on {}:{}", IP_ADDRESS, EXECUTOR_PORT);
-        let mut executor = ExecutorEngine::new(TargetArch::X86_64, address_ipv4, executor_port, tracer_port);
+        //let mut executor = ExecutorEngine::new(TargetArch::X86_64, address_ipv4, executor_port, tracer_port);
+        let mut executor = ExecutorEngine::new(TargetArch::X86_64, IP_ADDRESS, EXECUTOR_PORT, TRACER_PORT);
+        let exec_pid = tracee.id();
 
         let mem = read_process_memory_maps(tracee.id());
         print_memory_regions(&mem);
 
         self.run_thread(executor);
+
+        self.shutdown_thread(exec_pid);
     }
+
+    fn shutdown_thread(&self, pid: u32)
+    {
+        println!("[EXECUTOR] Thread executing process {} shutdown", pid);
+    }
+
 
     fn run_thread(&self, mut executor: ExecutorEngine)
     {

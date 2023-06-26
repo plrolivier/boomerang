@@ -11,3 +11,6 @@ exclude = [
 
 [workspace.package]
 version = "0.0.1"
+
+[profile.dev]
+debug = true

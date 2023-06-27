@@ -31,9 +31,9 @@ use sysforward::{
 
 /* Static variable to change */
 static IP_ADDRESS: &str = "127.0.0.1";
-static CONTROL_PORT: u16 = 31000;
-static TRACER_PORT: u16 = 31001;
-static EXECUTOR_PORT: u16 = 31002;
+//static CONTROL_PORT: u16 = 31000;
+static TRACER_PORT: u16 = 32000;
+static EXECUTOR_PORT: u16 = 32001;
 
 
 
@@ -168,8 +168,9 @@ impl TracerCallback for TraceDebuggerCallback {
                         println!("killing...");
                         ptrace::kill(pid).unwrap();
                         println!("joining...");
+                        // BUG: The start_tracing should be executed before otherwise the barrier deadlocks the join()
                         thread.join().unwrap();
-                        println!("finish!");
+                        println!("finished!");
                     },
                     None => {
                         // Error
@@ -187,6 +188,17 @@ impl TracerCallback for TraceDebuggerCallback {
     fn start_tracing(&mut self, pid: Pid) -> Result<(), io::Error>
     {
         println!("* Trace process {:?} *", pid);
+
+        match self.thread_map.get_mut(&pid) {
+            Some(thread) => {
+                thread.boot_barrier.wait();
+            },
+
+            None => {
+                //Error
+            }
+        }
+
         Ok(())
     }
 
@@ -306,6 +318,7 @@ impl TracerCallback for TraceDebuggerCallback {
 #[derive(Clone, Debug)]
 struct TracingThread {
     boot_barrier: Arc<Barrier>,
+    // Use condvar instead maybe ?
  }
 
 
@@ -358,7 +371,20 @@ impl TracingThread {
     fn wait_for_syscall(&self, pid: Pid) -> bool
     {
         // Continue execution
-        ptrace::syscall(pid, None).unwrap();
+        match ptrace::syscall(pid, None) {
+            Ok(()) => { },
+            /*
+            Err(ref err) if err.kind() == nix::errno::Errno::ESRCH => {
+                println!("ESRCH: No such process: {:?}", err);
+                return false;
+
+            }
+            */
+            Err(err) => {
+                println!("Fail to restart tracee: {:?}", err);
+                return false;
+            }
+        }
 
         match waitpid(pid, None) {
             Err(err) => {

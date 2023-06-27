@@ -45,6 +45,8 @@ def forward(program, args):
     ack = tracer.start_tracing([pid2])
     print(f"Start tracing: {ack}")
 
+    sleep(5)
+
     ack = tracer.stop_tracing([pid2])
     print(f"Stop tracing: {ack}")
 

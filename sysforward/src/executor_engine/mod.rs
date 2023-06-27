@@ -4,7 +4,8 @@
 //pub mod invoker;
 
 use std::{
-    io::{ self },
+    io::{ self }, sync::{Mutex, Condvar},
+    sync::{ Arc },
 };
 
 use nix::{
@@ -12,6 +13,7 @@ use nix::{
 };
 
 use crate::{
+    sync::{ Event },
     arch::{ TargetArch, Architecture },
     syscall::{ Syscall },
     operation::{ Operation, Ptrace },
@@ -32,6 +34,9 @@ pub struct ExecutorEngine {
 
     syscall: Syscall,
     interceptor: Box<dyn Operation>,
+
+    stop: Arc<Event>,
+    stopped: Arc<Event>,
 }
 
 impl ExecutorEngine {
@@ -41,6 +46,8 @@ impl ExecutorEngine {
         ipv4_address: &str,
         executor_port: u16,
         tracer_port: u16,
+        stop_event: Arc<Event>,
+        stopped_event: Arc<Event>,
     ) -> Self
     {
         Self {
@@ -48,15 +55,21 @@ impl ExecutorEngine {
             protocol: Server::new(ipv4_address, executor_port, tracer_port),
             syscall: Syscall::new(),
             interceptor: Box::new(Ptrace {}),
+            stop: stop_event,
+            stopped: stopped_event,
         }
     }
 
-    pub fn run(&mut self) {
-
+    pub fn run(&mut self)
+    {
         self.init();
 
         /* The main loop */
         loop {
+            if self.stop.is_set() {
+                break;
+            }
+
             /* Wait for new syscall
              * Note:
              * There is no timeout or keep-alive mechanisms to know when the tracer is finished.
@@ -64,7 +77,27 @@ impl ExecutorEngine {
              * remote commands (TODO).
              * For now, it needs to be stopped manually or via a signal.
              */
-            self.syscall = self.protocol.receive_syscall();
+            //self.syscall = self.protocol.receive_syscall();
+            match self.protocol.receive_syscall() {
+                Ok(syscall) => {
+                    self.syscall = syscall;
+                },
+                /* Unix => WouldBlock ; Windows => TimedOut
+                Err(ref err) if err.kind() == io::ErrorKind::TimedOut => {
+                    eprintln!("Socket timeout: {:?}", err);
+                    continue;
+                },
+                */
+                // The socket is set with a timeout of 1sec in order to check if the thread should stop.
+                Err(ref err) if err.kind() == io::ErrorKind::WouldBlock => {
+                    //eprintln!("Socket timeout: {:?}", err);
+                    continue;
+                },
+                Err(err) => {
+                    eprintln!("An error occured: {:?}", err);
+                    continue;
+                }
+            }
 
             /* Carry out syscall's decision */
             // TODO
@@ -73,12 +106,25 @@ impl ExecutorEngine {
             /* Return syscall */
             self.protocol.return_syscall_exit(&self.syscall);
         }
+
+        self.stopped.set();
+
+    }
+
+    pub fn shutdown(&mut self)
+    {
+        if ! self.stopped.is_set() {
+            self.stop.set();
+            self.stopped.wait();
+        }
+        //Ok()
     }
     
     fn init(&mut self)
     {
         //self.protocol.init();
     }
+
 
     fn log_syscall(&self) {
         let json = serde_json::to_string(&self.syscall).unwrap();

@@ -21,6 +21,7 @@ use nix::{
 };
 
 use sysforward::{
+    sync::{ Event },
     arch::TargetArch,
     memory::{ read_process_memory_maps, print_memory_regions },
     protocol::control::{ Configuration, ControlChannel },
@@ -30,9 +31,9 @@ use sysforward::{
 
 /* Static variable to change */
 static IP_ADDRESS: &str = "127.0.0.1";
-static CONTROL_PORT: u16 = 31000;
-static TRACER_PORT: u16 = 31001;
-static EXECUTOR_PORT: u16 = 31002;
+//static CONTROL_PORT: u16 = 31000;
+static TRACER_PORT: u16 = 32000;
+static EXECUTOR_PORT: u16 = 32001;
 
 
 
@@ -109,7 +110,7 @@ impl ExecutorCallback for ExecDebuggerCallback {
         // Create the tracing thread
         let boot_barrier = Arc::new(Barrier::new(2));
 
-        let executing_thread = ExecThread { boot_barrier };
+        let executing_thread = ExecThread::new(boot_barrier);
         let copy_executing_thread = executing_thread.clone();
         self.thread_map.insert(pid, executing_thread);
 
@@ -133,8 +134,20 @@ impl ExecutorCallback for ExecDebuggerCallback {
             Some(handler) => {
                 match handler.take() {
                     Some(thread) => {
-                        ptrace::kill(pid).unwrap();
+
+                        match self.thread_map.get_mut(&pid) {
+                            Some(exec_thread) => {
+                                println!("shutting down thread...");
+                                exec_thread.shutdown_thread(pid);
+                            }
+                            None => {
+                                // Error
+                            }
+                        }
+                        
+                        println!("joining...");
                         thread.join().unwrap();
+                        println!("finished!");
                     },
                     None => {
                         // Error
@@ -157,9 +170,20 @@ impl ExecutorCallback for ExecDebuggerCallback {
 #[derive(Clone, Debug)]
 struct ExecThread {
     boot_barrier: Arc<Barrier>,
+    stop: Arc<Event>,
+    stopped: Arc<Event>,
 }
 
 impl ExecThread {
+
+    pub fn new(boot_barrier: Arc<Barrier>) -> Self
+    {
+        ExecThread { 
+            boot_barrier,
+            stop: Arc::new(Event::new()),
+            stopped: Arc::new(Event::new()),
+        }
+    }
 
     fn boot_thread(
         &self, 
@@ -170,27 +194,35 @@ impl ExecThread {
     )
     {
         println!("[EXECUTOR] Start listening on {}:{}", IP_ADDRESS, EXECUTOR_PORT);
-        //let mut executor = ExecutorEngine::new(TargetArch::X86_64, address_ipv4, executor_port, tracer_port);
-        let mut executor = ExecutorEngine::new(TargetArch::X86_64, IP_ADDRESS, EXECUTOR_PORT, TRACER_PORT);
+        let copy_stop = self.stop.clone();
+        let copy_stopped = self.stopped.clone();
+        let mut executor = ExecutorEngine::new(TargetArch::X86_64, IP_ADDRESS, EXECUTOR_PORT, TRACER_PORT, copy_stop, copy_stopped);
         let exec_pid = tracee.id();
 
         let mem = read_process_memory_maps(tracee.id());
         print_memory_regions(&mem);
 
         self.run_thread(executor);
-
-        self.shutdown_thread(exec_pid);
     }
-
-    fn shutdown_thread(&self, pid: u32)
-    {
-        println!("[EXECUTOR] Thread executing process {} shutdown", pid);
-    }
-
 
     fn run_thread(&self, mut executor: ExecutorEngine)
     {
         executor.run();
+    }
+
+    pub fn shutdown_thread(&self, pid: Pid)
+    {
+        println!("[EXECUTOR] Thread executing process {} shutdown", pid);
+
+        println!("killing...");
+        ptrace::kill(pid).unwrap();
+        println!("killed");
+
+        if ! self.stopped.is_set() {
+            self.stop.set();
+            self.stopped.wait();
+        }
+        println!("thread stopped")
     }
 
 }

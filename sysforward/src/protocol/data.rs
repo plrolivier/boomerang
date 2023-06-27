@@ -2,8 +2,12 @@
  *
  */
 use std::{
+    time::{ Duration },
+    io,
     net::{ SocketAddr, UdpSocket, Ipv4Addr },
 };
+
+use nix::libc::recv;
 
 use crate::{
     syscall::{ Syscall },
@@ -97,6 +101,11 @@ impl Peer {
         Ok((payload, size))
     }
 
+    pub fn set_read_timeout(&self, dur: Option<Duration>) -> io::Result<()>
+    {
+        self.local_socket.set_read_timeout(dur)
+    }
+
 }
 
 
@@ -169,20 +178,37 @@ impl Server {
         let remote_addr = SocketAddr::new(ip.into(), tracer_port);
 
         let connection = Peer::new(local_addr, remote_addr);
+
+        let duration = Duration::new(1, 0);
+        connection.set_read_timeout(Some(duration)).unwrap();
+
         Server { connection }
     }
 
 
-    pub fn receive_syscall(&self) -> Syscall
+    pub fn receive_syscall(&self) -> Result<Syscall, std::io::Error>
     {
         // Read socket
         //let mut buffer: Vec<u8> = vec![0; 1024];
-        let (buffer, _len): (Vec<u8>, usize)  = self.connection.receive().expect("Error receiving syscall message");
+        let (buffer, _len): (Vec<u8>, usize)  = self.connection.receive()?;
         //println!("[EXECUTOR] Received {} bytes: {:?}", len, buffer);
+        /* 
+        match self.connection.receive() {
+            Ok((recv_buffer, _len)) => {
+                buffer = recv_buffer;
+            }
+
+            Err(err) => {
+                //eprintln!("Error receiving syscall message");
+                return Err(err);
+            }
+
+        }
+        */
 
         // Parse syscall
         let syscall = serde_json::from_slice(&buffer).expect("Fail to deserialize Syscall from JSON");
-        syscall
+        Ok(syscall)
     }
 
 

@@ -12,6 +12,7 @@ pub mod memory;
 pub mod tracer_engine;
 pub mod executor_engine;
 //pub mod migration;
+pub mod targets;
 
 pub use crate::tracer_engine::TracerEngine;
 pub use crate::executor_engine::ExecutorEngine;

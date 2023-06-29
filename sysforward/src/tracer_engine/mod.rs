@@ -18,7 +18,8 @@ use serde_json;
 use crate::{
     syscall::{ Syscall },
     arch::{ TargetArch, Architecture },
-    operation::{ Operation, Ptrace },
+    operation::Operation,
+    targets::ptrace::Ptrace,
     //protocol::{ Command, Packet, Header, SendSyscallEntryPayload, Client },
     tracer_engine::{
         decoder::{ Decoder },

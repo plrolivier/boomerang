@@ -16,7 +16,8 @@ use crate::{
     sync::{ Event },
     arch::{ TargetArch, Architecture },
     syscall::{ Syscall },
-    operation::{ Operation, Ptrace },
+    operation::Operation,
+    targets::ptrace::Ptrace,
     protocol::data::Server,
 };
 

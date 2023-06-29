@@ -4,19 +4,22 @@
  */
 use std::{
     collections::{ HashMap },
-    thread::{ Builder, JoinHandle },
+    thread::{ self, Builder, JoinHandle },
     os::unix::process::{ CommandExt },
-    process::{ exit, Child, Command },
-    sync::{ Arc, Barrier },
-    io::{self, prelude::*, BufReader, BufWriter },
-    net::{ Ipv4Addr },
+    process::{ self, exit, Child, Command, Stdio },
+    sync::{ 
+        Arc, Barrier,
+        mpsc::{ channel, Sender, Receiver },
+    },
+    io::{self, prelude::*, BufReader, BufWriter, ErrorKind },
+    net::{ Ipv4Addr }, str::FromStr,
 };
 
 use nix::{
     sys::{
         ptrace,
         wait::{ waitpid, WaitStatus},
-        signal::Signal,
+        signal::{ Signal, kill },
     },
     unistd::{ Pid },
 };
@@ -81,23 +84,30 @@ impl TraceDebugger {
     }
 }
 
+/*
 impl Default for TraceDebugger {
     fn default() -> Self {
         Self::new()
     }
 }
+*/
 
 
+struct ThreadCtrl {
+    handler: JoinHandle<()>,
+    barrier: Arc<Barrier>,
+    tx: Sender<String>,
+    rx: Receiver<String>,
+
+}
 
 struct TraceDebuggerCallback {
-    handler_map: HashMap<Pid, Option<JoinHandle<()>>>,
-    thread_map: HashMap<Pid, TracingThread>,
+    thread_map: HashMap<Pid, ThreadCtrl>,
 }
 
 impl TraceDebuggerCallback {
     pub fn new() -> Self {
         Self {
-            handler_map: HashMap::new(),
             thread_map: HashMap::new(),
         }
     }
@@ -106,50 +116,28 @@ impl TraceDebuggerCallback {
 
 impl TracerCallback for TraceDebuggerCallback {
 
-    fn spawn_process(&mut self, program: &str, prog_args: &[&str]) -> Result<Pid, io::Error>
+    fn spawn_process(&mut self, program: String, prog_args: Vec<String>) -> Result<Pid, io::Error>
     {
-        //println!("* Spawn process: {} {:?} *", program, prog_args);
-        //Ok(Pid::from_raw(10))
+        println!("Creating new tracing thread...");
 
-        /* TODO Verify the connection with executor
-        if ! self.check_connected() {
-            return Err(io::Error::new(io::ErrorKind::Other, "Not connected with executor"));
-        }
-        */
-
-        // Spawn the child
-        println!("[TRACER] Spawn {} {:?}", program, prog_args);
-        let child: Child = unsafe {
-            let mut command = Command::new(program);
-            command.args(prog_args);
-            command.pre_exec(|| {
-                ptrace::traceme().unwrap();
-                Ok(())
-            });
-
-            command.spawn().expect("Failed to spawn child process")
-        };
-
-        let pid = Pid::from_raw(child.id() as i32);
-
-        // Wait for first syscall
-        match waitpid(pid, None) {
-            Ok(WaitStatus::Stopped(_, Signal::SIGTRAP)) => { /* ??? */ },
-            _ => panic!("WaitStatus not handled"),
-        };
-
-        // Create the tracing thread
+        let (tx_ctrl, rx_ctrl) = channel();
+        let (tx_thread, rx_thread) = channel();
         let boot_barrier = Arc::new(Barrier::new(2));
+        let barrier_copy = boot_barrier.clone();
+        let mut tracing_thread = TracingThread::new(program, prog_args, tx_thread, rx_ctrl, boot_barrier);
 
-        let tracing_thread = TracingThread { boot_barrier };
-        let copy_tracing_thread = tracing_thread.clone();
-        self.thread_map.insert(pid, tracing_thread);
-
-        let builder = Builder::new().name(child.id().to_string());
+        /* Create thread and start it */
+        let builder = Builder::new();
         let handler = builder.spawn(move ||
-            copy_tracing_thread.boot_thread(child)
+            tracing_thread.start()
         ).unwrap();
-        self.handler_map.insert(pid, Some(handler));
+        
+        let thread_ctrl = ThreadCtrl { handler: handler, barrier: barrier_copy, tx: tx_ctrl, rx: rx_thread };
+
+        let pid = thread_ctrl.rx.recv().unwrap();
+        let pid = pid.parse().unwrap();
+        let pid = Pid::from_raw(pid);
+        self.thread_map.insert(pid, thread_ctrl);
 
         // Notify the executor
         //self.notify_new_process();
@@ -161,27 +149,21 @@ impl TracerCallback for TraceDebuggerCallback {
     {
         println!("* Kill process {:?} *", pid);
         
-        match self.handler_map.get_mut(&pid) {
-            Some(handler) => {
-                match handler.take() {
-                    Some(thread) => {
-                        println!("killing...");
-                        ptrace::kill(pid).unwrap();
-                        println!("joining...");
-                        // BUG: The start_tracing should be executed before otherwise the barrier deadlocks the join()
-                        thread.join().unwrap();
-                        println!("finished!");
-                    },
-                    None => {
-                        // Error
-                    }
-                }
+        match self.thread_map.remove(&pid) {
+            Some(thread) => {
+                println!("killing...");
+                ptrace::kill(pid).unwrap();
+                println!("joining...");
+                thread.handler.join().unwrap();
+                println!("kill command finished!");
             },
+
             None => {
-                // Error
+                // nix error: ESRC
+                println!("Error: No such process: {}", pid);
+                return Err(io::Error::new(ErrorKind::Other, "No such pid"))
             }
         }
-
         Ok(())
     }
 
@@ -191,20 +173,38 @@ impl TracerCallback for TraceDebuggerCallback {
 
         match self.thread_map.get_mut(&pid) {
             Some(thread) => {
-                thread.boot_barrier.wait();
+                println!("Waiting on boot barrier for {}", pid);
+                thread.barrier.wait();
             },
 
             None => {
-                //Error
+                // nix error: ESRC
+                println!("Error: No such running process: {}", pid);
+                return Err(io::Error::new(ErrorKind::Other, "No such running process"))
             }
         }
+        Ok(())
+    }
 
+    fn cont_tracing(&mut self, pid: Pid, signal: Option<Signal>) -> Result<(), io::Error>
+    {
+        println!("* Continue process {:?} with {:?} *", pid, signal);
+        match signal {
+            Some(signal) => {
+                ptrace::cont(pid, signal).unwrap(); 
+            },
+            None => {
+                ptrace::cont(pid, None).unwrap();
+            },
+        }
         Ok(())
     }
 
     fn stop_tracing(&mut self, pid: Pid) -> Result<(), io::Error>
     {
         println!("* Stop process {:?} *", pid);
+        //ptrace::
+        // TODO: which signal use GDB ?
         Ok(())
     }
 
@@ -315,77 +315,164 @@ impl TracerCallback for TraceDebuggerCallback {
 /*
  * Represent a thread tracing the execution of a child thread.
  */
-#[derive(Clone, Debug)]
-struct TracingThread {
-    boot_barrier: Arc<Barrier>,
-    // Use condvar instead maybe ?
+//#[derive(Clone, Debug)]
+pub struct TracingThread {
+    pub boot_barrier: Arc<Barrier>,
+    tx: Sender<String>,
+    rx: Receiver<String>,
+
+    program: String,
+    prog_args: Vec<String>,
+    tracee: Option<Child>,
+    //tracer: Option<TracerEngine>,
  }
 
 
 impl TracingThread {
 
-    /*
-     * Small code given to a newly spawn tracing thread for waiting to start tracing.
-     */
-    fn boot_thread(&self, tracee: Child)
+    pub fn new(program: String, prog_args: Vec<String>, tx: Sender<String>, rx: Receiver<String>, barrier: Arc<Barrier>) -> Self 
     {
-        // Setup the tracer
-        let tracer = TracerEngine::new(tracee.id() as i32, TargetArch::X86_64, IP_ADDRESS, TRACER_PORT, EXECUTOR_PORT);
-        let tracee_pid = tracee.id();
-        
-        // Wait for the main thread to start tracing
-        self.boot_barrier.wait();
-        self.run_thread(tracee, tracer);
-        self.shutdown_thread(tracee_pid);
-    }
-
-    fn shutdown_thread(&self, pid: u32)
-    {
-        println!("[TRACER] Thread tracing process {} shutdown", pid);
-    }
-
-    fn run_thread(&self, tracee: Child, mut tracer: TracerEngine)
-    {
-        let pid = Pid::from_raw(tracee.id() as i32);
-        /*
-         * The main tracing
-         */
-        loop {
-            match self.wait_for_syscall(pid) {
-                false => break,
-                true => (),
-            }
-            
-            self.sync_registers(pid, &mut tracer);
-            
-            tracer.trace();
+        TracingThread { 
+            boot_barrier: barrier,
+            tx: tx,
+            rx: rx,
+            program: program,
+            prog_args: prog_args,
+            tracee: None,
+            //tracer: None,
         }
     }
-
-    fn sync_registers(&self, pid: Pid, tracer: &mut TracerEngine) 
+    
+    pub fn start(&mut self)
     {
-        let regs: nix::libc::user_regs_struct = ptrace::getregs(pid).unwrap();
-        tracer.sync_registers(regs);
+        let tracer = self.boot_thread().expect("Fail to setup tracing thread");
+
+        // Wait for the signal to start the tracee execution and syscall tracing from the control thread.
+        self.boot_barrier.wait();
+
+        self.run_thread(tracer).unwrap();
+
+        self.shutdown_thread().expect("Fail to properly clean tracing thread");
     }
 
-    fn wait_for_syscall(&self, pid: Pid) -> bool
+    /*
+     * Small code used to setup the tracing context.
+     */
+    fn boot_thread(&mut self) -> Result<TracerEngine, io::Error>
+    {
+        println!("***************************************************");
+        println!("Tracing thread {} booting...", process::id());
+
+        /* Setup the tracee */
+        self.spawn_tracee(self.program.clone(), self.prog_args.clone())?; 
+
+        /* Setup the tracer */
+        let pid = self.tracee.as_ref().unwrap().id() as i32;
+        let tracer = TracerEngine::new(pid,
+                                                     TargetArch::X86_64,
+                                                     IP_ADDRESS,
+                                                     TRACER_PORT,
+                                                     EXECUTOR_PORT,
+                                                    );
+        
+        // Send the PID of the tracee to the control thread
+        self.tx.send(pid.to_string()).unwrap();
+
+        Ok(tracer)
+    }
+
+    /*
+     * Spawn the process where the tracee program will live.
+     * Use PTRACE_TRACEME and waits for the tracer thread to initialize.
+     */
+    fn spawn_tracee(&mut self, program: String, prog_args: Vec<String>) -> Result<(), io::Error>
+    {
+        println!("Spawnning {} {:?}", program, prog_args);
+
+        let mut command = Command::new(program);
+        command.args(prog_args);
+        command.stdout(Stdio::inherit());
+        command.stderr(Stdio::inherit());
+
+        unsafe {
+            command.pre_exec(|| {
+                ptrace::traceme().unwrap();
+                Ok(())
+            });
+        }
+        self.tracee = Some(command.spawn().expect("Failed to spawn child process"));
+
+        /* 
+        let status: std::process::ExitStatus = self.tracee.wait().unwrap();
+        println!("Status is {:?}", status);
+        println!("success: {:?}", status.success());
+        println!("code: {:?}", status.code());
+        */
+
+        Ok(())
+    }
+
+    fn _attach_tracee(&mut self, _pid: u32) -> Result<(), io::Error>
+    {
+        /* TODO */
+        panic!("Not implemented");
+    }
+
+    fn shutdown_thread(&self) -> Result<(), io::Error>
+    {
+        println!("Thread tracing process {} shutdown", self.tracee.as_ref().unwrap().id());
+        Ok(())
+    }
+
+    fn run_thread(&mut self, mut tracer: TracerEngine) -> Result<(), io::Error>
+    {
+        let pid = Pid::from_raw(self.tracee.as_ref().unwrap().id() as i32);
+        /*
+         * The main loop
+         */
+        loop {
+            self.restart_syscall(pid).unwrap();
+
+            match self.wait_for_syscall(pid) {
+                Err(()) => break,
+
+                Ok(pid) => { 
+                    self.sync_registers(pid, &mut tracer)?;
+                    tracer.trace()?;
+                },
+            }
+        }
+        Ok(())
+    }
+
+    fn sync_registers(&self, pid: Pid, tracer: &mut TracerEngine) -> Result<(), io::Error>
+    {
+        let regs: nix::libc::user_regs_struct = ptrace::getregs(pid)?;
+        tracer.sync_registers(regs);
+        Ok(())
+    }
+
+    fn restart_syscall(&self, pid: Pid) -> Result<Pid, ()>
     {
         // Continue execution
+        //ptrace::syscall(pid, None).unwrap();
         match ptrace::syscall(pid, None) {
-            Ok(()) => { },
+            Ok(()) => { /* continue */ },
             /*
             Err(ref err) if err.kind() == nix::errno::Errno::ESRCH => {
                 println!("ESRCH: No such process: {:?}", err);
                 return false;
-
             }
             */
             Err(err) => {
-                println!("Fail to restart tracee: {:?}", err);
-                return false;
+                panic!("Fail to restart tracee: {:?}", err);
             }
         }
+        Ok(pid)
+    }
 
+    fn wait_for_syscall(&self, pid: Pid) -> Result<Pid, ()>
+    {
         match waitpid(pid, None) {
             Err(err) => {
                 panic!("Oops something happens when waiting: {}", err);
@@ -396,23 +483,22 @@ impl TracingThread {
                     WaitStatus::Stopped(pid, signo) => {
                         match signo {
                             Signal::SIGTRAP => {
-                                return true;
+                                return Ok(pid);
                             },
                             Signal::SIGSEGV => {
                                 let regs = ptrace::getregs(pid).unwrap();
                                 println!("Tracee {} segfault at {:#x}", pid, regs.rip);
-                                return false;
+                                return Err(());
                             },
                             // TODO: add support for other signals
                             _ => {
-                                println!("Tracee {} received signal {} which is not handled", pid, signo);
-                                return false;
+                                panic!("Tracee {} received signal {} which is not handled", pid, signo);
                             },
                         }
                     },
                     WaitStatus::Exited(pid, exit_status) => {
                         println!("The tracee {} exits with status {}", pid, exit_status);
-                        return false;
+                        return Err(());
                     },
                     // TODO: add support for other WaitStatus
                     _ => {

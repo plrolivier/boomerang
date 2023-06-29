@@ -319,6 +319,15 @@ class ControlChannel(Thread):
         reply = str(message)    # wait for ACK string
         return reply
 
+    def tracer_cont_tracing(self, pid=[], signal=0):
+        # stop_tracing pid1 pid2 ...
+        cmd = ['stop_tracing'] + list(map(str, pid)) + [signal]
+        cmd = ' '.join(cmd)
+        self._send_message(cmd)
+        message = self._receive_message()
+        reply = str(message)    # wait for ACK string
+        return reply
+
     def tracer_stop_tracing(self, pid=[]):
         # stop_tracing pid1 pid2 ...
         cmd = ['stop_tracing'] + list(map(str, pid))

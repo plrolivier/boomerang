@@ -14,6 +14,7 @@ use std::{
 
 use nix::{
     unistd::{ Pid },
+    sys::signal::Signal,
 };
 
 use crate::{
@@ -190,6 +191,7 @@ impl ControlChannel {
             "spawn_process" => self.tracer_spawn_process(command),
             "kill_process" => self.tracer_kill_process(command),
             "start_tracing" => self.tracer_start_tracing(command),
+            "cont_tracing" => self.tracer_cont_tracing(command),
             "stop_tracing" => self.tracer_stop_tracing(command),
             //"" => Err(format!("Not implemented")),
             _ => {
@@ -268,8 +270,9 @@ impl ControlChannel {
     
     fn tracer_spawn_process(&mut self, command: Vec<&str>) -> Result<(), String>
     {
-        let program = command[1];
-        let args = &command[2..];
+        let program = command[1].to_string();
+        let args_str: Vec<&str> = command[2..].to_vec();
+        let args: Vec<String> = args_str.iter().map(|&s| s.to_string()).collect();
 
         match self.tracer.as_mut() {
             Some(tracer) => {
@@ -350,6 +353,71 @@ impl ControlChannel {
         self.writer.as_mut().unwrap().flush().unwrap();
 
         // when should we return an error ?
+        Ok(())
+    }
+
+    fn tracer_cont_tracing(&mut self, command: Vec<&str>) -> Result<(), String>
+    {
+        let pid = command[1];
+        let pid = FromStr::from_str(pid).unwrap();
+        let pid = Pid::from_raw(pid);
+
+        let sig = command[2];
+        let sig = FromStr::from_str(sig).unwrap();
+        let signal: Option<Signal>;
+        // Linux signals
+        match sig {
+            1 => signal = Some(Signal::SIGHUP),
+            2 => signal = Some(Signal::SIGINT),
+            3 => signal = Some(Signal::SIGQUIT),
+            4 => signal = Some(Signal::SIGKILL),
+            5 => signal = Some(Signal::SIGTRAP),
+            6 => signal = Some(Signal::SIGABRT),
+            7 => signal = Some(Signal::SIGBUS),
+            8 => signal = Some(Signal::SIGFPE),
+            9 => signal = Some(Signal::SIGKILL),
+            10 => signal = Some(Signal::SIGUSR1),
+            11 => signal = Some(Signal::SIGSEGV),
+            12 => signal = Some(Signal::SIGUSR2),
+            13 => signal = Some(Signal::SIGPIPE),
+            14 => signal = Some(Signal::SIGALRM),
+            15 => signal = Some(Signal::SIGTERM),
+            //16
+            17 => signal = Some(Signal::SIGCHLD),
+            18 => signal = Some(Signal::SIGCONT),
+            19 => signal = Some(Signal::SIGSTOP),
+            20 => signal = Some(Signal::SIGTSTP),
+            21 => signal = Some(Signal::SIGTTIN),
+            22 => signal = Some(Signal::SIGTTOU),
+            23 => signal = Some(Signal::SIGURG),
+            24 => signal = Some(Signal::SIGXCPU),
+            25 => signal = Some(Signal::SIGXFSZ),
+            26 => signal = Some(Signal::SIGVTALRM),
+            27 => signal = Some(Signal::SIGPROF),
+            28 => signal = Some(Signal::SIGWINCH),
+            29 => signal = Some(Signal::SIGIO),
+            30 => signal = Some(Signal::SIGPWR),
+            31 => signal = Some(Signal::SIGSYS),
+            _ => signal = None,
+        }
+
+        match self.tracer.as_mut() {
+            Some(tracer) => {
+                tracer.cont_tracing(pid, signal).unwrap();
+
+                let mut ack = String::new();
+                ack.push_str("ACK");
+                let buffer = ack.as_bytes();
+                self.writer.as_mut().unwrap().write(&buffer).unwrap();
+            },
+            None => {
+                let mut ack = String::new();
+                ack.push_str("ERR");
+                let buffer = ack.as_bytes();
+                self.writer.as_mut().unwrap().write(&buffer).unwrap();
+            }
+        }
+
         Ok(())
     }
     

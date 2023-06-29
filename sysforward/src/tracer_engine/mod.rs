@@ -12,6 +12,7 @@ use std::{
 use nix::{
     libc::user_regs_struct,
     unistd::{ Pid },
+    sys::signal::Signal,
 };
 use serde_json;
 use crate::{
@@ -33,9 +34,10 @@ use crate::{
  * and controlled by avatar2.
  */
 pub trait TracerCallback {
-    fn spawn_process(&mut self, program: &str, prog_args: &[&str]) -> Result<Pid, io::Error>;
+    fn spawn_process(&mut self, program: String, prog_args: Vec<String>) -> Result<Pid, io::Error>;
     fn kill_process(&mut self, pid: Pid) -> Result<(), io::Error>;
     fn start_tracing(&mut self, pid: Pid) -> Result<(), io::Error>;
+    fn cont_tracing(&mut self, pid: Pid, signal: Option<Signal>) -> Result<(), io::Error>;
     fn stop_tracing(&mut self, pid: Pid) -> Result<(), io::Error>;
 }
 
@@ -125,7 +127,8 @@ impl TracerEngine {
         self.regs = regs.clone();
     }
 
-    pub fn trace(&mut self){
+    pub fn trace(&mut self) -> Result<(), io::Error>
+    {
         match self.insyscall {
             false    => {
                 self.sync_entry();
@@ -137,6 +140,7 @@ impl TracerEngine {
                 self.trace_exit();
             },
         }
+        Ok(())
     }
 
     fn sync_entry(&mut self) {

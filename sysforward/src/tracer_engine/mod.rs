@@ -6,13 +6,14 @@ pub mod filtering;
 
 
 use std::{
+    collections::HashMap,
     sync::{ Arc },
     io::{ self },
 };
 use nix::{
     libc::user_regs_struct,
     unistd::{ Pid },
-    sys::signal::Signal,
+    sys::signal::{Signal, SigHandler},
 };
 use serde_json;
 use crate::{
@@ -61,6 +62,8 @@ pub struct TracerEngine {
     interceptor: Box<dyn Operation>,
     decoder: Arc<Decoder>,
     protocol: Client,
+
+    saved_syscall: Vec<Syscall>,
 }
 
 impl TracerEngine {
@@ -116,6 +119,7 @@ impl TracerEngine {
             interceptor: Box::new(Ptrace {}),
             decoder: decoder,
             protocol: Client::new(ipv4_address, tracer_port, executor_port),
+            saved_syscall: Vec::new(),
         }
     }
 
@@ -186,6 +190,21 @@ impl TracerEngine {
         self.syscall.raw.errno = errno;
     }
 
+    pub fn shutdown(&mut self) -> Result<(), io::Error>
+    {
+        // Calculate & print syscall statistics
+        // syscall number | how many? | is_decoded? | name
+        match self.calculate_stats() {
+            Ok(syscall_stats) => {
+                self.print_stats(syscall_stats);
+            },
+            Err(err) => {
+                println!("Oops, something happens when calculating syscall statistics: {}", err);
+            }
+        }
+        Ok(())
+    }
+
 
     fn trace_entry(&mut self) {
         self.log_raw_entry();
@@ -230,10 +249,12 @@ impl TracerEngine {
         println!("[TRACER] {}", json)
     }
 
-    fn log_exit(&self) {
+    fn log_exit(&mut self) {
         let json = serde_json::to_string(&self.syscall).unwrap();
         println!("[TRACER] {}", json);
         println!("");
+
+        self.saved_syscall.push(self.syscall.clone());
     }
 
     fn filter_entry(&mut self) -> Option<Decision> {
@@ -261,6 +282,37 @@ impl TracerEngine {
             _ => panic!("Decision not implemented")
         }
 
+    }
+
+
+    fn calculate_stats(&self) -> Result<HashMap<(u64, String), i32>, io::Error>
+    {
+        let mut syscall_stats: HashMap<(u64, String), i32> = HashMap::new();
+
+        for syscall in &self.saved_syscall {
+            let key = (syscall.raw.no.clone(), syscall.name.clone());
+            let count = syscall_stats.entry(key).or_insert(0);
+            *count += 1;
+        }
+        Ok(syscall_stats)
+    }
+
+    fn print_stats(&self, syscall_stats: HashMap<(u64, String), i32>)
+    {
+        //println!("{:?}", syscall_stats);
+
+        println!("+-----+------------------+--------+");
+        println!("| No  |       Name       | Number |");
+        println!("+-----+------------------+--------+");
+
+        for ((no, name), number) in syscall_stats {
+            let name_str = if name.is_empty() { "<empty>" } else { &name };
+            println!(
+                "| {:<3} | {:<16} | {:<6} |",
+                no, name_str, number
+            );
+        }
+        println!("+-----+------------------+--------+");
     }
 
 

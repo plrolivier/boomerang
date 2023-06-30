@@ -367,9 +367,9 @@ impl TracingThread {
         // Wait for the signal to start the tracee execution and syscall tracing from the control thread.
         self.boot_barrier.wait();
 
-        self.run_thread(tracer).unwrap();
+        let tracer = self.run_thread(tracer).unwrap();
 
-        self.shutdown_thread().expect("Fail to properly clean tracing thread");
+        self.shutdown_thread(tracer).expect("Fail to properly clean tracing thread");
     }
 
     /*
@@ -435,15 +435,16 @@ impl TracingThread {
         panic!("Not implemented");
     }
 
-    fn shutdown_thread(&mut self) -> Result<(), io::Error>
+    fn shutdown_thread(&mut self, mut tracer: TracerEngine) -> Result<(), io::Error>
     {
         println!("Thread tracing process {} shutdown", self.tracee.as_ref().unwrap().id());
         //let status = self.tracee.as_mut().unwrap().wait().expect("Not running");
         //println!("Tracee exits with status {}", status.code().unwrap());
+        tracer.shutdown().unwrap();
         Ok(())
     }
 
-    fn run_thread(&mut self, mut tracer: TracerEngine) -> Result<(), io::Error>
+    fn run_thread(&mut self, mut tracer: TracerEngine) -> Result<TracerEngine, io::Error>
     {
         let pid = Pid::from_raw(self.tracee.as_ref().unwrap().id() as i32);
         /*
@@ -461,7 +462,7 @@ impl TracingThread {
                 },
             }
         }
-        Ok(())
+        Ok(tracer)
     }
 
     fn sync_registers(&self, pid: Pid, tracer: &mut TracerEngine) -> Result<(), io::Error>

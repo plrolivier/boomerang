@@ -33,6 +33,10 @@ use crate::{
 
 
 
+/*
+ * TODO: add timestamps for calculating how much time the syscall spent in kernel / forwarding.
+ */
+
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Syscall {

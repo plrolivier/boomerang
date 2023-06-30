@@ -196,8 +196,14 @@ impl ExecThread {
         println!("[EXECUTOR] Start listening on {}:{}", IP_ADDRESS, EXECUTOR_PORT);
         let copy_stop = self.stop.clone();
         let copy_stopped = self.stopped.clone();
-        let mut executor = ExecutorEngine::new(TargetArch::X86_64, IP_ADDRESS, EXECUTOR_PORT, TRACER_PORT, copy_stop, copy_stopped);
-        let exec_pid = tracee.id();
+        let executor = ExecutorEngine::new(TargetArch::X86_64,
+                                                           IP_ADDRESS,
+                                                           EXECUTOR_PORT,
+                                                           TRACER_PORT,
+                                                           copy_stop,
+                                                           copy_stopped
+                                                          );
+        //let exec_pid = tracee.id();
 
         let mem = read_process_memory_maps(tracee.id());
         print_memory_regions(&mem);

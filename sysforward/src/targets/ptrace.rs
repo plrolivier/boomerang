@@ -12,6 +12,7 @@ use nix::{
 };
 use crate::{
     operation::Operation,
+    memory::{ read_process_memory_maps, print_memory_regions },
 };
 
 
@@ -41,14 +42,32 @@ impl Operation for Ptrace {
         let mut mem: Vec<u8> = Vec::new();
         let mut addr = addr;
         let mut count = size + (4 - size % 4);
+        
+        /*
+        println!("On process {}, read {} at {:#x}", pid, size, addr);
+        let pid_u32 = pid.as_raw() as u32;
+        let maps = read_process_memory_maps(pid_u32);
+        print_memory_regions(&maps);
+        */
 
         while count > 0 {
             let address = addr as ptrace::AddressType;
             //mem.push(ptrace::read(pid, address).unwrap() as u32);
-            let word = ptrace::read(pid, address).unwrap() as u32;
+            //let word = ptrace::read(pid, address).unwrap() as u32;
+            let word: u32;
+            match ptrace::read(pid, address) {
+                Ok(w) => {
+                    word = w as u32;
+                }
+                Err(err)=> {
+                    eprintln!("An error {} occured during read at {:?} on {}", err, address, pid);
+                    break;
+                }
+            }
             mem.extend_from_slice(&word.to_le_bytes());
             addr += 4;
             count -= 4;
+            //println!("Read returns {}, remains {} bytes", word, count);
         }
         mem
     }

@@ -38,22 +38,28 @@ def forward(program, args):
     # Setup processes
     pid1 = executor.spawn_process(program, args)
     print(f"Executor spawn process: {pid1}")
+    sleep(0.5)
     pid2 = tracer.spawn_process(program, args)
     print(f"Tracer spawn process: {pid2}")
+
+    sleep(1)
 
     # Trace syscall
     ack = tracer.start_tracing([pid2])
     print(f"Start tracing: {ack}")
 
-    sleep(5)
+    sleep(1)
+    #ip.embed()
 
     ack = tracer.stop_tracing([pid2])
     print(f"Stop tracing: {ack}")
 
+    sleep(1)
+
     # Terminate processes
     ack = tracer.kill_process([pid2])
     print(f"Kill process {pid2}: {ack}")
-
+    sleep(0.5)
     ack = executor.kill_process([pid1])
     print(f"Kill process {pid1}: {ack}")
 

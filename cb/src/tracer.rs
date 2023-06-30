@@ -5,7 +5,7 @@ use std::{
     collections::{ HashMap },
     thread::{ Builder, JoinHandle },
     os::unix::process::CommandExt,
-    process::{ exit, Child, Command },
+    process::{ exit, Child, Command, Stdio },
     sync::{ Arc, Barrier },
     io::{self, prelude::*, BufReader, BufWriter },
     net::{ TcpStream },
@@ -87,7 +87,7 @@ impl TraceDebugger {
         }
 
         // Spawn the child
-        println!("[TRACER] Spawn {} {:?}", program, prog_args);
+        println!("[TRACER] Spawn {} {}", program, prog_args.join(" "));
         let child: Child = unsafe {
             let mut command = Command::new(program);
             command.args(prog_args);
@@ -95,6 +95,8 @@ impl TraceDebugger {
                 ptrace::traceme().unwrap();
                 Ok(())
             });
+            command.stdout(Stdio::inherit());
+            command.stderr(Stdio::inherit());
 
             command.spawn().expect("Failed to spawn child process")
         };

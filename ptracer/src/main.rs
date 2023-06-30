@@ -152,10 +152,27 @@ impl TracerCallback for TraceDebuggerCallback {
         match self.thread_map.remove(&pid) {
             Some(thread) => {
                 println!("killing...");
-                ptrace::kill(pid).unwrap();
+                // TODO: Instead, ask the tracing thread to kill the process using Child.kill()?
+                // TODO: Check the process still lives... otherwise ESRCH...
+                //ptrace::kill(pid).unwrap(); // panic when ESRCH !
+                match ptrace::kill(pid) {
+                    Ok(()) => { },
+                    Err(err) => {  
+                        // ESRCH ?
+                        println!("Couldn't kill process: {}", err);
+                    },
+                }
+
                 println!("joining...");
-                thread.handler.join().unwrap();
-                println!("kill command finished!");
+                //thread.handler.join().unwrap();
+                match thread.handler.join() {
+                    Ok(()) => { },
+                    Err(err) => {
+                        println!("Couldn't joind the thread {}: {:?}", pid, err);
+                        return Err(io::Error::new(ErrorKind::Other, "Couldn't join the thread"))
+                    }
+                }
+                println!("kill command finished");
             },
 
             None => {
@@ -418,9 +435,11 @@ impl TracingThread {
         panic!("Not implemented");
     }
 
-    fn shutdown_thread(&self) -> Result<(), io::Error>
+    fn shutdown_thread(&mut self) -> Result<(), io::Error>
     {
         println!("Thread tracing process {} shutdown", self.tracee.as_ref().unwrap().id());
+        //let status = self.tracee.as_mut().unwrap().wait().expect("Not running");
+        //println!("Tracee exits with status {}", status.code().unwrap());
         Ok(())
     }
 

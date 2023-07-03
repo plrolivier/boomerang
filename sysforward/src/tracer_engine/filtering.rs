@@ -1,4 +1,5 @@
 /*
+ * TODO: create a trait which does the filtering and can be implemented by the target.
  * TODO: use eBPF to filter syscall and output the decision.
  */
 use serde::{Serialize, Deserialize};

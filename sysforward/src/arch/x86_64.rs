@@ -337,5 +337,6 @@ pub fn create_syscall_table() -> HashMap<&'static str, u64> {
         ("inotify_init1", 294),
         ("preadv", 295),
         ("pwritev", 296),
+        ("rseq", 334),
     ])
 }

@@ -20,6 +20,7 @@ pub mod prctl;
 pub mod dirent;
 pub mod stat;
 pub mod resource;
+pub mod rseq;
 
 
 use serde::{ Serialize, Deserialize };

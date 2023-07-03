@@ -1415,6 +1415,7 @@ pub enum DecodedSyscall {
     Getrlimit(syscall::resource::Getrlimit),
     Setrlimit(syscall::resource::Setrlimit),
     Prlimit(syscall::resource::Prlimit),
+    Prlimit64(syscall::resource::Prlimit),
     Getrusage(syscall::resource::Getrusage),
 
     Rseq(syscall::rseq::Rseq),
@@ -1476,6 +1477,7 @@ impl Decode for DecodedSyscall {
             DecodedSyscall::Getrlimit(x) => x.decode(pid, operation),
             DecodedSyscall::Setrlimit(x) => x.decode(pid, operation),
             DecodedSyscall::Prlimit(x) => x.decode(pid, operation),
+            DecodedSyscall::Prlimit64(x) => x.decode(pid, operation),
             DecodedSyscall::Getrusage(x) => x.decode(pid, operation),
             DecodedSyscall::Rseq(x) => x.decode(pid, operation),
             //DecodedSyscall::(x) => x.decode(pid, operation),

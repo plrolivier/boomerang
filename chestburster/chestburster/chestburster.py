@@ -90,7 +90,7 @@ class Chestburster(Avatar):
 
 
     def shutdown(self):
-        log.info('Shutting down ...')
+        #log.info('Shutting down ...')
         super().shutdown()
         if self.launcher is not None:
             self.launcher.stop()

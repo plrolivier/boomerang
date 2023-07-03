@@ -21,6 +21,8 @@ pub mod dirent;
 pub mod stat;
 pub mod resource;
 pub mod rseq;
+pub mod getrandom;
+pub mod epoll;
 
 
 use serde::{ Serialize, Deserialize };

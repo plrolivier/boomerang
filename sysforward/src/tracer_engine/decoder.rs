@@ -1420,6 +1420,15 @@ pub enum DecodedSyscall {
 
     Rseq(syscall::rseq::Rseq),
 
+    Getrandom(syscall::getrandom::Getrandom),
+
+    EpollCreate(syscall::epoll::EpollCreate),
+    EpollCreate1(syscall::epoll::EpollCreate1),
+    EpollCtl(syscall::epoll::EpollCtl),
+    EpollWait(syscall::epoll::EpollWait),
+    EpollPwait(syscall::epoll::EpollPwait),
+    EpollPwait2(syscall::epoll::EpollPwait2),
+
     /* ... */
 }
 
@@ -1480,6 +1489,13 @@ impl Decode for DecodedSyscall {
             DecodedSyscall::Prlimit64(x) => x.decode(pid, operation),
             DecodedSyscall::Getrusage(x) => x.decode(pid, operation),
             DecodedSyscall::Rseq(x) => x.decode(pid, operation),
+            DecodedSyscall::Getrandom(x) => x.decode(pid, operation),
+            DecodedSyscall::EpollCreate(x) => x.decode(pid, operation),
+            DecodedSyscall::EpollCreate1(x) => x.decode(pid, operation),
+            DecodedSyscall::EpollCtl(x) => x.decode(pid, operation),
+            DecodedSyscall::EpollWait(x) => x.decode(pid, operation),
+            DecodedSyscall::EpollPwait(x) => x.decode(pid, operation),
+            DecodedSyscall::EpollPwait2(x) => x.decode(pid, operation),
             //DecodedSyscall::(x) => x.decode(pid, operation),
         }
     }

@@ -1411,6 +1411,8 @@ pub enum DecodedSyscall {
     Fstat(syscall::stat::Fstat),
     Lstat(syscall::stat::Lstat),
     Fstatat(syscall::stat::Fstatat),
+    
+    Statx(syscall::statx::Statx),
 
     Getrlimit(syscall::resource::Getrlimit),
     Setrlimit(syscall::resource::Setrlimit),
@@ -1483,6 +1485,7 @@ impl Decode for DecodedSyscall {
             DecodedSyscall::Fstat(x) => x.decode(pid, operation),
             DecodedSyscall::Lstat(x) => x.decode(pid, operation),
             DecodedSyscall::Fstatat(x) => x.decode(pid, operation),
+            DecodedSyscall::Statx(x) => x.decode(pid, operation),
             DecodedSyscall::Getrlimit(x) => x.decode(pid, operation),
             DecodedSyscall::Setrlimit(x) => x.decode(pid, operation),
             DecodedSyscall::Prlimit(x) => x.decode(pid, operation),

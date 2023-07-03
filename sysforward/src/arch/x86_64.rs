@@ -339,6 +339,7 @@ pub fn create_syscall_table() -> HashMap<&'static str, u64> {
         ("pwritev", 296),
         ("prlimit64", 302),
         ("getrandom", 318),
+        ("statx", 332),
         ("rseq", 334),
         ("epoll_pwait2", 441),
     ])

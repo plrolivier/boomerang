@@ -19,6 +19,7 @@ pub mod execve;
 pub mod prctl;
 pub mod dirent;
 pub mod stat;
+pub mod statx;
 pub mod resource;
 pub mod rseq;
 pub mod getrandom;

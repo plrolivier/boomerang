@@ -1,6 +1,143 @@
 """ Provide tests for coreutils programs.
-"""
 
++-----------------------------+-----------+----------+
+| Categorie                   | Name      | tested ? |
++-----------------------------+-----------+----------+
+| Output of entire files      | cat       |          |
+|                             | tac       |          |
+|                             | nl        |          |
+|                             | od        |          |
+|                             | base32    |          |
+|                             | base64    |          |
+|                             | basenc    |          |
++-----------------------------+-----------+----------+
+| Formatting file contents    | fmt       |          |
+|                             | pr        |          |
+|                             | fold      |          |
++-----------------------------+-----------+----------+
+| Output of parts of files    | head      |          |
+|                             | tail      |          |
+|                             | split     |          |
+|                             | csplit    |          |
++-----------------------------+-----------+----------+
+| Summarizing files           | wc        |          |
+|                             | sum       |          |
+|                             | cksum     |          |
+|                             | b2sum     |          |
+|                             | md5sum    |          |
+|                             | sha1sum   |          |
+|                             | sha224sum |          |
+|                             | sha256sum |          |
+|                             | sha384sum |          |
+|                             | sha512sum |          |
++-----------------------------+-----------+----------+
+| Operating on sorted files   | sort      |          |
+|                             | shuf      |          |
+|                             | uniq      |          |
+|                             | comm      |          |
+|                             | ptx       |          |
+|                             | tsort     |          |
++-----------------------------+-----------+----------+
+| Operating on fields         | cut       |          |
+|                             | paste     |          |
+|                             | join      |          |
++-----------------------------+-----------+----------+
+| Operating on characters     | tr        |          |
+|                             | expand    |          |
+|                             | unexpand  |          |
++-----------------------------+-----------+----------+
+| Directory listing           | ls        | y        |
+|                             | dir       | y        |
+|                             | vdir      | y        |
+|                             | dircolors | y        |
++-----------------------------+-----------+----------+
+| Basic operations            | cp        |          |
+|                             | dd        |          |
+|                             | ginstall  |          |
+|                             | mv        |          |
+|                             | rm        |          |
+|                             | shred     |          |
++-----------------------------+-----------+----------+
+| Special file types          | link      |          |
+|                             | ln        |          |
+|                             | mkdir     |          |
+|                             | mkfifo    |          |
+|                             | mknod     |          |
+|                             | readlink  |          |
+|                             | rmdir     |          |
+|                             | unlink    |          |
++-----------------------------+-----------+----------+
+| Changing file attributes    | chown     |          |
+|                             | chgrp     |          |
+|                             | chmod     |          |
+|                             | touch     |          |
++-----------------------------+-----------+----------+
+| File space usage            | df        | y        |
+|                             | du        | y        |
+|                             | stat      |          |
+|                             | sync      | y        |
+|                             | truncate  |          |
++-----------------------------+-----------+----------+
+| Printing text               | echo      |          |
+|                             | printf    |          |
+|                             | yes       |          |
++-----------------------------+-----------+----------+
+| Conditions                  | false     |          |
+|                             | true      |          |
+|                             | test      |          |
+|                             | expr      |          |
++-----------------------------+-----------+----------+
+| Redirection                 | tee       |          |
++-----------------------------+-----------+----------+
+| File name manipulation      | basename  |          |
+|                             | dirname   |          |
+|                             | pathchk   |          |
+|                             | mktemp    |          |
+|                             | realpath  |          |
++-----------------------------+-----------+----------+
+| Working context             | pwd       |          |
+|                             | stty      |          |
+|                             | printenv  |          |
+|                             | tty       |          |
++-----------------------------+-----------+----------+
+| User information            | id        |          |
+|                             | logname   |          |
+|                             | whoami    | y        |
+|                             | groups    |          |
+|                             | users     | y        |
+|                             | who       | y        |
++-----------------------------+-----------+----------+
+| System context              | date      |          |
+|                             | arch      |          |
+|                             | nproc     |          |
+|                             | uname     | y        |
+|                             | hostname  |          |
+|                             | hostid    |          |
+|                             | uptime    |          |
++-----------------------------+-----------+----------+
+| SELinux context             | chcon     |          |
+|                             | runcon    |          |
++-----------------------------+-----------+----------+
+| Modified command invocation | chroot    |          |
+|                             | env       |          |
+|                             | nice      |          |
+|                             | nohup     |          |
+|                             | stdbuf    |          |
+|                             | timeout   |          |
++-----------------------------+-----------+----------+
+| Process control             | kill      |          |
++-----------------------------+-----------+----------+
+| Delaying                    | sleep     |          |
++-----------------------------+-----------+----------+
+| Numeric operations          | factor    |          |
+|                             | numfmt    |          |
+|                             | seq       |          |
++-----------------------------+-----------+----------+
+|                             | [         |          |
+|                             | pinky     |          |
++-----------------------------+-----------+----------+
+
+"""
 #import sys
 import unittest
 import os
@@ -64,8 +201,30 @@ class TestForward(unittest.TestCase):
         cb.shutdown()
 
 # =============================================================================
+# Output of entire files
 
-class TestLs(TestForward):
+# =============================================================================
+# Formatting file contents
+
+# =============================================================================
+# Output of parts of files
+
+# =============================================================================
+# Summarizing files
+
+# =============================================================================
+# Operating on sorted files
+
+# =============================================================================
+# Operating on fields
+
+# =============================================================================
+# Operating on characters
+
+# =============================================================================
+# Directory listing
+
+class TestDirectoryListing(TestForward):
 
     @classmethod
     def setUpClass(cls):
@@ -75,63 +234,68 @@ class TestLs(TestForward):
     def tearDownClass(cls):
         clean_files(BASE_DIR)
 
+class TestLs(TestDirectoryListing):
+
+    path = '/bin/ls'
 
     def test_no_args(self):
-        self.forward('/bin/ls', [])
-
-    #def test_root(self):
-    #    self.forward('/bin/ls', ['/'])
+        self.forward(self.path, [])
 
     def test_tmp(self):
-        self.forward('/bin/ls', [BASE_DIR])
+        self.forward(self.path, [BASE_DIR])
     
     def test_directory(self):
-        self.forward('/bin/ls', ['-d', BASE_DIR])
+        self.forward(self.path, ['-d', BASE_DIR])
 
     def test_size(self):
-        self.forward('/bin/ls', ['--size', BASE_DIR])
+        self.forward(self.path, ['--size', BASE_DIR])
 
     def test_time(self):
-        self.forward('/bin/ls', ['-t', BASE_DIR])
+        self.forward(self.path, ['-t', BASE_DIR])
 
     def test_long(self):
         # long + size + inode
-        self.forward('/bin/ls', ['-lsi', BASE_DIR])
+        self.forward(self.path, ['-lsi', BASE_DIR])
 
     def test_recursive(self):
-        self.forward('/bin/ls', ['--recursive', BASE_DIR])
+        self.forward(self.path, ['--recursive', BASE_DIR])
 
     def test_long_recursive(self):
-        self.forward('/bin/ls', ['-l', '--recursive', BASE_DIR])
+        self.forward(self.path, ['-l', '--recursive', BASE_DIR])
 
-# =============================================================================
+class TestDir(TestLs):
 
-class TestWho(TestForward):
+    path = '/bin/dir'
 
-    def test_no_args(self):
-        self.forward('/bin/who', [])
+class TestVdir(TestLs):
 
-    def test_all(self):
-        self.forward('/bin/who', ['--all'])
+    path = '/bin/vdir'
 
-# =============================================================================
+class TestDircolors(TestForward):
 
-class TestWhoami(TestForward):
+    path = '/bin/dircolors'
 
     def test_no_args(self):
-        self.forward('/bin/whoami', [])
+        self.forward(self.path, [])
+
+    def test_print_database(self):
+        self.forward(self.path, ['--print-database'])
+
+    def test_print_ls_colors(self):
+        self.forward(self.path, ['--print-ls-colors'])
+
 
 # =============================================================================
-
-class TestDf(TestForward):
-
-    def test_no_args(self):
-        self.forward('/bin/df', [])
-
-    def test_all(self):
-        self.forward('/bin/df', ['--all'])
+# Basic operations
 
 # =============================================================================
+# Special file types
+
+# =============================================================================
+# Changing file attributes
+
+# =============================================================================
+# File space usage
 
 class TestDu(TestForward):
 
@@ -144,7 +308,13 @@ class TestDu(TestForward):
     def test_summarize(self):
         self.forward('/bin/du', ['--summarize'])
 
-# =============================================================================
+class TestDf(TestForward):
+
+    def test_no_args(self):
+        self.forward('/bin/df', [])
+
+    def test_all(self):
+        self.forward('/bin/df', ['--all'])
 
 class TestSync(TestForward):
 
@@ -154,6 +324,67 @@ class TestSync(TestForward):
     def test_all(self):
         self.forward('/bin/sync', ['--data'])
 
+# =============================================================================
+# Printing text
+
+# =============================================================================
+# Conditions
+
+# =============================================================================
+# Redirection
+
+# =============================================================================
+# File name manipulation
+
+# =============================================================================
+# Woking context
+
+# =============================================================================
+# User information
+
+class TestWhoami(TestForward):
+
+    def test_no_args(self):
+        self.forward('/bin/whoami', [])
+
+class TestUsers(TestForward):
+
+    def test_no_args(self):
+        self.forward('/bin/users', [])
+
+class TestWho(TestForward):
+
+    def test_no_args(self):
+        self.forward('/bin/who', [])
+
+    def test_all(self):
+        self.forward('/bin/who', ['--all'])
+
+# =============================================================================
+# System context
+
+class TestUname(TestForward):
+
+    def test_no_args(self):
+        self.forward('/bin/uname', [])
+
+    def test_all(self):
+        self.forward('/bin/uname', ['--data'])
+
+# =============================================================================
+# SELinux context
+
+# =============================================================================
+# Modified command invocation
+
+# =============================================================================
+# Process control
+
+# =============================================================================
+# Delaying
+
+# =============================================================================
+# Numeric operations
 
 
 

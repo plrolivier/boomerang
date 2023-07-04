@@ -100,20 +100,20 @@
 |                             | printenv  |          |
 |                             | tty       |          |
 +-----------------------------+-----------+----------+
-| User information            | id        |          |
-|                             | logname   |          |
+| User information            | id        | y        |
+|                             | logname   | y        |
 |                             | whoami    | y        |
-|                             | groups    |          |
+|                             | groups    | y        |
 |                             | users     | y        |
 |                             | who       | y        |
 +-----------------------------+-----------+----------+
-| System context              | date      |          |
-|                             | arch      |          |
-|                             | nproc     |          |
+| System context              | date      | y        |
+|                             | arch      | n        |
+|                             | nproc     | y        |
 |                             | uname     | y        |
-|                             | hostname  |          |
-|                             | hostid    |          |
-|                             | uptime    |          |
+|                             | hostname  | n        |
+|                             | hostid    | y        |
+|                             | uptime    | y        |
 +-----------------------------+-----------+----------+
 | SELinux context             | chcon     |          |
 |                             | runcon    |          |
@@ -299,30 +299,36 @@ class TestDircolors(TestForward):
 
 class TestDu(TestForward):
 
+    path = '/bin/du'
+
     def test_no_args(self):
-        self.forward('/bin/du', [])
+        self.forward(self.path, [])
 
     def test_all(self):
-        self.forward('/bin/du', ['--all'])
+        self.forward(self.path, ['--all'])
 
     def test_summarize(self):
-        self.forward('/bin/du', ['--summarize'])
+        self.forward(self.path, ['--summarize'])
 
 class TestDf(TestForward):
 
+    path = '/bin/df'
+
     def test_no_args(self):
-        self.forward('/bin/df', [])
+        self.forward(self.path, [])
 
     def test_all(self):
-        self.forward('/bin/df', ['--all'])
+        self.forward(self.path, ['--all'])
 
 class TestSync(TestForward):
 
+    path = '/bin/sync'
+
     def test_no_args(self):
-        self.forward('/bin/sync', [])
+        self.forward(self.path, [])
 
     def test_all(self):
-        self.forward('/bin/sync', ['--data'])
+        self.forward(self.path, ['--data'])
 
 # =============================================================================
 # Printing text
@@ -360,16 +366,76 @@ class TestWho(TestForward):
     def test_all(self):
         self.forward('/bin/who', ['--all'])
 
+class TestGroups(TestForward):
+
+    def test_no_args(self):
+        self.forward('/bin/groups', [])
+
+class TestId(TestForward):
+
+    path = '/bin/id'
+
+    def test_no_args(self):
+        self.forward(self.path, [])
+
+class TestLogname(TestForward):
+
+    path = '/bin/logname'
+
+    def test_no_args(self):
+        self.forward(self.path, [])
+
+
 # =============================================================================
 # System context
 
-class TestUname(TestForward):
+class TestDate(TestForward):
+
+    path = '/bin/date'
 
     def test_no_args(self):
-        self.forward('/bin/uname', [])
+        self.forward(self.path, [])
+
+    def test_debug(self):
+        self.forward(self.path, ['--debug'])
+
+class TestNproc(TestForward):
+
+    path = '/bin/nproc'
+
+    def test_no_args(self):
+        self.forward(self.path, [])
 
     def test_all(self):
-        self.forward('/bin/uname', ['--data'])
+        self.forward(self.path, ['--all'])
+
+class TestUname(TestForward):
+
+    path = '/bin/uname'
+
+    def test_no_args(self):
+        self.forward(self.path, [])
+
+    def test_all(self):
+        self.forward(self.path, ['--data'])
+
+class TestHostid(TestForward):
+
+    path = '/bin/hostid'
+
+    def test_no_args(self):
+        self.forward(self.path, [])
+
+class TestUptime(TestForward):
+
+    path = '/bin/uptime'
+
+    def test_no_args(self):
+        self.forward(self.path, [])
+
+    def test_pretty(self):
+        self.forward(self.path, ['--pretty'])
+
 
 # =============================================================================
 # SELinux context

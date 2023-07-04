@@ -56,6 +56,9 @@ impl Peer {
 
     pub fn send(&self, data: &[u8]) -> Result<(), std::io::Error> 
     {
+        // There is a bug if data > 2^16 which is the maximum payload size for a UDP packet.
+        // For example with cat which read 0x20000 bytes
+
         // Craft the header
         /* 
         let header = Header::new(data.len());

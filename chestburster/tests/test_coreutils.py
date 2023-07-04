@@ -3,33 +3,33 @@
 +-----------------------------+-----------+----------+
 | Categorie                   | Name      | tested ? |
 +-----------------------------+-----------+----------+
-| Output of entire files      | cat       |          |
-|                             | tac       |          |
-|                             | nl        |          |
-|                             | od        |          |
-|                             | base32    |          |
-|                             | base64    |          |
-|                             | basenc    |          |
+| Output of entire files      | cat       | n        |
+|                             | tac       | y        |
+|                             | nl        | y        |
+|                             | od        | y        |
+|                             | base32    | y        |
+|                             | base64    | y        |
+|                             | basenc    | y        |
 +-----------------------------+-----------+----------+
 | Formatting file contents    | fmt       |          |
 |                             | pr        |          |
 |                             | fold      |          |
 +-----------------------------+-----------+----------+
-| Output of parts of files    | head      |          |
-|                             | tail      |          |
+| Output of parts of files    | head      | y        |
+|                             | tail      | y        |
 |                             | split     |          |
 |                             | csplit    |          |
 +-----------------------------+-----------+----------+
-| Summarizing files           | wc        |          |
-|                             | sum       |          |
-|                             | cksum     |          |
-|                             | b2sum     |          |
-|                             | md5sum    |          |
-|                             | sha1sum   |          |
-|                             | sha224sum |          |
-|                             | sha256sum |          |
-|                             | sha384sum |          |
-|                             | sha512sum |          |
+| Summarizing files           | wc        | y        |
+|                             | sum       | y        |
+|                             | cksum     | y        |
+|                             | b2sum     | y        |
+|                             | md5sum    | y        |
+|                             | sha1sum   | y        |
+|                             | sha224sum | y        |
+|                             | sha256sum | y        |
+|                             | sha384sum | y        |
+|                             | sha512sum | y        |
 +-----------------------------+-----------+----------+
 | Operating on sorted files   | sort      |          |
 |                             | shuf      |          |
@@ -95,10 +95,10 @@
 |                             | mktemp    |          |
 |                             | realpath  |          |
 +-----------------------------+-----------+----------+
-| Working context             | pwd       |          |
-|                             | stty      |          |
-|                             | printenv  |          |
-|                             | tty       |          |
+| Working context             | pwd       | y        |
+|                             | stty      | y        |
+|                             | printenv  | y        |
+|                             | tty       | y        |
 +-----------------------------+-----------+----------+
 | User information            | id        | y        |
 |                             | logname   | y        |
@@ -203,14 +203,219 @@ class TestForward(unittest.TestCase):
 # =============================================================================
 # Output of entire files
 
+class TestOutputEntireFiles(TestForward):
+
+    file_path = '/tmp/random.data'
+    
+    @classmethod
+    def setUpClass(cls):
+        setup_file_by_size(cls.file_path, 1024)
+
+    @classmethod
+    def tearDownClass(cls):
+        clean_file(cls.file_path)
+
+class TestTac(TestOutputEntireFiles):
+
+    path = '/bin/tac'
+
+    def test_no_args(self):
+        self.forward(self.path, [self.file_path])
+
+class TestNl(TestOutputEntireFiles):
+
+    path = '/bin/nl'
+
+    def test_no_args(self):
+        self.forward(self.path, [self.file_path])
+
+class TestOd(TestOutputEntireFiles):
+
+    path = '/bin/od'
+
+    def test_no_args(self):
+        self.forward(self.path, [self.file_path])
+
+    def test_address_radix(self):
+        self.forward(self.path, ['-A', self.file_path])
+
+class TestBase32(TestOutputEntireFiles):
+
+    path = '/bin/base32'
+
+    def test_no_args(self):
+        self.forward(self.path, [self.file_path])
+
+class TestBase64(TestOutputEntireFiles):
+
+    path = '/bin/base64'
+
+    def test_no_args(self):
+        self.forward(self.path, [self.file_path])
+
+class TestBasenc(TestOutputEntireFiles):
+
+    path = '/bin/basenc'
+
+    def test_no_args(self):
+        self.forward(self.path, [self.file_path])
+
 # =============================================================================
 # Formatting file contents
 
 # =============================================================================
 # Output of parts of files
 
+class TestOutputPartsFile(TestForward):
+
+    file_path = '/tmp/random.data'
+    
+    @classmethod
+    def setUpClass(cls):
+        setup_file_by_size(cls.file_path, 1024)
+
+    @classmethod
+    def tearDownClass(cls):
+        clean_file(cls.file_path)
+
+class TestHead(TestOutputPartsFile):
+
+    path = '/bin/head'
+
+    def test_no_args(self):
+        self.forward(self.path, [self.file_path])
+
+    def test_lines(self):
+        self.forward(self.path, ['-n 10', self.file_path])
+
+    def test_bytes(self):
+        self.forward(self.path, ['-c 10', self.file_path])
+
+class TestTail(TestOutputPartsFile):
+
+    path = '/bin/tail'
+
+    def test_no_args(self):
+        self.forward(self.path, [self.file_path])
+
+    def test_lines(self):
+        self.forward(self.path, ['-n 10', self.file_path])
+
+    def test_bytes(self):
+        self.forward(self.path, ['-c 10', self.file_path])
+
+#class TestSplit(TestOutputPartsFile):
+#
+#    path = '/bin/split'
+#
+#    def test_no_args(self):
+#        self.forward(self.path, [self.file_path])
+#
+#class TestCsplit(TestOutputPartsFile):
+#
+#    path = '/bin/csplit'
+#
+#    def test_no_args(self):
+#        self.forward(self.path, [self.file_path])
+
 # =============================================================================
 # Summarizing files
+
+class TestSummarizingFiles(TestForward):
+
+    file_path = '/tmp/random.data'
+    
+    @classmethod
+    def setUpClass(cls):
+        setup_file_by_size(cls.file_path, 1024)
+
+    @classmethod
+    def tearDownClass(cls):
+        clean_file(cls.file_path)
+
+
+class TestWc(TestSummarizingFiles):
+
+    path = '/bin/wc'
+
+    def test_no_args(self):
+        self.forward(self.path, [self.file_path])
+
+    def test_bytes(self):
+        self.forward(self.path, ['--bytes', self.file_path])
+
+    def test_chars(self):
+        self.forward(self.path, ['--chars', self.file_path])
+
+    def test_lines(self):
+        self.forward(self.path, ['--lines', self.file_path])
+
+    def test_words(self):
+        self.forward(self.path, ['--words', self.file_path])
+
+class TestSum(TestSummarizingFiles):
+
+    path = '/bin/sum'
+
+    def test_no_args(self):
+        self.forward(self.path, [self.file_path])
+
+class TestCksum(TestSummarizingFiles):
+
+    path = '/bin/cksum'
+
+    def test_no_args(self):
+        self.forward(self.path, [self.file_path])
+
+class TestB2sum(TestSummarizingFiles):
+
+    path = '/bin/b2sum'
+
+    def test_no_args(self):
+        self.forward(self.path, [self.file_path])
+
+class Testmd5sum(TestSummarizingFiles):
+
+    path = '/bin/md5sum'
+
+    def test_no_args(self):
+        self.forward(self.path, [self.file_path])
+
+class Testsha1sum(TestSummarizingFiles):
+
+    path = '/bin/sha1sum'
+
+    def test_no_args(self):
+        self.forward(self.path, [self.file_path])
+
+class Testsha224sum(TestSummarizingFiles):
+
+    path = '/bin/sha224sum'
+
+    def test_no_args(self):
+        self.forward(self.path, [self.file_path])
+
+class Testsha256sum(TestSummarizingFiles):
+
+    path = '/bin/sha256sum'
+
+    def test_no_args(self):
+        self.forward(self.path, [self.file_path])
+
+class Testsha384sum(TestSummarizingFiles):
+
+    path = '/bin/sha384sum'
+
+    def test_no_args(self):
+        self.forward(self.path, [self.file_path])
+
+class Testsha512sum(TestSummarizingFiles):
+
+    path = '/bin/sha512sum'
+
+    def test_no_args(self):
+        self.forward(self.path, [self.file_path])
+
 
 # =============================================================================
 # Operating on sorted files
@@ -344,6 +549,37 @@ class TestSync(TestForward):
 
 # =============================================================================
 # Woking context
+
+class TestPwd(TestForward):
+
+    path = '/bin/pwd'
+
+    def test_no_args(self):
+        self.forward(self.path, [])
+
+class TestStty(TestForward):
+
+    path = '/bin/stty'
+
+    def test_no_args(self):
+        self.forward(self.path, [])
+
+    def test_all(self):
+        self.forward(self.path, ['--all'])
+
+class TestPrintenv(TestForward):
+
+    path = '/bin/printenv'
+
+    def test_no_args(self):
+        self.forward(self.path, [])
+
+class TestTty(TestForward):
+
+    path = '/bin/tty'
+
+    def test_no_args(self):
+        self.forward(self.path, [])
 
 # =============================================================================
 # User information

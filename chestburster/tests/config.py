@@ -34,6 +34,19 @@ EXECUTOR_PORT=31001
 
 # =============================================================================
 
+def setup_file_by_size(path=None, size=1024):
+    """ Create a file of size bytes
+    """
+
+    PATH = path if path is not None else '/tmp/random_file.data'
+    with open(PATH, 'wb') as f:
+        content = bytearray(random.getrandbits(8) for _ in range(size))
+        f.write(content)
+
+def clean_file(path):
+    os.remove(path)
+
+
 def setup_files(base_dir=BASE_DIR):
     """ Setupt a directory with different type of files and directory layouts.
     """

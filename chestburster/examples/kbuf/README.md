@@ -1,0 +1,1 @@
+A simple Linux Kernel Module which create a buffer in kernel and exposes it via a character device that supports open, close, read, write llseek and ioctl system calls.

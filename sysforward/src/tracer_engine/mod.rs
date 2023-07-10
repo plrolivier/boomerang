@@ -55,7 +55,7 @@ pub struct TracerEngine {
     pub regs: user_regs_struct,     // only for x86_64
 
     syscall: Syscall,
-    //remote_syscall: Syscall,
+    remote_syscall: Syscall,
     insyscall: bool,
     filter: Filter,
 
@@ -113,7 +113,7 @@ impl TracerEngine {
                 gs: 0,
             },
             syscall: Syscall::new(),
-            //remote_syscall: Syscall::new(),
+            remote_syscall: Syscall::new(),
             insyscall: false,   // Hypothesis: we do the tracing from the start!
             filter: Filter::new(String::from("filtername")),
             interceptor: Box::new(Ptrace {}),
@@ -205,9 +205,10 @@ impl TracerEngine {
         Ok(())
     }
 
+    /* Tracing */
 
     fn trace_entry(&mut self) {
-        self.log_raw_entry();
+        //self._log_raw_entry();
 
         // TODO: Add an option to decode only certain syscalls to increase speed.
         self.decoder.decode_entry(&mut self.syscall, self.pid, &self.interceptor);
@@ -221,7 +222,7 @@ impl TracerEngine {
     }
 
     fn trace_exit(&mut self) {
-        self.log_raw_exit();
+        //self._log_raw_exit();
 
         self.decoder.decode_exit();
 
@@ -234,56 +235,83 @@ impl TracerEngine {
     }
 
 
-    fn log_raw_entry(&self) {
+    fn _log_raw_entry(&self) {
         println!("[{}] [ENTRY] no: {:#x} args: {:x?}", 
                  self.pid, self.syscall.raw.no as usize, self.syscall.raw.args)
     }
 
-    fn log_raw_exit(&self) {
+    fn _log_raw_exit(&self) {
         println!("[{}] [EXIT] retval: {:#x}", 
                  self.pid, self.syscall.raw.retval as usize)
     }
 
     fn log_entry(&self) {
         let json = serde_json::to_string(&self.syscall).unwrap();
-        println!("[TRACER] {}", json)
+        println!("[{}] {}", self.pid, json)
     }
 
     fn log_exit(&mut self) {
         let json = serde_json::to_string(&self.syscall).unwrap();
-        println!("[TRACER] {}", json);
+        println!("[{}] {}", self.pid, json);
         println!("");
 
         self.saved_syscall.push(self.syscall.clone());
     }
+
+    /* Filtering */
 
     fn filter_entry(&mut self) -> Option<Decision> {
         self.syscall.decision = Some(self.filter.filter(&self.syscall));
         self.syscall.decision
     }
 
-    fn filter_exit(&self) -> Option<Decision> {
+    fn filter_exit(&mut self) -> Option<Decision> {
+        self.syscall.decision = Some(self.filter.filter(&self.syscall));
         self.syscall.decision
     }
 
-    fn carry_out_entry_decision(&mut self) {
+    fn carry_out_entry_decision(&mut self)
+    {
+        //TODO: finish implementing the decisions
         match self.syscall.decision {
             Some(Decision::Continue) => (),
+            Some(Decision::Forward) => {
+                self.forward_entry().unwrap();
+            },
+            _ => panic!("Decision not implemented")
+        }
+    }
+
+    fn carry_out_exit_decision(&mut self)
+    {
+        // TODO: finish implementing the decisions
+        match self.syscall.decision {
+            Some(Decision::Continue) => (),
+            Some(Decision::Forward) => {
+                self.forward_exit().unwrap();
+            },
             _ => panic!("Decision not implemented")
         }
 
-        // TODO: implement execute_decision()
-        self.protocol.send_syscall_entry(&self.syscall);
     }
 
-    fn carry_out_exit_decision(&mut self) {
-        match self.syscall.decision {
-            Some(Decision::Continue) => (),
-            _ => panic!("Decision not implemented")
-        }
+    /* Forward decision */
 
+    fn forward_entry(&mut self) -> Result<(), io::Error>
+    {
+        self.remote_syscall = self.protocol.send_syscall_entry(&self.syscall)?;
+        println!("[{}] remote syscall retval: {:#x}", self.pid, self.remote_syscall.raw.retval as usize);
+        Ok(())
     }
 
+    fn forward_exit(&mut self) -> Result<(), io::Error>
+    {
+        // TODO
+        //self.write_syscall_ret(self.remote_syscall.raw.retval, self.remote_syscall.raw.errno)?;
+        Ok(())
+    }
+
+    /* Statistics */
 
     fn calculate_stats(&self) -> Result<HashMap<(u64, String), i32>, io::Error>
     {
@@ -316,6 +344,7 @@ impl TracerEngine {
     }
 
 
+
     /*
      * API to read/write from the environment by the interceptor "backend".
      */
@@ -323,6 +352,7 @@ impl TracerEngine {
         self.interceptor.read_registers(self.pid)
     }
 
+    //pub fn write_registers(&self, regs: user_regs_struct) -> Result<(), io::Error> {
     pub fn write_registers(&self, regs: user_regs_struct) -> bool {
         self.interceptor.write_registers(self.pid, regs)
     }
@@ -340,7 +370,7 @@ impl TracerEngine {
         self.interceptor.read_syscall_args(self.pid)
     }
 
-    pub fn write_syscall_args(&self, args: Vec<u64>) -> bool {
+    pub fn write_syscall_args(&self, args: Vec<u64>) -> Result<(), io::Error> {
         self.interceptor.write_syscall_args(self.pid, args)
     }
 
@@ -348,7 +378,7 @@ impl TracerEngine {
         self.interceptor.read_syscall_ret(self.pid)
     }
 
-    pub fn write_syscall_ret(&self, retval: u64, errno: u64) -> bool {
+    pub fn write_syscall_ret(&self, retval: u64, errno: u64) -> Result<(), io::Error> {
         self.interceptor.write_syscall_ret(self.pid, retval, errno)
     }
     */

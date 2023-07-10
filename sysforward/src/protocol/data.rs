@@ -139,7 +139,7 @@ impl Client {
         Client { connection }
     }
 
-    pub fn send_syscall_entry(&self, syscall: &Syscall)
+    pub fn send_syscall_entry(&self, syscall: &Syscall) -> Result<Syscall, std::io::Error>
     {
         // Craft the message
         let data: String = serde_json::to_string(syscall).expect("Fail to serialize syscall to JSON");
@@ -152,8 +152,8 @@ impl Client {
         let (buffer, _len): (Vec<u8>, usize) = self.connection.receive().expect("Error receiving syscall reply message");
         //println!("[TRACER] Received {} bytes: {:?}", len, buffer);
 
-        let _remote_syscall: Syscall = serde_json::from_slice(&buffer).expect("Fail to deserialize Syscall from JSON");
-        //remote_syscall
+        let remote_syscall: Syscall = serde_json::from_slice(&buffer).expect("Fail to deserialize Syscall from JSON");
+        Ok(remote_syscall)
     }
 
 }

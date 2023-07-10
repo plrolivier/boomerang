@@ -3,7 +3,7 @@
  */
 
 pub mod sync;
-mod operation;
+pub mod operation;
 pub mod protocol; // Should be private?
 
 pub mod arch;

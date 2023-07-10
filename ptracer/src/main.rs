@@ -342,6 +342,8 @@ pub struct TracingThread {
     prog_args: Vec<String>,
     tracee: Option<Child>,
     //tracer: Option<TracerEngine>,
+
+    //use_pkexec: bool,
  }
 
 
@@ -357,6 +359,7 @@ impl TracingThread {
             prog_args: prog_args,
             tracee: None,
             //tracer: None,
+            //use_pkexec: true,
         }
     }
     
@@ -402,10 +405,16 @@ impl TracingThread {
      * Spawn the process where the tracee program will live.
      * Use PTRACE_TRACEME and waits for the tracer thread to initialize.
      */
-    fn spawn_tracee(&mut self, program: String, prog_args: Vec<String>) -> Result<(), io::Error>
+    fn spawn_tracee(&mut self, mut program: String, mut prog_args: Vec<String>) -> Result<(), io::Error>
     {
-        println!("Spawnning {} {:?}", program, prog_args);
+        /*
+        if self.use_pkexec {
+            prog_args.insert(0, program);
+            program = String::from_str("pkexec").unwrap();
+        }
+        */
 
+        println!("Spawnning {} {:?}", program, prog_args);
         let mut command = Command::new(program);
         command.args(prog_args);
         command.stdout(Stdio::inherit());

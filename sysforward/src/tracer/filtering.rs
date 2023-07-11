@@ -42,7 +42,7 @@ pub enum Decision {
 
 
 pub trait Rule {
-    fn filter(&self, syscall: &Syscall) -> Result<Decision, std::io::Error>;
+    fn filter(&mut self, syscall: &Syscall) -> Result<Decision, std::io::Error>;
 }
 
 
@@ -67,11 +67,11 @@ impl Filter {
      * Return the decision made by the first rule to match,
      * otherwise returns the default decision.
      */
-    pub fn filter(&self, syscall: &Syscall) -> Decision {
+    pub fn filter(&mut self, syscall: &Syscall) -> Decision {
         let mut decision: Option<Decision> = None;
         // = self.default_decision;
 
-        for rule in &self.rules {
+        for rule in self.rules.iter_mut() {
             match rule.filter(syscall) {
                 Ok(result) => {
                     if result != Decision::Pass {

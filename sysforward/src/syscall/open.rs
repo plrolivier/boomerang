@@ -56,6 +56,9 @@ impl Decode for Creat {
 #[derive(Clone, Debug)]
 pub struct Open {
     pub args: Vec<ArgType>,
+    pub arg0: NullBuffer,
+    pub arg1: Flag,
+    pub arg2: Integer,
 }
 impl Open {
     pub fn new(raw: RawSyscall) -> Self {
@@ -63,7 +66,11 @@ impl Open {
         args.push(ArgType::NullBuffer(NullBuffer::new(raw.args[0], Direction::In)));
         args.push(ArgType::Flag(Flag::new(raw.args[1])));
         args.push(ArgType::Integer(Integer::new(raw.args[2])));
-        Self { args: args }
+
+        let arg0 = NullBuffer::new(raw.args[0], Direction::In);
+        let arg1 = Flag::new(raw.args[1]);
+        let arg2 = Integer::new(raw.args[2]);
+        Self { args: args, arg0, arg1, arg2 }
     }
 }
 impl Decode for Open {

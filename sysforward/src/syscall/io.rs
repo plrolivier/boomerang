@@ -5,8 +5,7 @@ use serde::{ Serialize, Deserialize };
 
 use crate::{
     syscall::{ RawSyscall },
-    syscall::args::{ ArgType, Direction },
-    syscall::args::{ Integer, Fd, Size, Offset, Protection, Signal, Flag, Address, Buffer, NullBuffer, Array, Struct },
+    syscall::args::{ Direction, Integer, Fd, Size, Offset, Protection, Signal, Flag, Address, Buffer, NullBuffer, Array, Struct },
     tracer::decoder::{ Decode },
     operation::{ Operation },
 };
@@ -16,20 +15,23 @@ use crate::{
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Read{
-    pub args: Vec<ArgType>,
+    pub fd: Fd,
+    pub buf: Buffer,
+    pub count: Size,
 }
 impl Read {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::Fd(Fd::new(raw.args[0])));
-        args.push(ArgType::Buffer(Buffer::new(raw.args[1], Direction::In, raw.args[2])));
-        args.push(ArgType::Size(Size::new(raw.args[2])));
-        Self { args: args }
+        let fd = Fd::new(raw.args[0]);
+        let buf = Buffer::new(raw.args[1], Direction::In, raw.args[2]);
+        let count = Size::new(raw.args[2]);
+        Self { fd, buf, count }
     }
 }
 impl Decode for Read {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.fd.decode(pid, operation);
+        self.buf.decode(pid, operation);
+        self.count.decode(pid, operation);
     }
 }
 
@@ -37,108 +39,127 @@ impl Decode for Read {
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Write{
-    pub args: Vec<ArgType>,
+    pub fd: Fd,
+    pub buf: Buffer,
+    pub count: Size,
 }
 impl Write {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::Fd(Fd::new(raw.args[0])));
-        args.push(ArgType::Buffer(Buffer::new(raw.args[1], Direction::Out, raw.args[2])));
-        args.push(ArgType::Size(Size::new(raw.args[2])));
-        Self { args: args }
+        let fd = Fd::new(raw.args[0]);
+        let buf = Buffer::new(raw.args[1], Direction::Out, raw.args[2]);
+        let count = Size::new(raw.args[2]);
+        Self { fd, buf, count }
     }
 }
 impl Decode for Write {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.fd.decode(pid, operation);
+        self.buf.decode(pid, operation);
+        self.count.decode(pid, operation);
     }
 }
 
-// ssize_t readv(int fildes, const struct iovec *iov, int iovcnt)
+// ssize_t readv(int fd, const struct iovec *iov, int iovcnt)
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Readv {
-    pub args: Vec<ArgType>,
+    pub fd: Fd,
+    pub iov: Struct,
+    pub iovcnt: Integer,
 }
 impl Readv {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::Fd(Fd::new(raw.args[0])));
-        args.push(ArgType::Struct(Struct::new(raw.args[1], Direction::InOut)));
-        args.push(ArgType::Integer(Integer::new(raw.args[2])));
-        Self { args: args }
+        let fd = Fd::new(raw.args[0]);
+        let iov = Struct::new(raw.args[1], Direction::InOut);
+        let iovcnt = Integer::new(raw.args[2]);
+        Self { fd, iov, iovcnt }
     }
 }
 impl Decode for Readv {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.fd.decode(pid, operation);
+        self.iov.decode(pid, operation);
+        self.iovcnt.decode(pid, operation);
     }
 }
 
-// ssize_t writev(int fildes, const struct iovec *iov, int iovcnt)
+// ssize_t writev(int fd, const struct iovec *iov, int iovcnt)
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Writev {
-    pub args: Vec<ArgType>,
+    pub fd: Fd,
+    pub iov: Struct,
+    pub iovcnt: Integer,
 }
 impl Writev {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::Fd(Fd::new(raw.args[0])));
-        args.push(ArgType::Struct(Struct::new(raw.args[1], Direction::InOut)));
-        args.push(ArgType::Integer(Integer::new(raw.args[2])));
-        Self { args: args }
+        let fd = Fd::new(raw.args[0]);
+        let iov = Struct::new(raw.args[1], Direction::InOut);
+        let iovcnt = Integer::new(raw.args[2]);
+        Self { fd, iov, iovcnt }
     }
 }
 impl Decode for Writev {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.fd.decode(pid, operation);
+        self.iov.decode(pid, operation);
+        self.iovcnt.decode(pid, operation);
     }
 }
 
 
 
-// ssize_t pread(int fildes, void *buf, size_t nbyte, off_t offset)
+// ssize_t pread(int fd, void *buf, size_t nbyte, off_t offset)
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Pread {
-    pub args: Vec<ArgType>,
+    pub fd: Fd,
+    pub buf: Buffer,
+    pub nbytes: Size,
+    pub offset: Offset,
 }
 impl Pread {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::Fd(Fd::new(raw.args[0])));
-        args.push(ArgType::Buffer(Buffer::new(raw.args[1], Direction::In, raw.args[2])));
-        args.push(ArgType::Size(Size::new(raw.args[2])));
-        args.push(ArgType::Offset(Offset::new(raw.args[3])));
-        Self { args: args }
+        let fd = Fd::new(raw.args[0]);
+        let buf = Buffer::new(raw.args[1], Direction::In, raw.args[2]);
+        let nbytes = Size::new(raw.args[2]);
+        let offset = Offset::new(raw.args[3]);
+        Self { fd, buf, nbytes, offset }
     }
 }
 impl Decode for Pread {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.fd.decode(pid, operation);
+        self.buf.decode(pid, operation);
+        self.nbytes.decode(pid, operation);
+        self.offset.decode(pid, operation);
     }
 }
 
-// ssize_t pwrite(int fildes, const void *buf, size_t nbyte, off_t offset)
+// ssize_t pwrite(int fd, const void *buf, size_t nbyte, off_t offset)
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Pwrite {
-    pub args: Vec<ArgType>,
+    pub fd: Fd,
+    pub buf: Buffer,
+    pub nbytes: Size,
+    pub offset: Offset,
 }
 impl Pwrite {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::Fd(Fd::new(raw.args[0])));
-        args.push(ArgType::Buffer(Buffer::new(raw.args[1], Direction::Out, raw.args[2])));
-        args.push(ArgType::Size(Size::new(raw.args[2])));
-        args.push(ArgType::Offset(Offset::new(raw.args[3])));
-        Self { args: args }
+        let fd = Fd::new(raw.args[0]);
+        let buf = Buffer::new(raw.args[1], Direction::Out, raw.args[2]);
+        let nbytes = Size::new(raw.args[2]);
+        let offset = Offset::new(raw.args[3]);
+        Self { fd, buf, nbytes, offset }
     }
 }
 impl Decode for Pwrite {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.fd.decode(pid, operation);
+        self.buf.decode(pid, operation);
+        self.nbytes.decode(pid, operation);
+        self.offset.decode(pid, operation);
     }
 }
 
@@ -147,21 +168,26 @@ impl Decode for Pwrite {
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Preadv {
-    pub args: Vec<ArgType>,
+    pub fd: Fd,
+    pub iov: Struct,
+    pub iovcnt: Integer,
+    pub offset: Offset,
 }
 impl Preadv {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::Fd(Fd::new(raw.args[0])));
-        args.push(ArgType::Struct(Struct::new(raw.args[1], Direction::In)));
-        args.push(ArgType::Integer(Integer::new(raw.args[2])));
-        args.push(ArgType::Offset(Offset::new(raw.args[3])));
-        Self { args: args }
+        let fd = Fd::new(raw.args[0]);
+        let iov = Struct::new(raw.args[1], Direction::In);
+        let iovcnt = Integer::new(raw.args[2]);
+        let offset = Offset::new(raw.args[3]);
+        Self { fd, iov, iovcnt, offset }
     }
 }
 impl Decode for Preadv {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.fd.decode(pid, operation);
+        self.iov.decode(pid, operation);
+        self.iovcnt.decode(pid, operation);
+        self.offset.decode(pid, operation);
     }
 }
 
@@ -169,21 +195,26 @@ impl Decode for Preadv {
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Pwritev {
-    pub args: Vec<ArgType>,
+    pub fd: Fd,
+    pub iov: Struct,
+    pub iovcnt: Integer,
+    pub offset: Offset,
 }
 impl Pwritev {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::Fd(Fd::new(raw.args[0])));
-        args.push(ArgType::Struct(Struct::new(raw.args[1], Direction::In)));
-        args.push(ArgType::Integer(Integer::new(raw.args[2])));
-        args.push(ArgType::Offset(Offset::new(raw.args[3])));
-        Self { args: args }
+        let fd = Fd::new(raw.args[0]);
+        let iov = Struct::new(raw.args[1], Direction::InOut);
+        let iovcnt = Integer::new(raw.args[2]);
+        let offset = Offset::new(raw.args[3]);
+        Self { fd, iov, iovcnt, offset }
     }
 }
 impl Decode for Pwritev {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.fd.decode(pid, operation);
+        self.iov.decode(pid, operation);
+        self.iovcnt.decode(pid, operation);
+        self.offset.decode(pid, operation);
     }
 }
 
@@ -193,22 +224,29 @@ impl Decode for Pwritev {
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Preadv2 {
-    pub args: Vec<ArgType>,
+    pub fd: Fd,
+    pub iov: Struct,
+    pub iovcnt: Integer,
+    pub offset: Offset,
+    pub flags: Flag,
 }
 impl Preadv2 {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::Fd(Fd::new(raw.args[0])));
-        args.push(ArgType::Struct(Struct::new(raw.args[1], Direction::In)));
-        args.push(ArgType::Integer(Integer::new(raw.args[2])));
-        args.push(ArgType::Offset(Offset::new(raw.args[3])));
-        args.push(ArgType::Flag(Flag::new(raw.args[4])));
-        Self { args: args }
+        let fd = Fd::new(raw.args[0]);
+        let iov = Struct::new(raw.args[1], Direction::In);
+        let iovcnt = Integer::new(raw.args[2]);
+        let offset = Offset::new(raw.args[3]);
+        let flags = Flag::new(raw.args[4]);
+        Self { fd, iov, iovcnt, offset, flags }
     }
 }
 impl Decode for Preadv2 {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.fd.decode(pid, operation);
+        self.iov.decode(pid, operation);
+        self.iovcnt.decode(pid, operation);
+        self.offset.decode(pid, operation);
+        self.flags.decode(pid, operation);
     }
 }
 
@@ -216,21 +254,28 @@ impl Decode for Preadv2 {
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Pwritev2 {
-    pub args: Vec<ArgType>,
+    pub fd: Fd,
+    pub iov: Struct,
+    pub iovcnt: Integer,
+    pub offset: Offset,
+    pub flags: Flag,
 }
 impl Pwritev2 {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::Fd(Fd::new(raw.args[0])));
-        args.push(ArgType::Struct(Struct::new(raw.args[1], Direction::In)));
-        args.push(ArgType::Integer(Integer::new(raw.args[2])));
-        args.push(ArgType::Offset(Offset::new(raw.args[3])));
-        args.push(ArgType::Flag(Flag::new(raw.args[4])));
-        Self { args: args }
+        let fd = Fd::new(raw.args[0]);
+        let iov = Struct::new(raw.args[1], Direction::In);
+        let iovcnt = Integer::new(raw.args[2]);
+        let offset = Offset::new(raw.args[3]);
+        let flags = Flag::new(raw.args[4]);
+        Self { fd, iov, iovcnt, offset, flags }
     }
 }
 impl Decode for Pwritev2 {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.fd.decode(pid, operation);
+        self.iov.decode(pid, operation);
+        self.iovcnt.decode(pid, operation);
+        self.offset.decode(pid, operation);
+        self.flags.decode(pid, operation);
     }
 }

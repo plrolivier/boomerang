@@ -4,9 +4,7 @@
 use serde::{ Serialize, Deserialize };
 use crate::{
     syscall::{ RawSyscall },
-    syscall::args::{ ArgType, Direction },
-    syscall::args::{ Integer, Fd, Size, Offset, Protection, Signal, Flag, Address, Buffer, NullBuffer, Array, Struct },
-    //syscall::args::{ Integer, Fd, Size, Flag, Buffer, NullBuffer, Struct },
+    syscall::args::{ Direction, Integer, Fd, Struct },
     tracer::decoder::{ Decode },
     operation::{ Operation },
 };
@@ -16,20 +14,23 @@ use crate::{
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Getdents {
-    pub args: Vec<ArgType>,
+    pub fd: Fd,
+    pub dirp: Struct,
+    pub count: Integer,
 }
 impl Getdents {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::Fd(Fd::new(raw.args[0])));
-        args.push(ArgType::Struct(Struct::new(raw.args[1], Direction::In)));
-        args.push(ArgType::Integer(Integer::new(raw.args[2])));
-        Self { args: args }
+        let fd = Fd::new(raw.args[0]);
+        let dirp = Struct::new(raw.args[1], Direction::In);
+        let count = Integer::new(raw.args[2]);
+        Self { fd, dirp, count }
     }
 }
 impl Decode for Getdents {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.fd.decode(pid, operation);
+        self.dirp.decode(pid, operation);
+        self.count.decode(pid, operation);
     }
 }
 
@@ -38,20 +39,23 @@ impl Decode for Getdents {
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Getdents64 {
-    pub args: Vec<ArgType>,
+    pub fd: Fd,
+    pub dirp: Struct,
+    pub count: Integer,
 }
 impl Getdents64 {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::Fd(Fd::new(raw.args[0])));
-        args.push(ArgType::Buffer(Buffer::new(raw.args[1], Direction::Out, raw.args[2])));
-        args.push(ArgType::Integer(Integer::new(raw.args[2])));
-        Self { args: args }
+        let fd = Fd::new(raw.args[0]);
+        let dirp = Struct::new(raw.args[1], Direction::In);
+        let count = Integer::new(raw.args[2]);
+        Self { fd, dirp, count }
     }
 }
 impl Decode for Getdents64 {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.fd.decode(pid, operation);
+        self.dirp.decode(pid, operation);
+        self.count.decode(pid, operation);
     }
 }
 
@@ -60,19 +64,22 @@ impl Decode for Getdents64 {
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Readdir {
-    pub args: Vec<ArgType>,
+    pub fd: Fd,
+    pub dirp: Struct,
+    pub count: Integer,
 }
 impl Readdir {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::Fd(Fd::new(raw.args[0])));
-        args.push(ArgType::Struct(Struct::new(raw.args[1], Direction::In)));
-        args.push(ArgType::Integer(Integer::new(raw.args[2])));
-        Self { args: args }
+        let fd = Fd::new(raw.args[0]);
+        let dirp = Struct::new(raw.args[1], Direction::In);
+        let count = Integer::new(raw.args[2]);
+        Self { fd, dirp, count }
     }
 }
 impl Decode for Readdir {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.fd.decode(pid, operation);
+        self.dirp.decode(pid, operation);
+        self.count.decode(pid, operation);
     }
 }

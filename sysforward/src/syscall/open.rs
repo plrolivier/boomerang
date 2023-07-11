@@ -1,11 +1,11 @@
 /*
+ *
  */
 use serde::{ Serialize, Deserialize };
 
 use crate::{
     syscall::{ RawSyscall },
-    syscall::args::{ ArgType, Direction },
-    syscall::args::{ Integer, Fd, Size, Flag, NullBuffer, Struct },
+    syscall::args::{ Direction, Integer, Fd, Size, Flag, NullBuffer, Struct },
     tracer::decoder::{ Decode },
     operation::{ Operation },
 };
@@ -15,18 +15,17 @@ use crate::{
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Close {
-    pub args: Vec<ArgType>,
+    pub fd: Fd,
 }
 impl Close {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::Fd(Fd::new(raw.args[0])));
-        Self { args: args }
+        let fd = Fd::new(raw.args[0]);
+        Self { fd }
     }
 }
 impl Decode for Close {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.fd.decode(pid, operation);
     }
 }
 
@@ -34,19 +33,20 @@ impl Decode for Close {
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Creat {
-    pub args: Vec<ArgType>,
+    pub pathname: NullBuffer,
+    pub mode: Integer,
 }
 impl Creat {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::NullBuffer(NullBuffer::new(raw.args[0], Direction::In)));
-        args.push(ArgType::Integer(Integer::new(raw.args[1])));
-        Self { args: args }
+        let pathname = NullBuffer::new(raw.args[0], Direction::In);
+        let mode = Integer::new(raw.args[1]);
+        Self { pathname, mode }
     }
 }
 impl Decode for Creat {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.pathname.decode(pid, operation);
+        self.mode.decode(pid, operation);
     }
 }
 
@@ -55,27 +55,23 @@ impl Decode for Creat {
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Open {
-    pub args: Vec<ArgType>,
-    pub arg0: NullBuffer,
-    pub arg1: Flag,
-    pub arg2: Integer,
+    pub pathname: NullBuffer,
+    pub flags: Flag,
+    pub mode: Integer,
 }
 impl Open {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::NullBuffer(NullBuffer::new(raw.args[0], Direction::In)));
-        args.push(ArgType::Flag(Flag::new(raw.args[1])));
-        args.push(ArgType::Integer(Integer::new(raw.args[2])));
-
-        let arg0 = NullBuffer::new(raw.args[0], Direction::In);
-        let arg1 = Flag::new(raw.args[1]);
-        let arg2 = Integer::new(raw.args[2]);
-        Self { args: args, arg0, arg1, arg2 }
+        let pathname = NullBuffer::new(raw.args[0], Direction::In);
+        let flags = Flag::new(raw.args[1]);
+        let mode = Integer::new(raw.args[2]);
+        Self { pathname, flags, mode }
     }
 }
 impl Decode for Open {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.pathname.decode(pid, operation);
+        self.flags.decode(pid, operation);
+        self.mode.decode(pid, operation);
     }
 }
 
@@ -84,21 +80,26 @@ impl Decode for Open {
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Openat {
-    pub args: Vec<ArgType>,
+    pub dirfd: Fd,
+    pub pathname: NullBuffer,
+    pub flags: Integer,
+    pub mode: Integer,
 }
 impl Openat {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::Fd(Fd::new(raw.args[0])));
-        args.push(ArgType::NullBuffer(NullBuffer::new(raw.args[1], Direction::In)));
-        args.push(ArgType::Integer(Integer::new(raw.args[2])));
-        args.push(ArgType::Integer(Integer::new(raw.args[3])));
-        Self { args: args }
+        let dirfd = Fd::new(raw.args[0]);
+        let pathname = NullBuffer::new(raw.args[1], Direction::In);
+        let flags = Integer::new(raw.args[2]);
+        let mode = Integer::new(raw.args[3]);
+        Self { dirfd, pathname, flags, mode }
     }
 }
 impl Decode for Openat {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.dirfd.decode(pid, operation);
+        self.pathname.decode(pid, operation);
+        self.flags.decode(pid, operation);
+        self.mode.decode(pid, operation);
     }
 }
 
@@ -106,17 +107,25 @@ impl Decode for Openat {
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Openat2 {
-    pub args: Vec<ArgType>,
+    pub dirfd: Fd,
+    pub pathname: NullBuffer,
+    pub how: Struct,
+    pub size: Size,
 }
 impl Openat2 {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::Fd(Fd::new(raw.args[0])));
-        args.push(ArgType::NullBuffer(NullBuffer::new(raw.args[1], Direction::In)));
-        args.push(ArgType::Struct(Struct::new(raw.args[2], Direction::In)));
-        args.push(ArgType::Size(Size::new(raw.args[3])));
-        Self { args: args }
+        let dirfd = Fd::new(raw.args[0]);
+        let pathname = NullBuffer::new(raw.args[1], Direction::In);
+        let how = Struct::new(raw.args[2], Direction::In);
+        let size = Size::new(raw.args[3]);
+        Self { dirfd, pathname, how, size }
     }
 }
 impl Decode for Openat2 {
+    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+        self.dirfd.decode(pid, operation);
+        self.pathname.decode(pid, operation);
+        self.how.decode(pid, operation);
+        self.size.decode(pid, operation);
+    }
 }

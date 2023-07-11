@@ -4,7 +4,6 @@ use serde::{ Serialize, Deserialize };
 
 use crate::{
     syscall::{ RawSyscall },
-    syscall::args::{ ArgType },
     syscall::args::{ Integer, Fd, Offset},
     tracer::decoder::{ Decode },
     operation::{ Operation },
@@ -16,22 +15,27 @@ use crate::{
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Fallocate {
-    pub args: Vec<ArgType>,
+    pub fd: Fd,
+    pub mode: Integer,
+    pub offset: Offset,
+    pub len: Offset,
 }
 
 impl Fallocate {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::Fd(Fd::new(raw.args[0])));
-        args.push(ArgType::Integer(Integer::new(raw.args[1])));
-        args.push(ArgType::Offset(Offset::new(raw.args[2])));
-        args.push(ArgType::Offset(Offset::new(raw.args[3])));
-        Self { args: args }
+        let fd = Fd::new(raw.args[0]);
+        let mode = Integer::new(raw.args[1]);
+        let offset = Offset::new(raw.args[2]);
+        let len = Offset::new(raw.args[3]);
+        Self { fd, mode, offset, len }
     }
 }
 
 impl Decode for Fallocate {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.fd.decode(pid, operation);
+        self.mode.decode(pid, operation);
+        self.offset.decode(pid, operation);
+        self.len.decode(pid, operation);
     }
 }

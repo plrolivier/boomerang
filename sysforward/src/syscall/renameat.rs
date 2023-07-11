@@ -4,11 +4,12 @@ use serde::{ Serialize, Deserialize };
 
 use crate::{
     syscall::{ RawSyscall },
-    syscall::args::{ ArgType, Direction },
-    syscall::args::{ Integer, NullBuffer },
+    syscall::args::{ Direction, Integer, Fd, NullBuffer },
     tracer::decoder::{ Decode },
     operation::{ Operation },
 };
+
+use super::args::Flag;
 
 
 
@@ -16,21 +17,22 @@ use crate::{
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Rename {
-    pub args: Vec<ArgType>,
+    pub oldpath: NullBuffer,
+    pub newpath: NullBuffer,
 }
 
 impl Rename {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::NullBuffer(NullBuffer::new(raw.args[0], Direction::In)));
-        args.push(ArgType::NullBuffer(NullBuffer::new(raw.args[1], Direction::In)));
-        Self { args: args }
+        let oldpath = NullBuffer::new(raw.args[0], Direction::In);
+        let newpath = NullBuffer::new(raw.args[1], Direction::In);
+        Self { oldpath, newpath }
     }
 }
 
 impl Decode for Rename {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.oldpath.decode(pid, operation);
+        self.newpath.decode(pid, operation);
     }
 }
 
@@ -38,23 +40,28 @@ impl Decode for Rename {
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Renameat {
-    pub args: Vec<ArgType>,
+    pub olddirfd: Fd,
+    pub oldpath: NullBuffer,
+    pub newdirfd: Fd,
+    pub newpath: NullBuffer,
 }
 
 impl Renameat {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::Integer(Integer::new(raw.args[0])));
-        args.push(ArgType::NullBuffer(NullBuffer::new(raw.args[1], Direction::In)));
-        args.push(ArgType::Integer(Integer::new(raw.args[2])));
-        args.push(ArgType::NullBuffer(NullBuffer::new(raw.args[3], Direction::In)));
-        Self { args: args }
+        let olddirfd = Fd::new(raw.args[0]);
+        let oldpath = NullBuffer::new(raw.args[1], Direction::In);
+        let newdirfd = Fd::new(raw.args[2]);
+        let newpath = NullBuffer::new(raw.args[3], Direction::In);
+        Self { olddirfd, oldpath, newdirfd, newpath }
     }
 }
 
 impl Decode for Renameat {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.olddirfd.decode(pid, operation);
+        self.oldpath.decode(pid, operation);
+        self.newdirfd.decode(pid, operation);
+        self.newpath.decode(pid, operation);
     }
 }
 
@@ -63,23 +70,30 @@ impl Decode for Renameat {
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Renameat2 {
-    pub args: Vec<ArgType>,
+    pub olddirfd: Fd,
+    pub oldpath: NullBuffer,
+    pub newdirfd: Fd,
+    pub newpath: NullBuffer,
+    pub flags: Flag,
 }
 
 impl Renameat2 {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::Integer(Integer::new(raw.args[0])));
-        args.push(ArgType::NullBuffer(NullBuffer::new(raw.args[1], Direction::In)));
-        args.push(ArgType::Integer(Integer::new(raw.args[2])));
-        args.push(ArgType::NullBuffer(NullBuffer::new(raw.args[3], Direction::In)));
-        args.push(ArgType::Integer(Integer::new(raw.args[4])));
-        Self { args: args }
+        let olddirfd = Fd::new(raw.args[0]);
+        let oldpath = NullBuffer::new(raw.args[1], Direction::In);
+        let newdirfd = Fd::new(raw.args[2]);
+        let newpath = NullBuffer::new(raw.args[3], Direction::In);
+        let flags = Flag::new(raw.args[4]);
+        Self { olddirfd, oldpath, newdirfd, newpath, flags }
     }
 }
 
 impl Decode for Renameat2 {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.olddirfd.decode(pid, operation);
+        self.oldpath.decode(pid, operation);
+        self.newdirfd.decode(pid, operation);
+        self.newpath.decode(pid, operation);
+        self.flags.decode(pid, operation);
     }
 }

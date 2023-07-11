@@ -4,8 +4,7 @@ use serde::{ Serialize, Deserialize };
 
 use crate::{
     syscall::{ RawSyscall },
-    syscall::args::{ ArgType, Direction },
-    syscall::args::{ Integer, NullBuffer },
+    syscall::args::{ Direction, Integer, Fd, NullBuffer },
     tracer::decoder::{ Decode },
     operation::{ Operation },
 };
@@ -15,20 +14,23 @@ use crate::{
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Mknod {
-    pub args: Vec<ArgType>,
+    pub pathname: NullBuffer,
+    pub mode: Integer,
+    pub dev: Integer,
 }
 impl Mknod {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::NullBuffer(NullBuffer::new(raw.args[0], Direction::In)));
-        args.push(ArgType::Integer(Integer::new(raw.args[1])));
-        args.push(ArgType::Integer(Integer::new(raw.args[2])));
-        Self { args: args }
+        let pathname = NullBuffer::new(raw.args[0], Direction::In);
+        let mode = Integer::new(raw.args[1]);
+        let dev = Integer::new(raw.args[2]);
+        Self { pathname, mode, dev }
     }
 }
 impl Decode for Mknod {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.pathname.decode(pid, operation);
+        self.mode.decode(pid, operation);
+        self.dev.decode(pid, operation);
     }
 }
 
@@ -36,22 +38,27 @@ impl Decode for Mknod {
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Mknodat {
-    pub args: Vec<ArgType>,
+    pub dirfd: Fd,
+    pub pathname: NullBuffer,
+    pub mode: Integer,
+    pub dev: Integer,
 }
 
 impl Mknodat {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::Integer(Integer::new(raw.args[0])));
-        args.push(ArgType::NullBuffer(NullBuffer::new(raw.args[1], Direction::In)));
-        args.push(ArgType::Integer(Integer::new(raw.args[2])));
-        args.push(ArgType::Integer(Integer::new(raw.args[3])));
-        Self { args: args }
+        let dirfd = Fd::new(raw.args[0]);
+        let pathname = NullBuffer::new(raw.args[1], Direction::In);
+        let mode = Integer::new(raw.args[2]);
+        let dev = Integer::new(raw.args[3]);
+        Self { dirfd, pathname, mode, dev }
     }
 }
 
 impl Decode for Mknodat {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.dirfd.decode(pid, operation);
+        self.pathname.decode(pid, operation);
+        self.mode.decode(pid, operation);
+        self.dev.decode(pid, operation);
     }
 }

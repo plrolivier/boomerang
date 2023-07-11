@@ -4,8 +4,7 @@ use serde::{ Serialize, Deserialize };
 
 use crate::{
     syscall::{ RawSyscall },
-    syscall::args::{ ArgType, Direction },
-    syscall::args::{ Integer, Flag, Address, NullBuffer, Struct },
+    syscall::args::{ Direction, Fd, Flag, Address, NullBuffer, Struct },
     tracer::decoder::{ Decode },
     operation::{ Operation },
 };
@@ -16,22 +15,29 @@ use crate::{
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct NameToHandleAt {
-    pub args: Vec<ArgType>,
+    pub dirfd: Fd,
+    pub pathname: NullBuffer,
+    pub handle: Struct,
+    pub mount_id: Address,
+    pub flags: Flag,
 }
 impl NameToHandleAt {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::Integer(Integer::new(raw.args[0])));
-        args.push(ArgType::NullBuffer(NullBuffer::new(raw.args[1], Direction::In)));
-        args.push(ArgType::Struct(Struct::new(raw.args[2], Direction::InOut)));
-        args.push(ArgType::Address(Address::new(raw.args[3], Direction::InOut)));
-        args.push(ArgType::Flag(Flag::new(raw.args[4])));
-        Self { args: args }
+        let dirfd = Fd::new(raw.args[0]);
+        let pathname = NullBuffer::new(raw.args[1], Direction::In);
+        let handle = Struct::new(raw.args[2], Direction::InOut);
+        let mount_id = Address::new(raw.args[3], Direction::InOut);
+        let flags = Flag::new(raw.args[4]);
+        Self { dirfd, pathname, handle, mount_id, flags }
     }
 }
 impl Decode for NameToHandleAt {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.dirfd.decode(pid, operation);
+        self.pathname.decode(pid, operation);
+        self.handle.decode(pid, operation);
+        self.mount_id.decode(pid, operation);
+        self.flags.decode(pid, operation);
     }
 }
 
@@ -39,19 +45,22 @@ impl Decode for NameToHandleAt {
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct OpenByHandleAt {
-    pub args: Vec<ArgType>,
+    pub mount_fd: Fd,
+    pub handle: Struct,
+    pub flags: Flag,
 }
 impl OpenByHandleAt {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::Integer(Integer::new(raw.args[0])));
-        args.push(ArgType::Struct(Struct::new(raw.args[1], Direction::InOut)));
-        args.push(ArgType::Flag(Flag::new(raw.args[2])));
-        Self { args: args }
+        let mount_fd = Fd::new(raw.args[0]);
+        let handle = Struct::new(raw.args[1], Direction::InOut);
+        let flags = Flag::new(raw.args[2]);
+        Self { mount_fd, handle, flags }
     }
 }
 impl Decode for OpenByHandleAt {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.mount_fd.decode(pid, operation);
+        self.handle.decode(pid, operation);
+        self.flags.decode(pid, operation);
     }
 }

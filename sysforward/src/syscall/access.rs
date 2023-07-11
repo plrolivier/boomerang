@@ -4,8 +4,7 @@
 use serde::{ Serialize, Deserialize };
 use crate::{
     syscall::{ RawSyscall },
-    syscall::args::{ ArgType, Direction },
-    syscall::args::{ Integer, Fd, Size, Offset, Protection, Signal, Flag, Address, Buffer, NullBuffer, Array, Struct },
+    syscall::args::{ Direction, Integer, Fd, Flag, NullBuffer },
     //syscall::args::{ Integer, Fd, Size, Flag, Buffer, NullBuffer, Struct },
     tracer::decoder::{ Decode },
     operation::{ Operation },
@@ -17,19 +16,20 @@ use crate::{
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Access {
-    pub args: Vec<ArgType>,
+    pub pathname: NullBuffer,
+    pub mode: Integer,
 }
 impl Access {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::NullBuffer(NullBuffer::new(raw.args[0], Direction::In)));
-        args.push(ArgType::Integer(Integer::new(raw.args[1])));
-        Self { args: args }
+        let pathname = NullBuffer::new(raw.args[0], Direction::In);
+        let mode = Integer::new(raw.args[1]);
+        Self { pathname, mode }
     }
 }
 impl Decode for Access {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.pathname.decode(pid, operation);
+        self.mode.decode(pid, operation);
     }
 }
 
@@ -38,21 +38,26 @@ impl Decode for Access {
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Faccessat {
-    pub args: Vec<ArgType>,
+    pub dirfd: Fd,
+    pub pathname: NullBuffer,
+    pub mode: Integer,
+    pub flags: Flag,
 }
 impl Faccessat {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::Fd(Fd::new(raw.args[0])));
-        args.push(ArgType::NullBuffer(NullBuffer::new(raw.args[1], Direction::In)));
-        args.push(ArgType::Integer(Integer::new(raw.args[2])));
-        args.push(ArgType::Flag(Flag::new(raw.args[3])));
-        Self { args: args }
+        let dirfd = Fd::new(raw.args[0]);
+        let pathname = NullBuffer::new(raw.args[1], Direction::In);
+        let mode = Integer::new(raw.args[2]);
+        let flags = Flag::new(raw.args[3]);
+        Self { dirfd, pathname, mode, flags }
     }
 }
 impl Decode for Faccessat {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.dirfd.decode(pid, operation);
+        self.pathname.decode(pid, operation);
+        self.mode.decode(pid, operation);
+        self.flags.decode(pid, operation);
     }
 }
 
@@ -61,20 +66,25 @@ impl Decode for Faccessat {
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Faccessat2 {
-    pub args: Vec<ArgType>,
+    pub dirfd: Fd,
+    pub pathname: NullBuffer,
+    pub mode: Integer,
+    pub flags: Flag,
 }
 impl Faccessat2 {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::Fd(Fd::new(raw.args[0])));
-        args.push(ArgType::NullBuffer(NullBuffer::new(raw.args[1], Direction::In)));
-        args.push(ArgType::Integer(Integer::new(raw.args[2])));
-        args.push(ArgType::Flag(Flag::new(raw.args[3])));
-        Self { args: args }
+        let dirfd = Fd::new(raw.args[0]);
+        let pathname = NullBuffer::new(raw.args[1], Direction::In);
+        let mode = Integer::new(raw.args[2]);
+        let flags = Flag::new(raw.args[3]);
+        Self { dirfd, pathname, mode, flags }
     }
 }
 impl Decode for Faccessat2 {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.dirfd.decode(pid, operation);
+        self.pathname.decode(pid, operation);
+        self.mode.decode(pid, operation);
+        self.flags.decode(pid, operation);
     }
 }

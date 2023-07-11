@@ -16,20 +16,24 @@ use crate::{
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Ioctl {
-    pub args: Vec<ArgType>,
+    pub fd: Fd,
+    pub request: Integer,
+    // TODO:
+    pub arg: Integer,
 }
 impl Ioctl {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::Fd(Fd::new(raw.args[0])));
-        args.push(ArgType::Integer(Integer::new(raw.args[1])));
+        let fd = Fd::new(raw.args[0]);
+        let request = Integer::new(raw.args[1]);
         // TODO:
-        args.push(ArgType::Integer(Integer::new(raw.args[2])));
-        Self { args: args }
+        let arg = Integer::new(raw.args[2]);
+        Self { fd, request, arg }
     }
 }
 impl Decode for Ioctl {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.fd.decode(pid, operation);
+        self.request.decode(pid, operation);
+        self.arg.decode(pid, operation);
     }
 }

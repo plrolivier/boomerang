@@ -5,8 +5,7 @@ use serde::{ Serialize, Deserialize };
 
 use crate::{
     syscall::{ RawSyscall },
-    syscall::args::{ ArgType, Direction },
-    syscall::args::{ Buffer, Size, Flag },
+    syscall::args::{ Direction, Buffer, Size, Flag },
     tracer::decoder::{ Decode },
     operation::{ Operation },
 };
@@ -17,21 +16,24 @@ use crate::{
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Getrandom {
-    pub args: Vec<ArgType>,
+    pub buf: Buffer,
+    pub buflen: Size,
+    pub flags: Flag,
 }
 
 impl Getrandom {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::Buffer(Buffer::new(raw.args[0], Direction::Out, raw.args[1])));
-        args.push(ArgType::Size(Size::new(raw.args[1])));
-        args.push(ArgType::Flag(Flag::new(raw.args[2])));
-        Self { args: args }
+        let buf = Buffer::new(raw.args[0], Direction::Out, raw.args[1]);
+        let buflen = Size::new(raw.args[1]);
+        let flags = Flag::new(raw.args[2]);
+        Self { buf, buflen, flags }
     }
 }
 
 impl Decode for Getrandom {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.buf.decode(pid, operation);
+        self.buflen.decode(pid, operation);
+        self.flags.decode(pid, operation);
     }
 }

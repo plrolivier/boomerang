@@ -4,8 +4,7 @@ use serde::{ Serialize, Deserialize };
 
 use crate::{
     syscall::{ RawSyscall },
-    syscall::args::{ ArgType, Direction },
-    syscall::args::{ Fd, Offset, NullBuffer },
+    syscall::args::{ Direction, Fd, Offset, NullBuffer },
     tracer::decoder::{ Decode },
     operation::{ Operation },
 };
@@ -16,21 +15,22 @@ use crate::{
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Truncate {
-    pub args: Vec<ArgType>,
+    pub path: NullBuffer,
+    pub length: Offset,
 }
 
 impl Truncate {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::NullBuffer(NullBuffer::new(raw.args[0], Direction::In)));
-        args.push(ArgType::Offset(Offset::new(raw.args[1])));
-        Self { args: args }
+        let path = NullBuffer::new(raw.args[0], Direction::In);
+        let length = Offset::new(raw.args[1]);
+        Self { path, length }
     }
 }
 
 impl Decode for Truncate {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.path.decode(pid, operation);
+        self.length.decode(pid, operation);
     }
 }
 
@@ -39,20 +39,21 @@ impl Decode for Truncate {
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Ftruncate {
-    pub args: Vec<ArgType>,
+    pub fd: Fd,
+    pub length: Offset,
 }
 
 impl Ftruncate {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::Fd(Fd::new(raw.args[0])));
-        args.push(ArgType::Offset(Offset::new(raw.args[1])));
-        Self { args: args }
+        let fd = Fd::new(raw.args[0]);
+        let length = Offset::new(raw.args[1]);
+        Self { fd, length }
     }
 }
 
 impl Decode for Ftruncate {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.fd.decode(pid, operation);
+        self.length.decode(pid, operation);
     }
 }

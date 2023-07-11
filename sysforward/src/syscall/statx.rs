@@ -17,21 +17,28 @@ use crate::{
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Statx {
-    pub args: Vec<ArgType>,
+    pub dirfd: Fd,
+    pub pathname: NullBuffer,
+    pub flags: Flag,
+    pub mask: Integer,
+    pub statxbuf: Struct,
 }
 impl Statx {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::Fd(Fd::new(raw.args[0])));
-        args.push(ArgType::NullBuffer(NullBuffer::new(raw.args[1], Direction::In)));
-        args.push(ArgType::Integer(Integer::new(raw.args[2])));
-        args.push(ArgType::Integer(Integer::new(raw.args[3])));
-        args.push(ArgType::Struct(Struct::new(raw.args[4], Direction::InOut)));
-        Self { args: args }
+        let dirfd = Fd::new(raw.args[0]);
+        let pathname = NullBuffer::new(raw.args[1], Direction::In);
+        let flags = Flag::new(raw.args[2]);
+        let mask = Integer::new(raw.args[3]);
+        let statxbuf = Struct::new(raw.args[4], Direction::InOut);
+        Self { dirfd, pathname, flags, mask, statxbuf }
     }
 }
 impl Decode for Statx {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.dirfd.decode(pid, operation);
+        self.pathname.decode(pid, operation);
+        self.flags.decode(pid, operation);
+        self.mask.decode(pid, operation);
+        self.statxbuf.decode(pid, operation);
     }
 }

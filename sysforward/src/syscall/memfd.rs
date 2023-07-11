@@ -4,8 +4,7 @@ use serde::{ Serialize, Deserialize };
 
 use crate::{
     syscall::{ RawSyscall },
-    syscall::args::{ ArgType, Direction },
-    syscall::args::{ Flag, NullBuffer },
+    syscall::args::{ Direction, Flag, NullBuffer },
     tracer::decoder::{ Decode },
     operation::{ Operation },
 };
@@ -16,20 +15,21 @@ use crate::{
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct MemfdCreate {
-    pub args: Vec<ArgType>,
+    pub name: NullBuffer,
+    pub flags: Flag,
 }
 
 impl MemfdCreate {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::NullBuffer(NullBuffer::new(raw.args[0], Direction::In)));
-        args.push(ArgType::Flag(Flag::new(raw.args[1])));
-        Self { args: args }
+        let name = NullBuffer::new(raw.args[0], Direction::In);
+        let flags = Flag::new(raw.args[1]);
+        Self { name, flags }
     }
 }
 
 impl Decode for MemfdCreate {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.name.decode(pid, operation);
+        self.flags.decode(pid, operation);
     }
 }

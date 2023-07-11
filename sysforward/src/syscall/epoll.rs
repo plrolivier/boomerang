@@ -5,8 +5,7 @@ use serde::{ Serialize, Deserialize };
 
 use crate::{
     syscall::{ RawSyscall },
-    syscall::args::{ ArgType, Direction },
-    syscall::args::{ Integer, Fd, Size, Offset, Protection, Signal, Flag, Address, Buffer, NullBuffer, Array, Struct },
+    syscall::args::{ Direction, Integer, Fd, Struct },
     tracer::decoder::{ Decode },
     operation::{ Operation },
 };
@@ -17,18 +16,17 @@ use crate::{
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct EpollCreate {
-    pub args: Vec<ArgType>,
+    pub size: Integer,
 }
 impl EpollCreate {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::Integer(Integer::new(raw.args[0])));
-        Self { args: args }
+        let size = Integer::new(raw.args[0]);
+        Self { size }
     }
 }
 impl Decode for EpollCreate {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.size.decode(pid, operation);
     }
 }
 
@@ -36,18 +34,17 @@ impl Decode for EpollCreate {
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct EpollCreate1 {
-    pub args: Vec<ArgType>,
+    pub size: Integer,
 }
 impl EpollCreate1 {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::Integer(Integer::new(raw.args[0])));
-        Self { args: args }
+        let size = Integer::new(raw.args[0]);
+        Self { size }
     }
 }
 impl Decode for EpollCreate1 {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.size.decode(pid, operation);
     }
 }
 
@@ -55,21 +52,26 @@ impl Decode for EpollCreate1 {
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct EpollCtl {
-    pub args: Vec<ArgType>,
+    pub epfd: Fd,
+    pub op: Integer,
+    pub fd: Fd,
+    pub event: Struct,
 }
 impl EpollCtl {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::Fd(Fd::new(raw.args[0])));
-        args.push(ArgType::Integer(Integer::new(raw.args[1])));
-        args.push(ArgType::Fd(Fd::new(raw.args[2])));
-        args.push(ArgType::Struct(Struct::new(raw.args[3], Direction::InOut)));
-        Self { args: args }
+        let epfd = Fd::new(raw.args[0]);
+        let op = Integer::new(raw.args[1]);
+        let fd = Fd::new(raw.args[2]);
+        let event = Struct::new(raw.args[3], Direction::InOut);
+        Self { epfd, op, fd, event }
     }
 }
 impl Decode for EpollCtl {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.epfd.decode(pid, operation);
+        self.op.decode(pid, operation);
+        self.fd.decode(pid, operation);
+        self.event.decode(pid, operation);
     }
 }
 
@@ -77,21 +79,26 @@ impl Decode for EpollCtl {
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct EpollWait {
-    pub args: Vec<ArgType>,
+    pub epfd: Fd,
+    pub events: Struct,
+    pub maxevents: Integer,
+    pub timeout: Integer,
 }
 impl EpollWait {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::Fd(Fd::new(raw.args[0])));
-        args.push(ArgType::Struct(Struct::new(raw.args[1], Direction::InOut)));
-        args.push(ArgType::Integer(Integer::new(raw.args[2])));
-        args.push(ArgType::Integer(Integer::new(raw.args[3])));
-        Self { args: args }
+        let epfd = Fd::new(raw.args[0]);
+        let events = Struct::new(raw.args[1], Direction::InOut);
+        let maxevents = Integer::new(raw.args[2]);
+        let timeout = Integer::new(raw.args[3]);
+        Self { epfd, events, maxevents, timeout }
     }
 }
 impl Decode for EpollWait {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.epfd.decode(pid, operation);
+        self.events.decode(pid, operation);
+        self.maxevents.decode(pid, operation);
+        self.timeout.decode(pid, operation);
     }
 }
 
@@ -99,22 +106,29 @@ impl Decode for EpollWait {
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct EpollPwait {
-    pub args: Vec<ArgType>,
+    pub epfd: Fd,
+    pub events: Struct,
+    pub maxevents: Integer,
+    pub timeout: Integer,
+    pub sigmask: Struct,
 }
 impl EpollPwait {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::Fd(Fd::new(raw.args[0])));
-        args.push(ArgType::Struct(Struct::new(raw.args[1], Direction::InOut)));
-        args.push(ArgType::Integer(Integer::new(raw.args[2])));
-        args.push(ArgType::Integer(Integer::new(raw.args[3])));
-        args.push(ArgType::Struct(Struct::new(raw.args[4], Direction::InOut)));
-        Self { args: args }
+        let epfd = Fd::new(raw.args[0]);
+        let events = Struct::new(raw.args[1], Direction::InOut);
+        let maxevents = Integer::new(raw.args[2]);
+        let timeout = Integer::new(raw.args[3]);
+        let sigmask = Struct::new(raw.args[4], Direction::In);
+        Self { epfd, events, maxevents, timeout, sigmask }
     }
 }
 impl Decode for EpollPwait {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.epfd.decode(pid, operation);
+        self.events.decode(pid, operation);
+        self.maxevents.decode(pid, operation);
+        self.timeout.decode(pid, operation);
+        self.sigmask.decode(pid, operation);
     }
 }
 
@@ -122,21 +136,28 @@ impl Decode for EpollPwait {
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct EpollPwait2 {
-    pub args: Vec<ArgType>,
+    pub epfd: Fd,
+    pub events: Struct,
+    pub maxevents: Integer,
+    pub timeout: Struct,
+    pub sigmask: Struct,
 }
 impl EpollPwait2 {
     pub fn new(raw: RawSyscall) -> Self {
-        let mut args = Vec::new();
-        args.push(ArgType::Fd(Fd::new(raw.args[0])));
-        args.push(ArgType::Struct(Struct::new(raw.args[1], Direction::InOut)));
-        args.push(ArgType::Integer(Integer::new(raw.args[2])));
-        args.push(ArgType::Struct(Struct::new(raw.args[3], Direction::InOut)));
-        args.push(ArgType::Struct(Struct::new(raw.args[4], Direction::InOut)));
-        Self { args: args }
+        let epfd = Fd::new(raw.args[0]);
+        let events = Struct::new(raw.args[1], Direction::InOut);
+        let maxevents = Integer::new(raw.args[2]);
+        let timeout = Struct::new(raw.args[3], Direction::In);
+        let sigmask = Struct::new(raw.args[4], Direction::In);
+        Self { epfd, events, maxevents, timeout, sigmask }
     }
 }
 impl Decode for EpollPwait2 {
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
+        self.epfd.decode(pid, operation);
+        self.events.decode(pid, operation);
+        self.maxevents.decode(pid, operation);
+        self.timeout.decode(pid, operation);
+        self.sigmask.decode(pid, operation);
     }
 }

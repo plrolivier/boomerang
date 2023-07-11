@@ -6,7 +6,7 @@ use crate::{
     syscall::{ RawSyscall },
     syscall::args::{ ArgType, Direction },
     syscall::args::{ Integer, Fd, Size, Flag, NullBuffer, Struct },
-    tracer_engine::decoder::{ Decode },
+    tracer::decoder::{ Decode },
     operation::{ Operation },
 };
 
@@ -25,7 +25,7 @@ impl Close {
     }
 }
 impl Decode for Close {
-    fn decode(&mut self, pid: i32, operation: &Box<dyn Operation>) {
+    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
         self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
     }
 }
@@ -45,7 +45,7 @@ impl Creat {
     }
 }
 impl Decode for Creat {
-    fn decode(&mut self, pid: i32, operation: &Box<dyn Operation>) {
+    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
         self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
     }
 }
@@ -67,7 +67,7 @@ impl Open {
     }
 }
 impl Decode for Open {
-    fn decode(&mut self, pid: i32, operation: &Box<dyn Operation>) {
+    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
         self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
     }
 }
@@ -90,7 +90,7 @@ impl Openat {
     }
 }
 impl Decode for Openat {
-    fn decode(&mut self, pid: i32, operation: &Box<dyn Operation>) {
+    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
         self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
     }
 }

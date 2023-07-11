@@ -6,7 +6,7 @@ use crate::{
     syscall::{ RawSyscall },
     syscall::args::{ ArgType, Direction },
     syscall::args::{ Integer, NullBuffer },
-    tracer_engine::decoder::{ Decode },
+    tracer::decoder::{ Decode },
     operation::{ Operation },
 };
 
@@ -27,7 +27,7 @@ impl Mknod {
     }
 }
 impl Decode for Mknod {
-    fn decode(&mut self, pid: i32, operation: &Box<dyn Operation>) {
+    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
         self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
     }
 }
@@ -51,7 +51,7 @@ impl Mknodat {
 }
 
 impl Decode for Mknodat {
-    fn decode(&mut self, pid: i32, operation: &Box<dyn Operation>) {
+    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
         self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
     }
 }

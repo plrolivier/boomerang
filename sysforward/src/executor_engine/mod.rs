@@ -17,7 +17,6 @@ use crate::{
     arch::{ TargetArch, Architecture },
     syscall::{ Syscall },
     operation::Operation,
-    targets::ptrace::Ptrace,
     protocol::data::Server,
 };
 
@@ -34,7 +33,7 @@ pub struct ExecutorEngine {
     protocol: Server,
 
     syscall: Syscall,
-    interceptor: Box<dyn Operation>,
+    operator: Box<Operation>,
 
     stop: Arc<Event>,
     stopped: Arc<Event>,
@@ -49,13 +48,14 @@ impl ExecutorEngine {
         tracer_port: u16,
         stop_event: Arc<Event>,
         stopped_event: Arc<Event>,
+        operator: Box<Operation>,
     ) -> Self
     {
         Self {
             arch: Architecture::new(target_arch),
             protocol: Server::new(ipv4_address, executor_port, tracer_port),
             syscall: Syscall::new(),
-            interceptor: Box::new(Ptrace {}),
+            operator: operator,
             stop: stop_event,
             stopped: stopped_event,
         }

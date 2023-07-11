@@ -6,7 +6,7 @@ use crate::{
     syscall::{ RawSyscall },
     syscall::args::{ ArgType, Direction },
     syscall::args::{ Fd, Offset, NullBuffer },
-    tracer_engine::decoder::{ Decode },
+    tracer::decoder::{ Decode },
     operation::{ Operation },
 };
 
@@ -29,7 +29,7 @@ impl Truncate {
 }
 
 impl Decode for Truncate {
-    fn decode(&mut self, pid: i32, operation: &Box<dyn Operation>) {
+    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
         self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
     }
 }
@@ -52,7 +52,7 @@ impl Ftruncate {
 }
 
 impl Decode for Ftruncate {
-    fn decode(&mut self, pid: i32, operation: &Box<dyn Operation>) {
+    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
         self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
     }
 }

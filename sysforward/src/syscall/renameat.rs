@@ -6,7 +6,7 @@ use crate::{
     syscall::{ RawSyscall },
     syscall::args::{ ArgType, Direction },
     syscall::args::{ Integer, NullBuffer },
-    tracer_engine::decoder::{ Decode },
+    tracer::decoder::{ Decode },
     operation::{ Operation },
 };
 
@@ -29,7 +29,7 @@ impl Rename {
 }
 
 impl Decode for Rename {
-    fn decode(&mut self, pid: i32, operation: &Box<dyn Operation>) {
+    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
         self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
     }
 }
@@ -53,7 +53,7 @@ impl Renameat {
 }
 
 impl Decode for Renameat {
-    fn decode(&mut self, pid: i32, operation: &Box<dyn Operation>) {
+    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
         self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
     }
 }
@@ -79,7 +79,7 @@ impl Renameat2 {
 }
 
 impl Decode for Renameat2 {
-    fn decode(&mut self, pid: i32, operation: &Box<dyn Operation>) {
+    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
         self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
     }
 }

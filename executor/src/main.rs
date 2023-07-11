@@ -26,6 +26,8 @@ use sysforward::{
     memory::{ read_process_memory_maps, print_memory_regions },
     protocol::control::{ Configuration, ControlChannel },
     executor_engine::{ ExecutorEngine, ExecutorCallback },
+    operation::Operation,
+    targets,
 };
 
 
@@ -196,12 +198,17 @@ impl ExecThread {
         println!("[EXECUTOR] Start listening on {}:{}", IP_ADDRESS, EXECUTOR_PORT);
         let copy_stop = self.stop.clone();
         let copy_stopped = self.stopped.clone();
+        let ptrace_op = targets::ptrace::Ptrace{ };
+        let regs_op = Box::new(ptrace_op.clone());
+        let mem_op = Box::new(ptrace_op);
+        let operator = Box::new(Operation{ register: regs_op, memory: mem_op});
         let executor = ExecutorEngine::new(TargetArch::X86_64,
                                                            IP_ADDRESS,
                                                            EXECUTOR_PORT,
                                                            TRACER_PORT,
                                                            copy_stop,
-                                                           copy_stopped
+                                                           copy_stopped,
+                                                           operator,
                                                           );
         //let exec_pid = tracee.id();
 

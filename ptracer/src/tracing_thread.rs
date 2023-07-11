@@ -1,5 +1,5 @@
 /*
- *
+ * The code relevant to the tracing of a single thread.
  */
 
 use std::{
@@ -23,15 +23,13 @@ use nix::{
 
 use sysforward::{
     arch::TargetArch,
-    tracer_engine::{ TracerEngine },
+    tracer::{ TracerEngine }, operation::Operation,
+    targets,
 };
 
 use crate::{
-    IP_ADDRESS, TRACER_PORT, EXECUTOR_PORT
+    IP_ADDRESS, TRACER_PORT, EXECUTOR_PORT,
 };
-
-
-
 
 
 
@@ -94,11 +92,18 @@ impl TracingThread {
 
         /* Setup the tracer */
         let pid = self.tracee.as_ref().unwrap().id() as i32;
+        
+        let ptrace_op = targets::ptrace::Ptrace{ };
+        let regs_op = Box::new(ptrace_op.clone());
+        let mem_op = Box::new(ptrace_op);
+        let operator = Box::new(Operation{ register: regs_op, memory: mem_op });
+
         let tracer = TracerEngine::new(pid,
                                                      TargetArch::X86_64,
                                                      IP_ADDRESS,
                                                      TRACER_PORT,
                                                      EXECUTOR_PORT,
+                                                     operator,
                                                     );
         
         // Send the PID of the tracee to the control thread

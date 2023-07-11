@@ -7,7 +7,7 @@ use crate::{
     syscall::{ RawSyscall },
     syscall::args::{ ArgType, Direction },
     syscall::args::{ Buffer, Size, Flag },
-    tracer_engine::decoder::{ Decode },
+    tracer::decoder::{ Decode },
     operation::{ Operation },
 };
 
@@ -31,7 +31,7 @@ impl Getrandom {
 }
 
 impl Decode for Getrandom {
-    fn decode(&mut self, pid: i32, operation: &Box<dyn Operation>) {
+    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
         self.args.iter_mut().for_each(|arg| arg.decode(pid, operation));
     }
 }

@@ -29,7 +29,7 @@ pub mod epoll;
 use serde::{ Serialize, Deserialize };
 
 use crate::{
-    tracer_engine::{
+    tracer::{
         decoder::{ DecodedSyscall },
         filtering::{ Decision },
     },

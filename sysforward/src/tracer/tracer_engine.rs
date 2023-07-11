@@ -1,10 +1,9 @@
 /*
+ * The tracer engine implements the instrumentation for tracing a system call.
+ */
+/*
  * The tracer engine takes care of handling syscalls.
  */
-pub mod decoder;
-pub mod filtering;
-
-
 use std::{
     collections::HashMap,
     sync::{ Arc },
@@ -12,41 +11,21 @@ use std::{
 };
 use nix::{
     libc::user_regs_struct,
-    unistd::{ Pid },
-    sys::signal::{Signal, SigHandler},
 };
 use serde_json;
 use crate::{
     syscall::{ Syscall },
     arch::{ TargetArch, Architecture },
     operation::Operation,
-    targets::ptrace::Ptrace,
-    //protocol::{ Command, Packet, Header, SendSyscallEntryPayload, Client },
-    tracer_engine::{
+    tracer::{
         decoder::{ Decoder },
         filtering::{ Decision, Filter },
     },
-    protocol::data::Client,
+    protocol::data::Client, memory,
 };
 
 
 
-/*
- * The tracer trait describes the interface a debugger should implement to be compatible with the control channel
- * and controlled by avatar2.
- */
-pub trait TracerCallback {
-    fn spawn_process(&mut self, program: String, prog_args: Vec<String>) -> Result<Pid, io::Error>;
-    fn kill_process(&mut self, pid: Pid) -> Result<(), io::Error>;
-    fn start_tracing(&mut self, pid: Pid) -> Result<(), io::Error>;
-    fn cont_tracing(&mut self, pid: Pid, signal: Option<Signal>) -> Result<(), io::Error>;
-    fn stop_tracing(&mut self, pid: Pid) -> Result<(), io::Error>;
-}
-
-
-/*
- * The tracer engine implements the instrumentation for tracing a system call.
- */
 pub struct TracerEngine {
 
     pub pid: i32,
@@ -59,7 +38,7 @@ pub struct TracerEngine {
     insyscall: bool,
     filter: Filter,
 
-    interceptor: Box<dyn Operation>,
+    operator: Box<Operation>,
     decoder: Arc<Decoder>,
     protocol: Client,
 
@@ -74,6 +53,7 @@ impl TracerEngine {
         ipv4_address: &str,
         tracer_port: u16,
         executor_port: u16,
+        operator: Box<Operation>,
     ) -> Self 
     {
         let arch = Arc::new(Architecture::new(target_arch));
@@ -116,7 +96,7 @@ impl TracerEngine {
             remote_syscall: Syscall::new(),
             insyscall: false,   // Hypothesis: we do the tracing from the start!
             filter: Filter::new(String::from("filtername")),
-            interceptor: Box::new(Ptrace {}),
+            operator: operator,
             decoder: decoder,
             protocol: Client::new(ipv4_address, tracer_port, executor_port),
             saved_syscall: Vec::new(),
@@ -211,7 +191,7 @@ impl TracerEngine {
         //self._log_raw_entry();
 
         // TODO: Add an option to decode only certain syscalls to increase speed.
-        self.decoder.decode_entry(&mut self.syscall, self.pid, &self.interceptor);
+        self.decoder.decode_entry(&mut self.syscall, self.pid, &self.operator);
 
         self.filter_entry();
         self.log_entry();
@@ -347,23 +327,23 @@ impl TracerEngine {
 
     /*
      * API to read/write from the environment by the interceptor "backend".
-     */
     pub fn read_registers(&self) -> Option<user_regs_struct> {
-        self.interceptor.read_registers(self.pid)
+        self.operator.read_registers(self.pid)
     }
 
     //pub fn write_registers(&self, regs: user_regs_struct) -> Result<(), io::Error> {
     pub fn write_registers(&self, regs: user_regs_struct) -> bool {
-        self.interceptor.write_registers(self.pid, regs)
+        self.operator.write_registers(self.pid, regs)
     }
 
     pub fn read_memory(&self, addr: u64, size: u64) -> Vec<u8> {
-        self.interceptor.read_memory(self.pid, addr, size)
+        self.operator.read_memory(self.pid, addr, size)
     }
 
     pub fn write_memory(&self, addr: u64, mem: Vec<u8>) -> u64 {
-        self.interceptor.write_memory(self.pid, addr, mem)
+        self.operator.write_memory(self.pid, addr, mem)
     }
+     */
 
     /*
     pub fn read_syscall_args(&self) -> Vec<u64> {

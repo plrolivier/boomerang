@@ -8,7 +8,7 @@ use serde::{ Serialize, Deserialize };
 
 use crate::{
     operation::{ Operation },
-    tracer_engine::{
+    tracer::{
         decoder::{ Decode },
     },
 };
@@ -33,7 +33,7 @@ pub enum ArgType {
 }
 
 impl Decode for ArgType {
-    fn decode(&mut self, pid: i32, operation: &Box<dyn Operation>) {
+    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
         match self {
             ArgType::Integer(integer)   => integer.decode(pid, operation),
             ArgType::Fd(fd)                  => fd.decode(pid, operation),
@@ -306,8 +306,8 @@ impl Buffer {
 
 impl Decode for Buffer {
 
-    fn decode(&mut self, pid: i32, operation: &Box<dyn Operation>) { 
-        self.content = operation.read_memory(pid, self.address, self.size);
+    fn decode(&mut self, pid: i32, operation: &Box<Operation>) { 
+        self.content = operation.memory.read(pid, self.address, self.size);
     }
 
     fn print(&self) {
@@ -344,11 +344,11 @@ impl NullBuffer {
 
 impl Decode for NullBuffer {
 
-    fn decode(&mut self, pid: i32, operation: &Box<dyn Operation>) { 
+    fn decode(&mut self, pid: i32, operation: &Box<Operation>) { 
         //TODO: does not work when the Null terminated buffer is greater than READ_SIZE bytes.
         #[allow(non_snake_case)]
         let READ_SIZE = 1024;
-        let buf = operation.read_memory(pid, self.address, READ_SIZE);
+        let buf = operation.memory.read(pid, self.address, READ_SIZE);
 
         let mut iter = buf.iter();
         loop {
@@ -405,7 +405,7 @@ impl Array {
 
 impl Decode for Array {
 
-    fn decode(&mut self, _pid: i32, _operation: &Box<dyn Operation>) { 
+    fn decode(&mut self, _pid: i32, _operation: &Box<Operation>) { 
        panic!("To implement"); 
     }
 }
@@ -439,7 +439,7 @@ impl Struct {
 
 impl Decode for Struct {
 
-    fn decode(&mut self, _pid: i32, _operation: &Box<dyn Operation>) { 
+    fn decode(&mut self, _pid: i32, _operation: &Box<Operation>) { 
        panic!("To implement"); 
     }
 

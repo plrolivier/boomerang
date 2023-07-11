@@ -1,9 +1,10 @@
 /*
- * The first example of an interceptor uses ptrace to intercept syscalls.
+ * The interfaces used by the tracer engine to interact with the tracee process.
  */
 use core::ffi::c_void;
 use std::{
     collections::VecDeque,
+    io,
 };
 use nix::{
     unistd::Pid,
@@ -11,33 +12,38 @@ use nix::{
     sys::ptrace,
 };
 use crate::{
-    operation::Operation,
-    memory::{ read_process_memory_maps, print_memory_regions },
+    operation::{ RegisterOperation, MemoryOperation },
 };
 
 
 
+#[derive(Clone, Debug)]
 pub struct Ptrace { }
 
-impl Operation for Ptrace {
+
+impl RegisterOperation for Ptrace {
 
     fn read_registers(&self, pid: i32) -> Option<user_regs_struct> {
         let pid = Pid::from_raw(pid);
         Some(ptrace::getregs(pid).unwrap())
     }
 
-    fn write_registers(&self, pid: i32, regs: user_regs_struct) -> bool {
+    fn write_registers(&self, pid: i32, regs: user_regs_struct) -> Result<(), io::Error> {
         let pid = Pid::from_raw(pid);
         match ptrace::setregs(pid, regs) {
-            Ok(()) => return true,
+            Ok(()) => return Ok(()),
             Err(e) => {
-                eprintln!("Error setting registers for process {}: {}", pid, e);
-                return false
+                eprintln!("[{}] Error setting registers: {}", pid, e);
+                return Err(e.into())
             },
         }
     }
+}
 
-    fn read_memory(&self, pid: i32, addr: u64, size: u64) -> Vec<u8> {
+
+impl MemoryOperation for Ptrace {
+
+    fn read(&self, pid: i32, addr: u64, size: u64) -> Vec<u8> {
         let pid = Pid::from_raw(pid);
         let mut mem: Vec<u8> = Vec::new();
         let mut addr = addr;
@@ -72,7 +78,7 @@ impl Operation for Ptrace {
         mem
     }
 
-    fn write_memory(&self, pid: i32, addr: u64, mem: Vec<u8>) -> u64 {
+    fn write(&self, pid: i32, addr: u64, mem: Vec<u8>) -> u64 {
         let pid = Pid::from_raw(pid);
         let mut addr = addr;
         let size = mem.len() as u64;
@@ -92,3 +98,14 @@ impl Operation for Ptrace {
     }
 
 }
+
+
+/*
+impl SyscallOperation for Ptrace {
+    fn read_syscall_args(&self, pid: i32) -> Vec<u64>;
+    fn write_syscall_args(&self, pid: i32, args: Vec<u64>) -> Result<(), std::io::Error>;
+
+    fn read_syscall_ret(&self, pid: i32) -> (u64, u64);
+    fn write_syscall_ret(&self, pid: i32, retval: u64, errno: u64) -> Result<(), std::io::Error>;
+}
+*/

@@ -29,9 +29,8 @@ use nix::{
 };
 
 use sysforward::{
-    arch::TargetArch,
     protocol::control::{ Configuration, ControlChannel },
-    tracer_engine::{ TracerCallback, TracerEngine },
+    tracer::{ TracerCallback },
 };
 
 use crate::{ 

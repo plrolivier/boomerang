@@ -11,31 +11,41 @@ use nix::{
 
 
 
-pub trait Operation {
+pub trait RegisterOperation {
     fn read_registers(&self, pid: i32) -> Option<user_regs_struct>;
-    fn write_registers(&self, pid: i32, regs: user_regs_struct) -> bool;
+    fn write_registers(&self, pid: i32, regs: user_regs_struct) -> Result<(), std::io::Error>;
 
     /* 
      * When it's possible to edit registers one by one:
     fn read_register(&self, pid: i32, name: str) -> u64;
     fn write_register(&self, pid: i32, name: str, value: u64) -> bool;
     */
-
-    fn read_memory(&self, pid: i32, addr: u64, size: u64) -> Vec<u8>;
-    fn write_memory(&self, pid: i32, addr: u64, mem: Vec<u8>) -> u64;
-
-    /*
-     * SyscallOperation allow to interact with the syscall values when it does not need to pass
-     * by registers.
-     * TODO It will be use and implemented later...
-     *
-    fn read_syscall_args(&self, pid: i32) -> Vec<u64>;
-    fn write_syscall_args(&self, pid: i32, args: Vec<u64>) -> bool;
-    fn read_syscall_ret(&self, pid: i32) -> (u64, u64);
-    fn write_syscall_ret(&self, pid: i32, retval: u64, errno: u64) -> bool;
-    */
 }
 
+pub trait MemoryOperation {
+    fn read(&self, pid: i32, addr: u64, size: u64) -> Vec<u8>;
+    fn write(&self, pid: i32, addr: u64, mem: Vec<u8>) -> u64;
+}
+
+/*
+ * SyscallOperation allow to interact with the syscall values when it does not need to pass
+ * by registers.
+ * TODO It will be use and implemented later...
+pub trait SyscallOperation {
+    fn read_syscall_args(&self, pid: i32) -> Vec<u64>;
+    fn write_syscall_args(&self, pid: i32, args: Vec<u64>) -> Result<(), std::io::Error>;
+
+    fn read_syscall_ret(&self, pid: i32) -> (u64, u64);
+    fn write_syscall_ret(&self, pid: i32, retval: u64, errno: u64) -> Result<(), std::io::Error>;
+}
+ */
+
+
+pub struct Operation {
+    pub register: Box<dyn RegisterOperation>,
+    pub memory: Box<dyn MemoryOperation>,
+    //syscall: SyscallOperation,
+}
 
 
 /*

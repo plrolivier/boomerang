@@ -26,7 +26,7 @@ impl Decoder {
         }
     }
 
-    pub fn decode_entry(&self, syscall: &mut Syscall, pid: i32, operation: &Box<dyn Operation>) {
+    pub fn decode_entry(&self, syscall: &mut Syscall, pid: i32, operation: &Box<Operation>) {
 
         // TODO: improve the match by using number instead of strings
         match self.arch.syscall_table.get_syscall_name(&syscall.raw.no) {
@@ -46,7 +46,7 @@ impl Decoder {
         //syscall.entry_decoded = true;
     }
 
-    fn decode_args(&self, syscall: &mut Syscall, pid: i32, operation: &Box<dyn Operation>) {
+    fn decode_args(&self, syscall: &mut Syscall, pid: i32, operation: &Box<Operation>) {
         if let Some(decoded_sc) = &mut syscall.decoded {
                 decoded_sc.decode(pid, operation);
             }
@@ -1338,7 +1338,7 @@ impl Decoder {
 pub trait Decode: {
     //fn as_any(&self) -> &dyn Any;
     #[allow(unused_variables)]
-    fn decode(&mut self, pid: i32, operation: &Box<dyn Operation>) { }
+    fn decode(&mut self, pid: i32, operation: &Box<Operation>) { }
     fn print(&self) { }
 }
 
@@ -1435,7 +1435,7 @@ pub enum DecodedSyscall {
 }
 
 impl Decode for DecodedSyscall {
-    fn decode(&mut self, pid: i32, operation: &Box<dyn Operation>) {
+    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
         match self {
             DecodedSyscall::Close(x) => x.decode(pid, operation),
             DecodedSyscall::Creat(x) => x.decode(pid, operation),

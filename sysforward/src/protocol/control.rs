@@ -18,7 +18,7 @@ use nix::{
 };
 
 use crate::{
-    tracer_engine::{ TracerCallback },
+    tracer::{ TracerCallback },
     executor_engine::{ ExecutorCallback },
 };
 

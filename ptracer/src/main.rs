@@ -3,7 +3,6 @@
  * Works with an executor instance.
  */
 
-mod operation;
 mod tracing_thread;
 
 use std::{

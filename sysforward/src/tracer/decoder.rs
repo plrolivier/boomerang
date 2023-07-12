@@ -79,6 +79,20 @@ impl Decoder {
 
             "read"      => { decode_syscall!(Read, io) },
             "write"     => { decode_syscall!(Write, io) },
+            "readv"     => { decode_syscall!(Readv, io) },
+            "writev"    => { decode_syscall!(Writev, io) },
+            "pread"     => { decode_syscall!(Pread, io) },
+            "pwrite"    => { decode_syscall!(Pwrite, io) },
+            "preadv"    => { decode_syscall!(Preadv, io) },
+            "pwritev"   => { decode_syscall!(Pwritev, io) },
+            "preadv2"   => { decode_syscall!(Preadv2, io) },
+            "pwritev2"  => { decode_syscall!(Pwritev2, io) },
+
+            "ioctl"     => { decode_syscall!(Ioctl, ioctl) },
+
+            "access"    => { decode_syscall!(Access, access) },
+            "faccessat" => { decode_syscall!(Faccessat, access) },
+            "faccessat2"=> { decode_syscall!(Faccessat2, access) },
 
             "fallocate" => { decode_syscall!(Fallocate, fallocate) },
             "name_to_handle_at" => { decode_syscall!(NameToHandleAt, file_handle) },
@@ -92,6 +106,12 @@ impl Decoder {
             "truncate" => { decode_syscall!(Truncate, truncate) },
             "ftruncate" => { decode_syscall!(Ftruncate, truncate) },
 
+            "execve"    => { decode_syscall!(Execve, execve) },
+            "execveat"  => { decode_syscall!(Execveat, execve) },
+
+            "prctl"     => { decode_syscall!(Prctl, prctl) },
+            "archprctl" => { decode_syscall!(ArchPrctl, prctl) },
+
             "brk"       => { decode_syscall!(Brk, mmap) },
             "sbrk"      => { decode_syscall!(Sbrk, mmap) },
             "mmap"      => { decode_syscall!(Mmap, mmap) },
@@ -99,6 +119,34 @@ impl Decoder {
             "munmap"    => { decode_syscall!(Munmap, mmap) },
             "mprotect"  => { decode_syscall!(Mprotect, mmap) },
             "madvise"   => { decode_syscall!(Madvise, mmap) },
+
+            "getdents"  => { decode_syscall!(Getdents, dirent) },
+            "getdents64"=> { decode_syscall!(Getdents64, dirent) },
+            "readdir"   => { decode_syscall!(Readdir, dirent) },
+
+            "stat"      => { decode_syscall!(Stat, stat) },
+            "fstat"     => { decode_syscall!(Fstat, stat) },
+            "lstat"     => { decode_syscall!(Lstat, stat) },
+            "fstatat"   => { decode_syscall!(Fstatat, stat) },
+            
+            "statx"     => { decode_syscall!(Statx, statx) },
+
+            "getrlimit" => { decode_syscall!(Getrlimit, resource) },
+            "setrlimit" => { decode_syscall!(Setrlimit, resource) },
+            "prlimit"   => { decode_syscall!(Prlimit, resource) },
+            "prlimit64" => { decode_syscall!(Prlimit, resource) },
+            "getrusage" => { decode_syscall!(Getrusage, resource) },
+
+            "rseq"      => { decode_syscall!(Rseq, rseq) },
+
+            "getrandom" => { decode_syscall!(Getrandom, getrandom) },
+
+            "epollcreate"   => { decode_syscall!(EpollCreate, epoll) },
+            "epollcreate1"  => { decode_syscall!(EpollCreate1, epoll) },
+            "epollctl"      => { decode_syscall!(EpollCtl, epoll) },
+            "epollwait"     => { decode_syscall!(EpollWait, epoll) },
+            "epollpwait"    => { decode_syscall!(EpollPwait, epoll) },
+            "epollpwait2"   => { decode_syscall!(EpollPwait2, epoll) },
 
             //"close" => {
             //    // int close(int fd)

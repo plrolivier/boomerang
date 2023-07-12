@@ -5,7 +5,7 @@ use serde::{ Serialize, Deserialize };
 use crate::{
     syscall::{ RawSyscall },
     syscall::args::{ Direction, Integer, Size, Flag, Struct },
-    tracer::decoder::{ Decode },
+    tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
     operation::{ Operation },
 };
 
@@ -28,8 +28,8 @@ impl Rseq {
         Self { rseq, rseq_len, flags, sig }
     }
 }
-impl Decode for Rseq {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Rseq {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.rseq.decode(pid, operation);
         self.rseq_len.decode(pid, operation);
         self.flags.decode(pid, operation);

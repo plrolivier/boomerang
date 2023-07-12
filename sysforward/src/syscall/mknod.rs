@@ -5,7 +5,7 @@ use serde::{ Serialize, Deserialize };
 use crate::{
     syscall::{ RawSyscall },
     syscall::args::{ Direction, Integer, Fd, NullBuffer },
-    tracer::decoder::{ Decode },
+    tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
     operation::{ Operation },
 };
 
@@ -26,8 +26,8 @@ impl Mknod {
         Self { pathname, mode, dev }
     }
 }
-impl Decode for Mknod {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Mknod {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.pathname.decode(pid, operation);
         self.mode.decode(pid, operation);
         self.dev.decode(pid, operation);
@@ -54,8 +54,8 @@ impl Mknodat {
     }
 }
 
-impl Decode for Mknodat {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Mknodat {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.dirfd.decode(pid, operation);
         self.pathname.decode(pid, operation);
         self.mode.decode(pid, operation);

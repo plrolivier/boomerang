@@ -7,7 +7,7 @@ use crate::{
     syscall::{ RawSyscall },
     syscall::args::{ ArgType, Direction },
     syscall::args::{ Integer, Fd, Size, Offset, Protection, Signal, Flag, Address, Buffer, NullBuffer, Array, Struct },
-    tracer::decoder::{ Decode },
+    tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
     operation::{ Operation },
 };
 
@@ -33,8 +33,8 @@ impl Statx {
         Self { dirfd, pathname, flags, mask, statxbuf }
     }
 }
-impl Decode for Statx {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Statx {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.dirfd.decode(pid, operation);
         self.pathname.decode(pid, operation);
         self.flags.decode(pid, operation);

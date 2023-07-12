@@ -24,6 +24,23 @@ use crate::{
     protocol::data::Client, memory,
 };
 
+/* Used to store the location where the FD is valid */
+enum FdLocation {
+    Local(u16),
+    Remote(u16),
+}
+
+/*
+struct TraceeState { 
+    fd_table: HashMap<u16, FdLocation>,
+}
+
+impl TraceeState {
+    pub fn new() -> Self {
+        Self { fd_table: HashMap::new() }
+    }
+}
+*/
 
 
 pub struct TracerEngine {
@@ -33,14 +50,18 @@ pub struct TracerEngine {
     //pub regs: Vec<u64>,
     pub regs: user_regs_struct,     // only for x86_64
 
-    syscall: Syscall,
-    remote_syscall: Syscall,
-    insyscall: bool,
-    filter: Filter,
-
     operator: Box<Operation>,
     decoder: Arc<Decoder>,
     protocol: Client,
+
+    /* Tracee state */
+    syscall: Syscall,
+    remote_syscall: Syscall,
+    insyscall: bool,
+    fd_table: HashMap<u16, FdLocation>,
+    //state: TraceeState,
+
+    filter: Filter,
 
     saved_syscall: Vec<Syscall>,
 }
@@ -92,13 +113,15 @@ impl TracerEngine {
                 fs: 0,
                 gs: 0,
             },
-            syscall: Syscall::new(),
-            remote_syscall: Syscall::new(),
-            insyscall: false,   // Hypothesis: we do the tracing from the start!
-            filter: Filter::new(String::from("filtername")),
             operator: operator,
             decoder: decoder,
             protocol: Client::new(ipv4_address, tracer_port, executor_port),
+            syscall: Syscall::new(),
+            remote_syscall: Syscall::new(),
+            insyscall: false,   // Hypothesis: we do the tracing from the start!
+            fd_table: HashMap::new(),
+            //state: TraceeState::new(),
+            filter: Filter::new(String::from("filtername")),
             saved_syscall: Vec::new(),
         }
     }
@@ -204,7 +227,7 @@ impl TracerEngine {
     fn trace_exit(&mut self) {
         //self._log_raw_exit();
 
-        self.decoder.decode_exit();
+        self.decoder.decode_exit(&mut self.syscall, self.pid, &self.operator);
 
         self.filter_exit();
         self.log_exit();
@@ -254,7 +277,9 @@ impl TracerEngine {
     {
         //TODO: finish implementing the decisions
         match self.syscall.decision {
-            Some(Decision::Continue) => (),
+            Some(Decision::Continue) => {
+                self.continue_entry().unwrap();
+            },
             Some(Decision::Forward) => {
                 self.forward_entry().unwrap();
             },
@@ -266,7 +291,9 @@ impl TracerEngine {
     {
         // TODO: finish implementing the decisions
         match self.syscall.decision {
-            Some(Decision::Continue) => (),
+            Some(Decision::Continue) => {
+                self.continue_exit().unwrap();
+            },
             Some(Decision::Forward) => {
                 self.forward_exit().unwrap();
             },
@@ -275,12 +302,28 @@ impl TracerEngine {
 
     }
 
-    /* Forward decision */
+    fn continue_entry(&mut self) -> Result<(), io::Error>
+    {
+        // TODO
+        Ok(())
+    }
+
+    fn continue_exit(&mut self) -> Result<(), io::Error>
+    {
+        // TODO
+        Ok(())
+    }
 
     fn forward_entry(&mut self) -> Result<(), io::Error>
     {
+        /* Pre-forward instrumentation */
+
+        /* Forward */
         self.remote_syscall = self.protocol.send_syscall_entry(&self.syscall)?;
         println!("[{}] remote syscall retval: {:#x}", self.pid, self.remote_syscall.raw.retval as usize);
+
+        /* Post-forward instrumentation */
+
         Ok(())
     }
 

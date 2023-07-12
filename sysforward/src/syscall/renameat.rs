@@ -5,7 +5,7 @@ use serde::{ Serialize, Deserialize };
 use crate::{
     syscall::{ RawSyscall },
     syscall::args::{ Direction, Integer, Fd, NullBuffer },
-    tracer::decoder::{ Decode },
+    tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
     operation::{ Operation },
 };
 
@@ -29,8 +29,8 @@ impl Rename {
     }
 }
 
-impl Decode for Rename {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Rename {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.oldpath.decode(pid, operation);
         self.newpath.decode(pid, operation);
     }
@@ -56,8 +56,8 @@ impl Renameat {
     }
 }
 
-impl Decode for Renameat {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Renameat {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.olddirfd.decode(pid, operation);
         self.oldpath.decode(pid, operation);
         self.newdirfd.decode(pid, operation);
@@ -88,8 +88,8 @@ impl Renameat2 {
     }
 }
 
-impl Decode for Renameat2 {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Renameat2 {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.olddirfd.decode(pid, operation);
         self.oldpath.decode(pid, operation);
         self.newdirfd.decode(pid, operation);

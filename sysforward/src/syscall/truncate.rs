@@ -5,7 +5,7 @@ use serde::{ Serialize, Deserialize };
 use crate::{
     syscall::{ RawSyscall },
     syscall::args::{ Direction, Fd, Offset, NullBuffer },
-    tracer::decoder::{ Decode },
+    tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
     operation::{ Operation },
 };
 
@@ -27,8 +27,8 @@ impl Truncate {
     }
 }
 
-impl Decode for Truncate {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Truncate {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.path.decode(pid, operation);
         self.length.decode(pid, operation);
     }
@@ -51,8 +51,8 @@ impl Ftruncate {
     }
 }
 
-impl Decode for Ftruncate {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Ftruncate {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.fd.decode(pid, operation);
         self.length.decode(pid, operation);
     }

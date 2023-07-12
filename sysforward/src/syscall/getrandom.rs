@@ -6,7 +6,7 @@ use serde::{ Serialize, Deserialize };
 use crate::{
     syscall::{ RawSyscall },
     syscall::args::{ Direction, Buffer, Size, Flag },
-    tracer::decoder::{ Decode },
+    tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
     operation::{ Operation },
 };
 
@@ -30,8 +30,8 @@ impl Getrandom {
     }
 }
 
-impl Decode for Getrandom {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Getrandom {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.buf.decode(pid, operation);
         self.buflen.decode(pid, operation);
         self.flags.decode(pid, operation);

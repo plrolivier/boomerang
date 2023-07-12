@@ -6,7 +6,7 @@ use crate::{
     syscall::{ RawSyscall },
     syscall::args::{ Direction, Fd, Flag, NullBuffer, Struct },
     //syscall::args::{ Integer, Fd, Size, Flag, Buffer, NullBuffer, Struct },
-    tracer::decoder::{ Decode },
+    tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
     operation::{ Operation },
 };
 
@@ -25,8 +25,8 @@ impl Stat {
         Self { pathname, statbuf }
     }
 }
-impl Decode for Stat {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Stat {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.pathname.decode(pid, operation);
         self.statbuf.decode(pid, operation);
     }
@@ -47,8 +47,8 @@ impl Fstat {
         Self { fd, statbuf }
     }
 }
-impl Decode for Fstat {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Fstat {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.fd.decode(pid, operation);
         self.statbuf.decode(pid, operation);
     }
@@ -69,8 +69,8 @@ impl Lstat {
         Self { pathname, statbuf }
     }
 }
-impl Decode for Lstat {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Lstat {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.pathname.decode(pid, operation);
         self.statbuf.decode(pid, operation);
     }
@@ -95,8 +95,8 @@ impl Fstatat {
         Self { dirfd, pathname, statbuf, flags }
     }
 }
-impl Decode for Fstatat {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Fstatat {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.dirfd.decode(pid, operation);
         self.pathname.decode(pid, operation);
         self.statbuf.decode(pid, operation);

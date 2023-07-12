@@ -43,6 +43,9 @@ pub enum Decision {
 
 pub trait Rule {
     fn filter(&mut self, syscall: &Syscall) -> Result<Decision, std::io::Error>;
+    /* Callback to get syscall return information
+    fn on_syscall_exit(&mut self, syscall: &Syscall) -> Result<(), std::io::Error>;
+    */
 }
 
 

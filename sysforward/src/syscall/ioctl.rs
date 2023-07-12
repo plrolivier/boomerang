@@ -8,7 +8,7 @@ use crate::{
     syscall::args::{ ArgType, Direction },
     syscall::args::{ Integer, Fd, Size, Offset, Protection, Signal, Flag, Address, Buffer, NullBuffer, Array, Struct },
     //syscall::args::{ Integer, Fd, Size, Flag, Buffer, NullBuffer, Struct },
-    tracer::decoder::{ Decode },
+    tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
     operation::{ Operation },
 };
 
@@ -30,8 +30,8 @@ impl Ioctl {
         Self { fd, request, arg }
     }
 }
-impl Decode for Ioctl {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Ioctl {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.fd.decode(pid, operation);
         self.request.decode(pid, operation);
         self.arg.decode(pid, operation);

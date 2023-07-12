@@ -5,7 +5,7 @@ use serde::{ Serialize, Deserialize };
 use crate::{
     syscall::{ RawSyscall },
     syscall::args::{ Direction, Flag, NullBuffer },
-    tracer::decoder::{ Decode },
+    tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
     operation::{ Operation },
 };
 
@@ -27,8 +27,8 @@ impl MemfdCreate {
     }
 }
 
-impl Decode for MemfdCreate {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for MemfdCreate {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.name.decode(pid, operation);
         self.flags.decode(pid, operation);
     }

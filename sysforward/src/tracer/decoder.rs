@@ -48,7 +48,7 @@ impl Decoder {
 
     fn decode_args(&self, syscall: &mut Syscall, pid: i32, operation: &Box<Operation>) {
         if let Some(decoded_sc) = &mut syscall.decoded {
-                decoded_sc.decode(pid, operation);
+                decoded_sc.decode_entry(pid, operation);
             }
     }
 
@@ -1378,17 +1378,39 @@ impl Decoder {
     }
 
 
-    pub fn decode_exit(&self) { }
+    pub fn decode_exit(&self, syscall: &mut Syscall, pid: i32, operation: &Box<Operation>) {
+
+        /* Decode return value */
+        if let Some(decoded_sc) = &mut syscall.decoded {
+            decoded_sc.decode_exit(pid, operation);
+        }
+
+    }
 }
 
 
 
-pub trait Decode: {
-    //fn as_any(&self) -> &dyn Any;
-    #[allow(unused_variables)]
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) { }
+pub trait DecodeArg {
+    fn decode(&mut self, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error> { 
+        Ok(())
+    }
     fn print(&self) { }
 }
+
+pub trait DecodeEntry {
+    //fn as_any(&self) -> &dyn Any;
+    #[allow(unused_variables)]
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) { }
+    fn print(&self) { }
+}
+
+pub trait DecodeExit {
+    fn decode_exit(&mut self, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error> { 
+        Ok(())
+    }
+}
+
+
 
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
@@ -1482,72 +1504,145 @@ pub enum DecodedSyscall {
     /* ... */
 }
 
-impl Decode for DecodedSyscall {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for DecodedSyscall {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         match self {
-            DecodedSyscall::Close(x) => x.decode(pid, operation),
-            DecodedSyscall::Creat(x) => x.decode(pid, operation),
-            DecodedSyscall::Open(x) => x.decode(pid, operation),
-            DecodedSyscall::Openat(x) => x.decode(pid, operation),
-            DecodedSyscall::Openat2(x) => x.decode(pid, operation),
-            DecodedSyscall::Read(x) => x.decode(pid, operation),
-            DecodedSyscall::Write(x) => x.decode(pid, operation),
-            DecodedSyscall::Readv(x) => x.decode(pid, operation),
-            DecodedSyscall::Writev(x) => x.decode(pid, operation),
-            DecodedSyscall::Pread(x) => x.decode(pid, operation),
-            DecodedSyscall::Pwrite(x) => x.decode(pid, operation),
-            DecodedSyscall::Preadv(x) => x.decode(pid, operation),
-            DecodedSyscall::Pwritev(x) => x.decode(pid, operation),
-            DecodedSyscall::Preadv2(x) => x.decode(pid, operation),
-            DecodedSyscall::Pwritev2(x) => x.decode(pid, operation),
-            DecodedSyscall::Ioctl(x) => x.decode(pid, operation),
-            DecodedSyscall::Brk(x) => x.decode(pid, operation),
-            DecodedSyscall::Sbrk(x) => x.decode(pid, operation),
-            DecodedSyscall::Mmap(x) => x.decode(pid, operation),
-            DecodedSyscall::Mremap(x) => x.decode(pid, operation),
-            DecodedSyscall::Munmap(x) => x.decode(pid, operation),
-            DecodedSyscall::Mprotect(x) => x.decode(pid, operation),
-            DecodedSyscall::Madvise(x) => x.decode(pid, operation),
-            DecodedSyscall::Execve(x) => x.decode(pid, operation),
-            DecodedSyscall::Execveat(x) => x.decode(pid, operation),
-            DecodedSyscall::Fallocate(x) => x.decode(pid, operation),
-            DecodedSyscall::NameToHandleAt(x) => x.decode(pid, operation),
-            DecodedSyscall::OpenByHandleAt(x) => x.decode(pid, operation),
-            DecodedSyscall::MemfdCreate(x) => x.decode(pid, operation),
-            DecodedSyscall::Mknod(x) => x.decode(pid, operation),
-            DecodedSyscall::Mknodat(x) => x.decode(pid, operation),
-            DecodedSyscall::Rename(x) => x.decode(pid, operation),
-            DecodedSyscall::Renameat(x) => x.decode(pid, operation),
-            DecodedSyscall::Renameat2(x) => x.decode(pid, operation),
-            DecodedSyscall::Truncate(x) => x.decode(pid, operation),
-            DecodedSyscall::Ftruncate(x) => x.decode(pid, operation),
-            DecodedSyscall::Access(x) => x.decode(pid, operation),
-            DecodedSyscall::Faccessat(x) => x.decode(pid, operation),
-            DecodedSyscall::Faccessat2(x) => x.decode(pid, operation),
-            DecodedSyscall::Prctl(x) => x.decode(pid, operation),
-            DecodedSyscall::ArchPrctl(x) => x.decode(pid, operation),
-            DecodedSyscall::Getdents(x) => x.decode(pid, operation),
-            DecodedSyscall::Getdents64(x) => x.decode(pid, operation),
-            DecodedSyscall::Readdir(x) => x.decode(pid, operation),
-            DecodedSyscall::Stat(x) => x.decode(pid, operation),
-            DecodedSyscall::Fstat(x) => x.decode(pid, operation),
-            DecodedSyscall::Lstat(x) => x.decode(pid, operation),
-            DecodedSyscall::Fstatat(x) => x.decode(pid, operation),
-            DecodedSyscall::Statx(x) => x.decode(pid, operation),
-            DecodedSyscall::Getrlimit(x) => x.decode(pid, operation),
-            DecodedSyscall::Setrlimit(x) => x.decode(pid, operation),
-            DecodedSyscall::Prlimit(x) => x.decode(pid, operation),
-            DecodedSyscall::Prlimit64(x) => x.decode(pid, operation),
-            DecodedSyscall::Getrusage(x) => x.decode(pid, operation),
-            DecodedSyscall::Rseq(x) => x.decode(pid, operation),
-            DecodedSyscall::Getrandom(x) => x.decode(pid, operation),
-            DecodedSyscall::EpollCreate(x) => x.decode(pid, operation),
-            DecodedSyscall::EpollCreate1(x) => x.decode(pid, operation),
-            DecodedSyscall::EpollCtl(x) => x.decode(pid, operation),
-            DecodedSyscall::EpollWait(x) => x.decode(pid, operation),
-            DecodedSyscall::EpollPwait(x) => x.decode(pid, operation),
-            DecodedSyscall::EpollPwait2(x) => x.decode(pid, operation),
-            //DecodedSyscall::(x) => x.decode(pid, operation),
+            DecodedSyscall::Close(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Creat(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Open(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Openat(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Openat2(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Read(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Write(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Readv(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Writev(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Pread(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Pwrite(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Preadv(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Pwritev(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Preadv2(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Pwritev2(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Ioctl(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Brk(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Sbrk(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Mmap(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Mremap(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Munmap(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Mprotect(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Madvise(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Execve(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Execveat(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Fallocate(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::NameToHandleAt(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::OpenByHandleAt(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::MemfdCreate(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Mknod(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Mknodat(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Rename(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Renameat(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Renameat2(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Truncate(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Ftruncate(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Access(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Faccessat(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Faccessat2(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Prctl(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::ArchPrctl(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Getdents(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Getdents64(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Readdir(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Stat(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Fstat(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Lstat(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Fstatat(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Statx(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Getrlimit(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Setrlimit(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Prlimit(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Prlimit64(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Getrusage(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Rseq(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::Getrandom(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::EpollCreate(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::EpollCreate1(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::EpollCtl(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::EpollWait(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::EpollPwait(x) => x.decode_entry(pid, operation),
+            DecodedSyscall::EpollPwait2(x) => x.decode_entry(pid, operation),
+            //DecodedSyscall::(x) => x.decode_entry(pid, operation),
+        }
+    }
+}
+
+impl DecodeExit for DecodedSyscall {
+    fn decode_exit(&mut self, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error> { 
+        match self {
+            DecodedSyscall::Open(x) => x.decode_exit(pid, operation),
+            _ => panic!("oops"),
+            /* 
+            DecodedSyscall::Close(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Creat(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Openat(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Openat2(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Read(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Write(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Readv(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Writev(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Pread(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Pwrite(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Preadv(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Pwritev(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Preadv2(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Pwritev2(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Ioctl(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Brk(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Sbrk(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Mmap(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Mremap(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Munmap(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Mprotect(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Madvise(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Execve(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Execveat(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Fallocate(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::NameToHandleAt(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::OpenByHandleAt(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::MemfdCreate(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Mknod(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Mknodat(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Rename(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Renameat(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Renameat2(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Truncate(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Ftruncate(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Access(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Faccessat(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Faccessat2(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Prctl(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::ArchPrctl(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Getdents(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Getdents64(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Readdir(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Stat(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Fstat(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Lstat(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Fstatat(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Statx(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Getrlimit(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Setrlimit(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Prlimit(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Prlimit64(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Getrusage(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Rseq(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::Getrandom(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::EpollCreate(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::EpollCreate1(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::EpollCtl(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::EpollWait(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::EpollPwait(x) => x.decode_exit(pid, operation),
+            DecodedSyscall::EpollPwait2(x) => x.decode_exit(pid, operation),
+            */
+            //DecodedSyscall::(x) => x.decode_exit(pid, operation),
         }
     }
 }

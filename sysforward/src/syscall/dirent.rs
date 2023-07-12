@@ -5,7 +5,7 @@ use serde::{ Serialize, Deserialize };
 use crate::{
     syscall::{ RawSyscall },
     syscall::args::{ Direction, Integer, Fd, Struct },
-    tracer::decoder::{ Decode },
+    tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
     operation::{ Operation },
 };
 
@@ -26,8 +26,8 @@ impl Getdents {
         Self { fd, dirp, count }
     }
 }
-impl Decode for Getdents {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Getdents {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.fd.decode(pid, operation);
         self.dirp.decode(pid, operation);
         self.count.decode(pid, operation);
@@ -51,8 +51,8 @@ impl Getdents64 {
         Self { fd, dirp, count }
     }
 }
-impl Decode for Getdents64 {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Getdents64 {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.fd.decode(pid, operation);
         self.dirp.decode(pid, operation);
         self.count.decode(pid, operation);
@@ -76,8 +76,8 @@ impl Readdir {
         Self { fd, dirp, count }
     }
 }
-impl Decode for Readdir {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Readdir {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.fd.decode(pid, operation);
         self.dirp.decode(pid, operation);
         self.count.decode(pid, operation);

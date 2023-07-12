@@ -6,7 +6,7 @@ use crate::{
     syscall::{ RawSyscall },
     syscall::args::{ Direction, Integer, Fd, Flag, NullBuffer },
     //syscall::args::{ Integer, Fd, Size, Flag, Buffer, NullBuffer, Struct },
-    tracer::decoder::{ Decode },
+    tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
     operation::{ Operation },
 };
 
@@ -26,8 +26,8 @@ impl Access {
         Self { pathname, mode }
     }
 }
-impl Decode for Access {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Access {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.pathname.decode(pid, operation);
         self.mode.decode(pid, operation);
     }
@@ -52,8 +52,8 @@ impl Faccessat {
         Self { dirfd, pathname, mode, flags }
     }
 }
-impl Decode for Faccessat {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Faccessat {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.dirfd.decode(pid, operation);
         self.pathname.decode(pid, operation);
         self.mode.decode(pid, operation);
@@ -80,8 +80,8 @@ impl Faccessat2 {
         Self { dirfd, pathname, mode, flags }
     }
 }
-impl Decode for Faccessat2 {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Faccessat2 {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.dirfd.decode(pid, operation);
         self.pathname.decode(pid, operation);
         self.mode.decode(pid, operation);

@@ -9,7 +9,7 @@ use serde::{ Serialize, Deserialize };
 use crate::{
     operation::{ Operation },
     tracer::{
-        decoder::{ Decode },
+        decoder::{ DecodeArg },
     },
 };
 
@@ -32,8 +32,8 @@ pub enum ArgType {
     Struct(Struct),
 }
 
-impl Decode for ArgType {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeArg for ArgType {
+    fn decode(&mut self, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error> {
         match self {
             ArgType::Integer(integer)   => integer.decode(pid, operation),
             ArgType::Fd(fd)                  => fd.decode(pid, operation),
@@ -67,7 +67,7 @@ impl Integer {
     }
 }
 
-impl Decode for Integer { 
+impl DecodeArg for Integer { 
     fn print(&self) {
         println!("integer: {:#x}", self.value);
     }
@@ -89,7 +89,7 @@ impl Fd {
     }
 }
 
-impl Decode for Fd {
+impl DecodeArg for Fd {
 
     fn print(&self) {
         println!("fd: {:#x}", self.value);
@@ -116,7 +116,7 @@ impl Size {
     }
 }
 
-impl Decode for Size {
+impl DecodeArg for Size {
     fn print(&self) {
         println!("size: {:#x}", self.value);
     }
@@ -140,7 +140,7 @@ impl Offset {
     }
 }
 
-impl Decode for Offset {
+impl DecodeArg for Offset {
     fn print(&self) {
         println!("offset: {:#x}", self.value);
     }
@@ -162,7 +162,7 @@ impl Flag {
     }
 }
 
-impl Decode for Flag {
+impl DecodeArg for Flag {
     fn print(&self) {
         println!("flag: {:#x}", self.value);
     }
@@ -185,7 +185,7 @@ impl Protection {
     }
 }
 
-impl Decode for Protection {
+impl DecodeArg for Protection {
 
     fn print(&self) {
         println!("protection: {:#x}", self.value);
@@ -212,7 +212,7 @@ impl Signal {
     }
 }
 
-impl Decode for Signal {
+impl DecodeArg for Signal {
 
     fn print(&self) {
         println!("signo: {:#x}", self.value);
@@ -270,7 +270,7 @@ impl Address {
     }
 }
 
-impl Decode for Address {
+impl DecodeArg for Address {
     fn print(&self) {
         println!("address: {:#x}", self.value);
         println!("direction: {:#x}", self.direction);
@@ -304,10 +304,11 @@ impl Buffer {
     }
 }
 
-impl Decode for Buffer {
+impl DecodeArg for Buffer {
 
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) { 
+    fn decode(&mut self, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error> { 
         self.content = operation.memory.read(pid, self.address, self.size);
+        Ok(())
     }
 
     fn print(&self) {
@@ -342,9 +343,9 @@ impl NullBuffer {
     }
 }
 
-impl Decode for NullBuffer {
+impl DecodeArg for NullBuffer {
 
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) { 
+    fn decode(&mut self, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error> { 
         //TODO: does not work when the Null terminated buffer is greater than READ_SIZE bytes.
         #[allow(non_snake_case)]
         let READ_SIZE = 1024;
@@ -365,6 +366,7 @@ impl Decode for NullBuffer {
                 None => break,
             }
         }
+        Ok(())
     }
 
     fn print(&self) {
@@ -403,9 +405,9 @@ impl Array {
     }
 }
 
-impl Decode for Array {
+impl DecodeArg for Array {
 
-    fn decode(&mut self, _pid: i32, _operation: &Box<Operation>) { 
+    fn decode(&mut self, _pid: i32, _operation: &Box<Operation>) -> Result<(), std::io::Error> { 
        panic!("To implement"); 
     }
 }
@@ -437,9 +439,9 @@ impl Struct {
     }
 }
 
-impl Decode for Struct {
+impl DecodeArg for Struct {
 
-    fn decode(&mut self, _pid: i32, _operation: &Box<Operation>) { 
+    fn decode(&mut self, _pid: i32, _operation: &Box<Operation>) -> Result<(), std::io::Error> { 
        panic!("To implement"); 
     }
 

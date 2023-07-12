@@ -5,7 +5,7 @@ use serde::{ Serialize, Deserialize };
 use crate::{
     syscall::{ RawSyscall },
     syscall::args::{ Direction, Fd, Flag, Address, NullBuffer, Struct },
-    tracer::decoder::{ Decode },
+    tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
     operation::{ Operation },
 };
 
@@ -31,8 +31,8 @@ impl NameToHandleAt {
         Self { dirfd, pathname, handle, mount_id, flags }
     }
 }
-impl Decode for NameToHandleAt {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for NameToHandleAt {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.dirfd.decode(pid, operation);
         self.pathname.decode(pid, operation);
         self.handle.decode(pid, operation);
@@ -57,8 +57,8 @@ impl OpenByHandleAt {
         Self { mount_fd, handle, flags }
     }
 }
-impl Decode for OpenByHandleAt {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for OpenByHandleAt {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.mount_fd.decode(pid, operation);
         self.handle.decode(pid, operation);
         self.flags.decode(pid, operation);

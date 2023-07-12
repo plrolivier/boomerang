@@ -5,7 +5,7 @@ use serde::{ Serialize, Deserialize };
 use crate::{
     syscall::{ RawSyscall },
     syscall::args::{ Direction, Fd, Flag, Address, NullBuffer },
-    tracer::decoder::{ Decode },
+    tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
     operation::{ Operation },
 };
 
@@ -26,8 +26,8 @@ impl Execve {
         Self { pathname, argv, envp }
     }
 }
-impl Decode for Execve {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Execve {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.pathname.decode(pid, operation);
         self.argv.decode(pid, operation);
         self.envp.decode(pid, operation);
@@ -54,8 +54,8 @@ impl Execveat {
         Self { dirfd, pathname, argv, envp, flags }
     }
 }
-impl Decode for Execveat {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Execveat {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.dirfd.decode(pid, operation);
         self.pathname.decode(pid, operation);
         self.argv.decode(pid, operation);

@@ -6,7 +6,7 @@ use serde::{ Serialize, Deserialize };
 use crate::{
     syscall::{ RawSyscall },
     syscall::args::{ Direction, Integer, Fd, Size, Offset, Protection, Signal, Flag, Address, Buffer, NullBuffer, Array, Struct },
-    tracer::decoder::{ Decode },
+    tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
     operation::{ Operation },
 };
 
@@ -25,8 +25,8 @@ impl Getrlimit {
         Self { resource, rlim }
     }
 }
-impl Decode for Getrlimit {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Getrlimit {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.resource.decode(pid, operation);
         self.rlim.decode(pid, operation);
     }
@@ -47,8 +47,8 @@ impl Setrlimit {
         Self { resource, rlim }
     }
 }
-impl Decode for Setrlimit {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Setrlimit {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.resource.decode(pid, operation);
         self.rlim.decode(pid, operation);
     }
@@ -73,8 +73,8 @@ impl Prlimit {
         Self { pid, resource, new_limit, old_limit }
     }
 }
-impl Decode for Prlimit {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Prlimit {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.pid.decode(pid, operation);
         self.resource.decode(pid, operation);
         self.new_limit.decode(pid, operation);
@@ -97,8 +97,8 @@ impl Getrusage {
         Self { who, usage }
     }
 }
-impl Decode for Getrusage {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Getrusage {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.who.decode(pid, operation);
         self.usage.decode(pid, operation);
     }

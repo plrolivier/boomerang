@@ -6,7 +6,7 @@ use serde::{ Serialize, Deserialize };
 use crate::{
     syscall::{ RawSyscall },
     syscall::args::{ Direction, Integer, Fd, Size, Offset, Protection, Signal, Flag, Address, Buffer, NullBuffer, Array, Struct },
-    tracer::decoder::{ Decode },
+    tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
     operation::{ Operation },
 };
 
@@ -27,8 +27,8 @@ impl Read {
         Self { fd, buf, count }
     }
 }
-impl Decode for Read {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Read {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.fd.decode(pid, operation);
         self.buf.decode(pid, operation);
         self.count.decode(pid, operation);
@@ -51,8 +51,8 @@ impl Write {
         Self { fd, buf, count }
     }
 }
-impl Decode for Write {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Write {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.fd.decode(pid, operation);
         self.buf.decode(pid, operation);
         self.count.decode(pid, operation);
@@ -75,8 +75,8 @@ impl Readv {
         Self { fd, iov, iovcnt }
     }
 }
-impl Decode for Readv {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Readv {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.fd.decode(pid, operation);
         self.iov.decode(pid, operation);
         self.iovcnt.decode(pid, operation);
@@ -99,8 +99,8 @@ impl Writev {
         Self { fd, iov, iovcnt }
     }
 }
-impl Decode for Writev {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Writev {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.fd.decode(pid, operation);
         self.iov.decode(pid, operation);
         self.iovcnt.decode(pid, operation);
@@ -127,8 +127,8 @@ impl Pread {
         Self { fd, buf, nbytes, offset }
     }
 }
-impl Decode for Pread {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Pread {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.fd.decode(pid, operation);
         self.buf.decode(pid, operation);
         self.nbytes.decode(pid, operation);
@@ -154,8 +154,8 @@ impl Pwrite {
         Self { fd, buf, nbytes, offset }
     }
 }
-impl Decode for Pwrite {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Pwrite {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.fd.decode(pid, operation);
         self.buf.decode(pid, operation);
         self.nbytes.decode(pid, operation);
@@ -182,8 +182,8 @@ impl Preadv {
         Self { fd, iov, iovcnt, offset }
     }
 }
-impl Decode for Preadv {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Preadv {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.fd.decode(pid, operation);
         self.iov.decode(pid, operation);
         self.iovcnt.decode(pid, operation);
@@ -209,8 +209,8 @@ impl Pwritev {
         Self { fd, iov, iovcnt, offset }
     }
 }
-impl Decode for Pwritev {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Pwritev {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.fd.decode(pid, operation);
         self.iov.decode(pid, operation);
         self.iovcnt.decode(pid, operation);
@@ -240,8 +240,8 @@ impl Preadv2 {
         Self { fd, iov, iovcnt, offset, flags }
     }
 }
-impl Decode for Preadv2 {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Preadv2 {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.fd.decode(pid, operation);
         self.iov.decode(pid, operation);
         self.iovcnt.decode(pid, operation);
@@ -270,8 +270,8 @@ impl Pwritev2 {
         Self { fd, iov, iovcnt, offset, flags }
     }
 }
-impl Decode for Pwritev2 {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Pwritev2 {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.fd.decode(pid, operation);
         self.iov.decode(pid, operation);
         self.iovcnt.decode(pid, operation);

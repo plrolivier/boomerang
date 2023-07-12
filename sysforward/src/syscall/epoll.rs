@@ -6,7 +6,7 @@ use serde::{ Serialize, Deserialize };
 use crate::{
     syscall::{ RawSyscall },
     syscall::args::{ Direction, Integer, Fd, Struct },
-    tracer::decoder::{ Decode },
+    tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
     operation::{ Operation },
 };
 
@@ -24,8 +24,8 @@ impl EpollCreate {
         Self { size }
     }
 }
-impl Decode for EpollCreate {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for EpollCreate {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.size.decode(pid, operation);
     }
 }
@@ -42,8 +42,8 @@ impl EpollCreate1 {
         Self { size }
     }
 }
-impl Decode for EpollCreate1 {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for EpollCreate1 {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.size.decode(pid, operation);
     }
 }
@@ -66,8 +66,8 @@ impl EpollCtl {
         Self { epfd, op, fd, event }
     }
 }
-impl Decode for EpollCtl {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for EpollCtl {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.epfd.decode(pid, operation);
         self.op.decode(pid, operation);
         self.fd.decode(pid, operation);
@@ -93,8 +93,8 @@ impl EpollWait {
         Self { epfd, events, maxevents, timeout }
     }
 }
-impl Decode for EpollWait {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for EpollWait {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.epfd.decode(pid, operation);
         self.events.decode(pid, operation);
         self.maxevents.decode(pid, operation);
@@ -122,8 +122,8 @@ impl EpollPwait {
         Self { epfd, events, maxevents, timeout, sigmask }
     }
 }
-impl Decode for EpollPwait {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for EpollPwait {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.epfd.decode(pid, operation);
         self.events.decode(pid, operation);
         self.maxevents.decode(pid, operation);
@@ -152,8 +152,8 @@ impl EpollPwait2 {
         Self { epfd, events, maxevents, timeout, sigmask }
     }
 }
-impl Decode for EpollPwait2 {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for EpollPwait2 {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.epfd.decode(pid, operation);
         self.events.decode(pid, operation);
         self.maxevents.decode(pid, operation);

@@ -13,7 +13,7 @@ use serde::{ Serialize, Deserialize };
 use crate::{
     syscall::{ RawSyscall },
     syscall::args::{ Direction, Integer, Fd, Size, Offset, Protection, Flag, Address },
-    tracer::decoder::{ Decode },
+    tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
     operation::{ Operation },
 };
 
@@ -31,8 +31,8 @@ impl Brk {
         Self { addr }
     }
 }
-impl Decode for Brk {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Brk {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.addr.decode(pid, operation);
     }
 }
@@ -50,8 +50,8 @@ impl Sbrk {
         Self { increment }
     }
 }
-impl Decode for Sbrk {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Sbrk {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.increment.decode(pid, operation);
     }
 }
@@ -79,8 +79,8 @@ impl Mmap {
         Self { addr, length, prot, flags, fd, offset }
     }
 }
-impl Decode for Mmap {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Mmap {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.addr.decode(pid, operation);
         self.length.decode(pid, operation);
         self.prot.decode(pid, operation);
@@ -111,8 +111,8 @@ impl Mremap {
         Self { old_address, old_size, new_size, flags, new_address }
     }
 }
-impl Decode for Mremap {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Mremap {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.old_address.decode(pid, operation);
         self.old_size.decode(pid, operation);
         self.new_size.decode(pid, operation);
@@ -137,8 +137,8 @@ impl Munmap {
         Self { addr, length }
     }
 }
-impl Decode for Munmap {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Munmap {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.addr.decode(pid, operation);
         self.length.decode(pid, operation);
     }
@@ -161,8 +161,8 @@ impl Mprotect {
         Self { addr, len, prot }
     }
 }
-impl Decode for Mprotect {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Mprotect {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.addr.decode(pid, operation);
         self.len.decode(pid, operation);
         self.prot.decode(pid, operation);
@@ -186,8 +186,8 @@ impl Madvise {
         Self { addr, length, advice }
     }
 }
-impl Decode for Madvise {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) {
+impl DecodeEntry for Madvise {
+    fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
         self.addr.decode(pid, operation);
         self.length.decode(pid, operation);
         self.advice.decode(pid, operation);

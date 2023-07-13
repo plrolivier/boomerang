@@ -2,6 +2,7 @@
  */
 use serde::{ Serialize, Deserialize };
 
+use decode_derive::DecodeExit;
 use crate::{
     syscall::{ RawSyscall },
     syscall::args::{ Direction, Fd, Flag, Address, NullBuffer, Struct },
@@ -9,17 +10,21 @@ use crate::{
     operation::{ Operation },
 };
 
+use super::args::Integer;
+
 
 
 // int name_to_handle_at(int dirfd, const char *pathname, struct file_handle *handle, int *mount_id, int flags)
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct NameToHandleAt {
     pub dirfd: Fd,
     pub pathname: NullBuffer,
     pub handle: Struct,
     pub mount_id: Address,
     pub flags: Flag,
+    pub retval: Option<Integer>,
 }
 impl NameToHandleAt {
     pub fn new(raw: RawSyscall) -> Self {
@@ -28,7 +33,8 @@ impl NameToHandleAt {
         let handle = Struct::new(raw.args[2], Direction::InOut);
         let mount_id = Address::new(raw.args[3], Direction::InOut);
         let flags = Flag::new(raw.args[4]);
-        Self { dirfd, pathname, handle, mount_id, flags }
+        let retval = None;
+        Self { dirfd, pathname, handle, mount_id, flags, retval }
     }
 }
 impl DecodeEntry for NameToHandleAt {
@@ -44,17 +50,20 @@ impl DecodeEntry for NameToHandleAt {
 // int open_by_handle_at(int mount_fd, struct file_handle *handle, int flags)
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct OpenByHandleAt {
     pub mount_fd: Fd,
     pub handle: Struct,
     pub flags: Flag,
+    pub retval: Option<Integer>,
 }
 impl OpenByHandleAt {
     pub fn new(raw: RawSyscall) -> Self {
         let mount_fd = Fd::new(raw.args[0]);
         let handle = Struct::new(raw.args[1], Direction::InOut);
         let flags = Flag::new(raw.args[2]);
-        Self { mount_fd, handle, flags }
+        let retval = None;
+        Self { mount_fd, handle, flags, retval }
     }
 }
 impl DecodeEntry for OpenByHandleAt {

@@ -2,6 +2,7 @@
  *
  */
 use serde::{ Serialize, Deserialize };
+use decode_derive::DecodeExit;
 use crate::{
     syscall::{ RawSyscall },
     syscall::args::{ Direction, Integer, Address },
@@ -13,12 +14,14 @@ use crate::{
 // int prctl(int option, unsigned long arg2, unsigned long arg3, unsigned long arg4, unsigned long arg5)
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct Prctl {
     pub option: Integer,
     pub arg2: Integer,
     pub arg3: Integer,
     pub arg4: Integer,
     pub arg5: Integer,
+    pub retval: Option<Integer>,
 }
 impl Prctl {
     pub fn new(raw: RawSyscall) -> Self {
@@ -27,7 +30,8 @@ impl Prctl {
         let arg3 = Integer::new(raw.args[2]);
         let arg4 = Integer::new(raw.args[3]);
         let arg5 = Integer::new(raw.args[4]);
-        Self { option, arg2, arg3, arg4, arg5 }
+        let retval = None;
+        Self { option, arg2, arg3, arg4, arg5, retval }
     }
 }
 impl DecodeEntry for Prctl {
@@ -45,15 +49,18 @@ impl DecodeEntry for Prctl {
 // int syscall(SYS_arch_prctl, int code, unsigned long *addr)
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct ArchPrctl {
     pub code: Integer,
     pub addr: Address,
+    pub retval: Option<Integer>,
 }
 impl ArchPrctl {
     pub fn new(raw: RawSyscall) -> Self {
         let code = Integer::new(raw.args[0]);
         let addr = Address::new(raw.args[1], Direction::In);
-        Self { code, addr }
+        let retval = None;
+        Self { code, addr, retval }
     }
 }
 impl DecodeEntry for ArchPrctl {

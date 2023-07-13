@@ -3,6 +3,7 @@
  */
 use serde::{ Serialize, Deserialize };
 
+use decode_derive::DecodeExit;
 use crate::{
     syscall::{ RawSyscall },
     syscall::args::{ Direction, Integer, Fd, Size, Offset, Protection, Signal, Flag, Address, Buffer, NullBuffer, Array, Struct },
@@ -14,17 +15,20 @@ use crate::{
 // ssize_t read(int fd, void buf[.count], size_t count)
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct Read{
     pub fd: Fd,
     pub buf: Buffer,
     pub count: Size,
+    pub retval: Option<Size>,
 }
 impl Read {
     pub fn new(raw: RawSyscall) -> Self {
         let fd = Fd::new(raw.args[0]);
         let buf = Buffer::new(raw.args[1], Direction::In, raw.args[2]);
         let count = Size::new(raw.args[2]);
-        Self { fd, buf, count }
+        let retval = None;
+        Self { fd, buf, count, retval }
     }
 }
 impl DecodeEntry for Read {
@@ -38,17 +42,20 @@ impl DecodeEntry for Read {
 // ssize_t write(int fd, const void buf[.count], size_t count)
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct Write{
     pub fd: Fd,
     pub buf: Buffer,
     pub count: Size,
+    pub retval: Option<Size>,
 }
 impl Write {
     pub fn new(raw: RawSyscall) -> Self {
         let fd = Fd::new(raw.args[0]);
         let buf = Buffer::new(raw.args[1], Direction::Out, raw.args[2]);
         let count = Size::new(raw.args[2]);
-        Self { fd, buf, count }
+        let retval = None;
+        Self { fd, buf, count, retval }
     }
 }
 impl DecodeEntry for Write {
@@ -62,17 +69,20 @@ impl DecodeEntry for Write {
 // ssize_t readv(int fd, const struct iovec *iov, int iovcnt)
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct Readv {
     pub fd: Fd,
     pub iov: Struct,
     pub iovcnt: Integer,
+    pub retval: Option<Size>,
 }
 impl Readv {
     pub fn new(raw: RawSyscall) -> Self {
         let fd = Fd::new(raw.args[0]);
         let iov = Struct::new(raw.args[1], Direction::InOut);
         let iovcnt = Integer::new(raw.args[2]);
-        Self { fd, iov, iovcnt }
+        let retval = None;
+        Self { fd, iov, iovcnt, retval }
     }
 }
 impl DecodeEntry for Readv {
@@ -86,17 +96,20 @@ impl DecodeEntry for Readv {
 // ssize_t writev(int fd, const struct iovec *iov, int iovcnt)
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct Writev {
     pub fd: Fd,
     pub iov: Struct,
     pub iovcnt: Integer,
+    pub retval: Option<Size>,
 }
 impl Writev {
     pub fn new(raw: RawSyscall) -> Self {
         let fd = Fd::new(raw.args[0]);
         let iov = Struct::new(raw.args[1], Direction::InOut);
         let iovcnt = Integer::new(raw.args[2]);
-        Self { fd, iov, iovcnt }
+        let retval = None;
+        Self { fd, iov, iovcnt, retval }
     }
 }
 impl DecodeEntry for Writev {
@@ -112,11 +125,13 @@ impl DecodeEntry for Writev {
 // ssize_t pread(int fd, void *buf, size_t nbyte, off_t offset)
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct Pread {
     pub fd: Fd,
     pub buf: Buffer,
     pub nbytes: Size,
     pub offset: Offset,
+    pub retval: Option<Size>,
 }
 impl Pread {
     pub fn new(raw: RawSyscall) -> Self {
@@ -124,7 +139,8 @@ impl Pread {
         let buf = Buffer::new(raw.args[1], Direction::In, raw.args[2]);
         let nbytes = Size::new(raw.args[2]);
         let offset = Offset::new(raw.args[3]);
-        Self { fd, buf, nbytes, offset }
+        let retval = None;
+        Self { fd, buf, nbytes, offset, retval }
     }
 }
 impl DecodeEntry for Pread {
@@ -139,11 +155,13 @@ impl DecodeEntry for Pread {
 // ssize_t pwrite(int fd, const void *buf, size_t nbyte, off_t offset)
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct Pwrite {
     pub fd: Fd,
     pub buf: Buffer,
     pub nbytes: Size,
     pub offset: Offset,
+    pub retval: Option<Size>,
 }
 impl Pwrite {
     pub fn new(raw: RawSyscall) -> Self {
@@ -151,7 +169,8 @@ impl Pwrite {
         let buf = Buffer::new(raw.args[1], Direction::Out, raw.args[2]);
         let nbytes = Size::new(raw.args[2]);
         let offset = Offset::new(raw.args[3]);
-        Self { fd, buf, nbytes, offset }
+        let retval = None;
+        Self { fd, buf, nbytes, offset, retval }
     }
 }
 impl DecodeEntry for Pwrite {
@@ -167,11 +186,13 @@ impl DecodeEntry for Pwrite {
 // ssize_t preadv(int fd, const struct iovec *iov, int iovcnt, off_t offset)
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct Preadv {
     pub fd: Fd,
     pub iov: Struct,
     pub iovcnt: Integer,
     pub offset: Offset,
+    pub retval: Option<Size>,
 }
 impl Preadv {
     pub fn new(raw: RawSyscall) -> Self {
@@ -179,7 +200,8 @@ impl Preadv {
         let iov = Struct::new(raw.args[1], Direction::In);
         let iovcnt = Integer::new(raw.args[2]);
         let offset = Offset::new(raw.args[3]);
-        Self { fd, iov, iovcnt, offset }
+        let retval = None;
+        Self { fd, iov, iovcnt, offset, retval}
     }
 }
 impl DecodeEntry for Preadv {
@@ -194,11 +216,13 @@ impl DecodeEntry for Preadv {
 // ssize_t pwritev(int fd, const struct iovec *iov, int iovcnt, off_t offset)
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct Pwritev {
     pub fd: Fd,
     pub iov: Struct,
     pub iovcnt: Integer,
     pub offset: Offset,
+    pub retval: Option<Size>,
 }
 impl Pwritev {
     pub fn new(raw: RawSyscall) -> Self {
@@ -206,7 +230,8 @@ impl Pwritev {
         let iov = Struct::new(raw.args[1], Direction::InOut);
         let iovcnt = Integer::new(raw.args[2]);
         let offset = Offset::new(raw.args[3]);
-        Self { fd, iov, iovcnt, offset }
+        let retval = None;
+        Self { fd, iov, iovcnt, offset, retval }
     }
 }
 impl DecodeEntry for Pwritev {
@@ -223,12 +248,14 @@ impl DecodeEntry for Pwritev {
 // ssize_t preadv2(int fd, const struct iovec *iov, int iovcnt, off_t offset, int flags)
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct Preadv2 {
     pub fd: Fd,
     pub iov: Struct,
     pub iovcnt: Integer,
     pub offset: Offset,
     pub flags: Flag,
+    pub retval: Option<Size>,
 }
 impl Preadv2 {
     pub fn new(raw: RawSyscall) -> Self {
@@ -237,7 +264,8 @@ impl Preadv2 {
         let iovcnt = Integer::new(raw.args[2]);
         let offset = Offset::new(raw.args[3]);
         let flags = Flag::new(raw.args[4]);
-        Self { fd, iov, iovcnt, offset, flags }
+        let retval = None;
+        Self { fd, iov, iovcnt, offset, flags, retval }
     }
 }
 impl DecodeEntry for Preadv2 {
@@ -253,12 +281,15 @@ impl DecodeEntry for Preadv2 {
 // ssize_t pwritev2(int fd, const struct iovec *iov, int iovcnt, off_t offset, int flags)
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct Pwritev2 {
     pub fd: Fd,
     pub iov: Struct,
     pub iovcnt: Integer,
     pub offset: Offset,
     pub flags: Flag,
+    pub retval: Option<Size>,
+
 }
 impl Pwritev2 {
     pub fn new(raw: RawSyscall) -> Self {
@@ -267,7 +298,8 @@ impl Pwritev2 {
         let iovcnt = Integer::new(raw.args[2]);
         let offset = Offset::new(raw.args[3]);
         let flags = Flag::new(raw.args[4]);
-        Self { fd, iov, iovcnt, offset, flags }
+        let retval = None;
+        Self { fd, iov, iovcnt, offset, flags, retval }
     }
 }
 impl DecodeEntry for Pwritev2 {

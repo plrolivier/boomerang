@@ -1578,8 +1578,6 @@ impl DecodeExit for DecodedSyscall {
     fn decode_exit(&mut self, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error> { 
         match self {
             DecodedSyscall::Open(x) => x.decode_exit(pid, operation),
-            _ => panic!("oops"),
-            /* 
             DecodedSyscall::Close(x) => x.decode_exit(pid, operation),
             DecodedSyscall::Creat(x) => x.decode_exit(pid, operation),
             DecodedSyscall::Openat(x) => x.decode_exit(pid, operation),
@@ -1641,7 +1639,7 @@ impl DecodeExit for DecodedSyscall {
             DecodedSyscall::EpollWait(x) => x.decode_exit(pid, operation),
             DecodedSyscall::EpollPwait(x) => x.decode_exit(pid, operation),
             DecodedSyscall::EpollPwait2(x) => x.decode_exit(pid, operation),
-            */
+            //_ => panic!("oops"),
             //DecodedSyscall::(x) => x.decode_exit(pid, operation),
         }
     }

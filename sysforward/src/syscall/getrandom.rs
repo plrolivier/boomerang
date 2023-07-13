@@ -3,9 +3,10 @@
  */
 use serde::{ Serialize, Deserialize };
 
+use decode_derive::DecodeExit;
 use crate::{
     syscall::{ RawSyscall },
-    syscall::args::{ Direction, Buffer, Size, Flag },
+    syscall::args::{ Direction, Integer, Buffer, Size, Flag },
     tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
     operation::{ Operation },
 };
@@ -15,10 +16,12 @@ use crate::{
 // ssize_t getrandom(void buf[.buflen], size_t buflen, unsigned int flags);
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct Getrandom {
     pub buf: Buffer,
     pub buflen: Size,
     pub flags: Flag,
+    pub retval: Option<Integer>,
 }
 
 impl Getrandom {
@@ -26,7 +29,8 @@ impl Getrandom {
         let buf = Buffer::new(raw.args[0], Direction::Out, raw.args[1]);
         let buflen = Size::new(raw.args[1]);
         let flags = Flag::new(raw.args[2]);
-        Self { buf, buflen, flags }
+        let retval = None;
+        Self { buf, buflen, flags, retval }
     }
 }
 

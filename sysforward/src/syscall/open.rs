@@ -99,6 +99,7 @@ impl DecodeExit for Open {
 // int openat(int dirfd, const char *pathname, int flags, mode_t mode)
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct Openat {
     pub dirfd: Fd,
     pub pathname: NullBuffer,

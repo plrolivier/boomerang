@@ -2,6 +2,7 @@
  */
 use serde::{ Serialize, Deserialize };
 
+use decode_derive::DecodeExit;
 use crate::{
     syscall::{ RawSyscall },
     syscall::args::{ Direction, Integer, Fd, NullBuffer },
@@ -13,17 +14,20 @@ use crate::{
 // int mknod(const char *pathname, mode_t mode, dev_t dev)
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct Mknod {
     pub pathname: NullBuffer,
     pub mode: Integer,
     pub dev: Integer,
+    pub retval: Option<Integer>,
 }
 impl Mknod {
     pub fn new(raw: RawSyscall) -> Self {
         let pathname = NullBuffer::new(raw.args[0], Direction::In);
         let mode = Integer::new(raw.args[1]);
         let dev = Integer::new(raw.args[2]);
-        Self { pathname, mode, dev }
+        let retval = None;
+        Self { pathname, mode, dev, retval }
     }
 }
 impl DecodeEntry for Mknod {
@@ -37,11 +41,13 @@ impl DecodeEntry for Mknod {
 // int mknodat(int dirfd, const char *pathname, mode_t mode, dev_t dev)
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct Mknodat {
     pub dirfd: Fd,
     pub pathname: NullBuffer,
     pub mode: Integer,
     pub dev: Integer,
+    pub retval: Option<Integer>,
 }
 
 impl Mknodat {
@@ -50,7 +56,8 @@ impl Mknodat {
         let pathname = NullBuffer::new(raw.args[1], Direction::In);
         let mode = Integer::new(raw.args[2]);
         let dev = Integer::new(raw.args[3]);
-        Self { dirfd, pathname, mode, dev }
+        let retval = None;
+        Self { dirfd, pathname, mode, dev, retval }
     }
 }
 

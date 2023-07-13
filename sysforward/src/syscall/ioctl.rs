@@ -3,6 +3,7 @@
  *
  */
 use serde::{ Serialize, Deserialize };
+use decode_derive::DecodeExit;
 use crate::{
     syscall::{ RawSyscall },
     syscall::args::{ ArgType, Direction },
@@ -15,11 +16,13 @@ use crate::{
 // int ioctl(int fildes, int request, ... /* arg */)
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct Ioctl {
     pub fd: Fd,
     pub request: Integer,
     // TODO:
     pub arg: Integer,
+    pub retval: Option<Integer>
 }
 impl Ioctl {
     pub fn new(raw: RawSyscall) -> Self {
@@ -27,7 +30,8 @@ impl Ioctl {
         let request = Integer::new(raw.args[1]);
         // TODO:
         let arg = Integer::new(raw.args[2]);
-        Self { fd, request, arg }
+        let retval = None;
+        Self { fd, request, arg, retval }
     }
 }
 impl DecodeEntry for Ioctl {

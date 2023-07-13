@@ -10,6 +10,7 @@
  */
 use serde::{ Serialize, Deserialize };
 
+use decode_derive::DecodeExit;
 use crate::{
     syscall::{ RawSyscall },
     syscall::args::{ Direction, Integer, Fd, Size, Offset, Protection, Flag, Address },
@@ -22,13 +23,16 @@ use crate::{
 // int brk(void *addr);
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct Brk{
     pub addr: Address,
+    pub retval: Option<Integer>,
 }
 impl Brk {
     pub fn new(raw: RawSyscall) -> Self {
         let addr = Address::new(raw.args[0], Direction::In);
-        Self { addr }
+        let retval = None;
+        Self { addr, retval }
     }
 }
 impl DecodeEntry for Brk {
@@ -41,13 +45,16 @@ impl DecodeEntry for Brk {
 // void *sbrk(intptr_t increment);
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct Sbrk{
     pub increment: Integer,
+    pub retval: Option<Address>,
 }
 impl Sbrk {
     pub fn new(raw: RawSyscall) -> Self {
         let increment = Integer::new(raw.args[0]);
-        Self { increment }
+        let retval = None;
+        Self { increment, retval }
     }
 }
 impl DecodeEntry for Sbrk {
@@ -60,6 +67,7 @@ impl DecodeEntry for Sbrk {
 // void *mmap(void addr[.length], size_t length, int prot, int flags, int fd, off_t offset);
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct Mmap{
     pub addr: Address,
     pub length: Size,
@@ -67,6 +75,7 @@ pub struct Mmap{
     pub flags: Flag,
     pub fd: Fd,
     pub offset: Offset,
+    pub retval: Option<Address>,
 }
 impl Mmap {
     pub fn new(raw: RawSyscall) -> Self {
@@ -76,7 +85,8 @@ impl Mmap {
         let flags = Flag::new(raw.args[3]);
         let fd = Fd::new(raw.args[4]);
         let offset = Offset::new(raw.args[5]);
-        Self { addr, length, prot, flags, fd, offset }
+        let retval = None;
+        Self { addr, length, prot, flags, fd, offset, retval }
     }
 }
 impl DecodeEntry for Mmap {
@@ -94,12 +104,14 @@ impl DecodeEntry for Mmap {
 // void *mremap(void old_address[.old_size], size_t old_size, size_t new_size, int flags, ... /* void *new_address */);
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct Mremap{
     pub old_address: Address,
     pub old_size: Size,
     pub new_size: Size,
     pub flags: Flag,
     pub new_address: Address,
+    pub retval: Option<Address>,
 }
 impl Mremap {
     pub fn new(raw: RawSyscall) -> Self {
@@ -108,7 +120,8 @@ impl Mremap {
         let new_size = Size::new(raw.args[2]);
         let flags = Flag::new(raw.args[3]);
         let new_address = Address::new(raw.args[4], Direction::In);
-        Self { old_address, old_size, new_size, flags, new_address }
+        let retval = None;
+        Self { old_address, old_size, new_size, flags, new_address, retval }
     }
 }
 impl DecodeEntry for Mremap {
@@ -126,15 +139,18 @@ impl DecodeEntry for Mremap {
 // int munmap(void addr[.length], size_t length);
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct Munmap{
     pub addr: Address,
     pub length: Size,
+    pub retval: Option<Integer>,
 }
 impl Munmap {
     pub fn new(raw: RawSyscall) -> Self {
         let addr = Address::new(raw.args[0], Direction::In);
         let length = Size::new(raw.args[1]);
-        Self { addr, length }
+        let retval = None;
+        Self { addr, length, retval }
     }
 }
 impl DecodeEntry for Munmap {
@@ -148,17 +164,20 @@ impl DecodeEntry for Munmap {
 // int mprotect(void addr[.len], size_t len, int prot);
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct Mprotect{
     pub addr: Address,
     pub len: Size,
     pub prot: Protection,
+    pub retval: Option<Integer>,
 }
 impl Mprotect {
     pub fn new(raw: RawSyscall) -> Self {
         let addr = Address::new(raw.args[0], Direction::In);
         let len = Size::new(raw.args[1]);
         let prot = Protection::new(raw.args[2]);
-        Self { addr, len, prot }
+        let retval = None;
+        Self { addr, len, prot, retval }
     }
 }
 impl DecodeEntry for Mprotect {
@@ -173,17 +192,20 @@ impl DecodeEntry for Mprotect {
 // int madvise(void addr[.length], size_t length, int advice);
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct Madvise{
     pub addr: Address,
     pub length: Size,
     pub advice: Integer,
+    pub retval: Option<Integer>,
 }
 impl Madvise {
     pub fn new(raw: RawSyscall) -> Self {
         let addr = Address::new(raw.args[0], Direction::In);
         let length = Size::new(raw.args[1]);
         let advice = Integer::new(raw.args[2]);
-        Self { addr, length, advice }
+        let retval = None;
+        Self { addr, length, advice, retval }
     }
 }
 impl DecodeEntry for Madvise {

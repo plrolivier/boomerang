@@ -2,9 +2,10 @@
  *
  */
 use serde::{ Serialize, Deserialize };
+use decode_derive::DecodeExit;
 use crate::{
     syscall::{ RawSyscall },
-    syscall::args::{ Direction, Fd, Flag, NullBuffer, Struct },
+    syscall::args::{ Direction, Integer, Fd, Flag, NullBuffer, Struct },
     //syscall::args::{ Integer, Fd, Size, Flag, Buffer, NullBuffer, Struct },
     tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
     operation::{ Operation },
@@ -14,15 +15,18 @@ use crate::{
 // int stat(const char *restrict pathname, struct stat *restrict statbuf)
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct Stat {
     pub pathname: NullBuffer,
     pub statbuf: Struct,
+    pub retval: Option<Integer>,
 }
 impl Stat {
     pub fn new(raw: RawSyscall) -> Self {
         let pathname = NullBuffer::new(raw.args[0], Direction::In);
         let statbuf = Struct::new(raw.args[1], Direction::InOut);
-        Self { pathname, statbuf }
+        let retval = None;
+        Self { pathname, statbuf, retval }
     }
 }
 impl DecodeEntry for Stat {
@@ -36,15 +40,18 @@ impl DecodeEntry for Stat {
 // int fstat(int fd, struct stat *statbuf)
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct Fstat {
     pub fd: Fd,
     pub statbuf: Struct,
+    pub retval: Option<Integer>,
 }
 impl Fstat {
     pub fn new(raw: RawSyscall) -> Self {
         let fd = Fd::new(raw.args[0]);
         let statbuf = Struct::new(raw.args[1], Direction::InOut);
-        Self { fd, statbuf }
+        let retval = None;
+        Self { fd, statbuf, retval }
     }
 }
 impl DecodeEntry for Fstat {
@@ -58,15 +65,18 @@ impl DecodeEntry for Fstat {
 // int lstat(const char *restrict pathname, struct stat *restrict statbuf)
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct Lstat {
     pub pathname: NullBuffer,
     pub statbuf: Struct,
+    pub retval: Option<Integer>,
 }
 impl Lstat {
     pub fn new(raw: RawSyscall) -> Self {
         let pathname = NullBuffer::new(raw.args[0], Direction::In);
         let statbuf = Struct::new(raw.args[1], Direction::InOut);
-        Self { pathname, statbuf }
+        let retval = None;
+        Self { pathname, statbuf, retval }
     }
 }
 impl DecodeEntry for Lstat {
@@ -80,11 +90,13 @@ impl DecodeEntry for Lstat {
 //  int fstatat(int dirfd, const char *restrict pathname, struct stat *restrict statbuf, int flags)
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct Fstatat {
     pub dirfd: Fd,
     pub pathname: NullBuffer,
     pub statbuf: Struct,
     pub flags: Flag,
+    pub retval: Option<Integer>,
 }
 impl Fstatat {
     pub fn new(raw: RawSyscall) -> Self {
@@ -92,7 +104,8 @@ impl Fstatat {
         let pathname = NullBuffer::new(raw.args[1], Direction::In);
         let statbuf = Struct::new(raw.args[2], Direction::InOut);
         let flags = Flag::new(raw.args[3]);
-        Self { dirfd, pathname, statbuf, flags }
+        let retval = None;
+        Self { dirfd, pathname, statbuf, flags, retval }
     }
 }
 impl DecodeEntry for Fstatat {

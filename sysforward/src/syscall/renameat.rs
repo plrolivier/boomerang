@@ -2,6 +2,7 @@
  */
 use serde::{ Serialize, Deserialize };
 
+use decode_derive::DecodeExit;
 use crate::{
     syscall::{ RawSyscall },
     syscall::args::{ Direction, Integer, Fd, NullBuffer },
@@ -16,16 +17,19 @@ use super::args::Flag;
 // int rename(const char *oldpath, const char *newpath)
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct Rename {
     pub oldpath: NullBuffer,
     pub newpath: NullBuffer,
+    pub retval: Option<Integer>,
 }
 
 impl Rename {
     pub fn new(raw: RawSyscall) -> Self {
         let oldpath = NullBuffer::new(raw.args[0], Direction::In);
         let newpath = NullBuffer::new(raw.args[1], Direction::In);
-        Self { oldpath, newpath }
+        let retval = None;
+        Self { oldpath, newpath, retval }
     }
 }
 
@@ -39,11 +43,13 @@ impl DecodeEntry for Rename {
 // int renameat(int olddirfd, const char *oldpath, int newdirfd, const char *newpath)
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct Renameat {
     pub olddirfd: Fd,
     pub oldpath: NullBuffer,
     pub newdirfd: Fd,
     pub newpath: NullBuffer,
+    pub retval: Option<Integer>,
 }
 
 impl Renameat {
@@ -52,7 +58,8 @@ impl Renameat {
         let oldpath = NullBuffer::new(raw.args[1], Direction::In);
         let newdirfd = Fd::new(raw.args[2]);
         let newpath = NullBuffer::new(raw.args[3], Direction::In);
-        Self { olddirfd, oldpath, newdirfd, newpath }
+        let retval = None;
+        Self { olddirfd, oldpath, newdirfd, newpath, retval }
     }
 }
 
@@ -69,12 +76,14 @@ impl DecodeEntry for Renameat {
 // int renameat2(int olddirfd, const char *oldpath, int newdirfd, const char *newpath, unsigned int flags)
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct Renameat2 {
     pub olddirfd: Fd,
     pub oldpath: NullBuffer,
     pub newdirfd: Fd,
     pub newpath: NullBuffer,
     pub flags: Flag,
+    pub retval: Option<Integer>,
 }
 
 impl Renameat2 {
@@ -84,7 +93,8 @@ impl Renameat2 {
         let newdirfd = Fd::new(raw.args[2]);
         let newpath = NullBuffer::new(raw.args[3], Direction::In);
         let flags = Flag::new(raw.args[4]);
-        Self { olddirfd, oldpath, newdirfd, newpath, flags }
+        let retval = None;
+        Self { olddirfd, oldpath, newdirfd, newpath, flags, retval }
     }
 }
 

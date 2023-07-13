@@ -2,9 +2,10 @@
  */
 use serde::{ Serialize, Deserialize };
 
+use decode_derive::DecodeExit;
 use crate::{
     syscall::{ RawSyscall },
-    syscall::args::{ Direction, Flag, NullBuffer },
+    syscall::args::{ Direction, Integer, Flag, NullBuffer },
     tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
     operation::{ Operation },
 };
@@ -14,16 +15,19 @@ use crate::{
 // int memfd_create(const char *name, unsigned int flags)
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct MemfdCreate {
     pub name: NullBuffer,
     pub flags: Flag,
+    pub retval: Option<Integer>,
 }
 
 impl MemfdCreate {
     pub fn new(raw: RawSyscall) -> Self {
         let name = NullBuffer::new(raw.args[0], Direction::In);
         let flags = Flag::new(raw.args[1]);
-        Self { name, flags }
+        let retval = None;
+        Self { name, flags, retval }
     }
 }
 

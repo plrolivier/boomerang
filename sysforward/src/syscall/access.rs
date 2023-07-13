@@ -2,6 +2,7 @@
  *
  */
 use serde::{ Serialize, Deserialize };
+use decode_derive::DecodeExit;
 use crate::{
     syscall::{ RawSyscall },
     syscall::args::{ Direction, Integer, Fd, Flag, NullBuffer },
@@ -15,15 +16,18 @@ use crate::{
 // int access(const char *pathname, int mode)
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct Access {
     pub pathname: NullBuffer,
     pub mode: Integer,
+    pub retval: Option<Integer>,
 }
 impl Access {
     pub fn new(raw: RawSyscall) -> Self {
         let pathname = NullBuffer::new(raw.args[0], Direction::In);
         let mode = Integer::new(raw.args[1]);
-        Self { pathname, mode }
+        let retval = None;
+        Self { pathname, mode, retval }
     }
 }
 impl DecodeEntry for Access {
@@ -37,11 +41,13 @@ impl DecodeEntry for Access {
 // int faccessat(int dirfd, const char *pathname, int mode, int flags)
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct Faccessat {
     pub dirfd: Fd,
     pub pathname: NullBuffer,
     pub mode: Integer,
     pub flags: Flag,
+    pub retval: Option<Integer>,
 }
 impl Faccessat {
     pub fn new(raw: RawSyscall) -> Self {
@@ -49,7 +55,8 @@ impl Faccessat {
         let pathname = NullBuffer::new(raw.args[1], Direction::In);
         let mode = Integer::new(raw.args[2]);
         let flags = Flag::new(raw.args[3]);
-        Self { dirfd, pathname, mode, flags }
+        let retval = None;
+        Self { dirfd, pathname, mode, flags, retval }
     }
 }
 impl DecodeEntry for Faccessat {
@@ -65,11 +72,13 @@ impl DecodeEntry for Faccessat {
 // int syscall(SYS_faccessat2, int dirfd, const char *pathname, int mode, int flags)
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
+#[derive(DecodeExit)]
 pub struct Faccessat2 {
     pub dirfd: Fd,
     pub pathname: NullBuffer,
     pub mode: Integer,
     pub flags: Flag,
+    pub retval: Option<Integer>,
 }
 impl Faccessat2 {
     pub fn new(raw: RawSyscall) -> Self {
@@ -77,7 +86,8 @@ impl Faccessat2 {
         let pathname = NullBuffer::new(raw.args[1], Direction::In);
         let mode = Integer::new(raw.args[2]);
         let flags = Flag::new(raw.args[3]);
-        Self { dirfd, pathname, mode, flags }
+        let retval = None;
+        Self { dirfd, pathname, mode, flags, retval }
     }
 }
 impl DecodeEntry for Faccessat2 {

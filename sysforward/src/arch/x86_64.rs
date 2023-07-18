@@ -38,7 +38,7 @@ pub fn create_register_table() -> HashMap<&'static str, u8> {
 }
 */
 
-pub fn create_syscall_table() -> HashMap<&'static str, u64> {
+pub fn create_syscall_table() -> HashMap<&'static str, usize> {
     HashMap::from([
         ("read", 0),
         ("write", 1),

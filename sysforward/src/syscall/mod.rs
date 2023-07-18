@@ -73,10 +73,10 @@ impl Syscall {
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct RawSyscall {
-    pub no: u64,
-    pub args: Vec<u64>,
-    pub retval: u64,
-    pub errno: u64,
+    pub no: usize,
+    pub args: Vec<usize>,
+    pub retval: usize,
+    pub errno: usize,
 }
 
 impl RawSyscall {

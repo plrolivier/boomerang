@@ -58,11 +58,11 @@ impl DecodeArg for ArgType {
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Integer {
-    pub value: u64
+    pub value: usize
 }
 
 impl Integer {
-    pub fn new(value: u64) -> Self {
+    pub fn new(value: usize) -> Self {
         Self { value: value }
     }
 }
@@ -80,12 +80,12 @@ impl DecodeArg for Integer {
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Fd {
-    pub value: u16,
+    pub value: usize,
 }
 
 impl Fd {
-    pub fn new(value: u64) -> Self {
-        Self { value: value as u16 }
+    pub fn new(value: usize) -> Self {
+        Self { value: value }
     }
 }
 
@@ -103,13 +103,13 @@ impl DecodeArg for Fd {
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Size {
-    pub value: u64,
+    pub value: usize,
     //pub obj: Option<T>,
     
 }
 
 impl Size {
-    pub fn new(value: u64) -> Self {
+    pub fn new(value: usize) -> Self {
         Self { 
             value: value,
         }
@@ -129,11 +129,11 @@ impl DecodeArg for Size {
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Offset {
-    pub value: u64,
+    pub value: usize,
 }
 
 impl Offset {
-    pub fn new(value: u64) -> Self {
+    pub fn new(value: usize) -> Self {
         Self {
             value: value,
         }
@@ -157,7 +157,7 @@ pub struct Flag {
 }
 
 impl Flag {
-    pub fn new(value: u64) -> Self {
+    pub fn new(value: usize) -> Self {
         Self { value: value as u8 }
     }
 }
@@ -180,7 +180,7 @@ pub struct Protection {
 }
 
 impl Protection {
-    pub fn new(value: u64) -> Self {
+    pub fn new(value: usize) -> Self {
         Self { value: value as u8 }
     }
 }
@@ -207,7 +207,7 @@ pub struct Signal {
 }
 
 impl Signal {
-    pub fn new(value: u64) -> Self {
+    pub fn new(value: usize) -> Self {
         Self { value: value as u8 }
     }
 }
@@ -257,12 +257,12 @@ impl fmt::LowerHex for Direction {
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Address {
-    pub value: u64,
+    pub value: usize,
     pub direction: Direction,
 }
 
 impl Address {
-    pub fn new(value: u64, direction: Direction) -> Self {
+    pub fn new(value: usize, direction: Direction) -> Self {
         Self { 
             value: value,
             direction: direction
@@ -287,14 +287,14 @@ impl DecodeArg for Address {
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Buffer {
-    pub address: u64,
+    pub address: usize,
     pub direction: Direction,
-    pub size: u64,
+    pub size: usize,
     pub content: Vec<u8>,
 }
 
 impl Buffer {
-    pub fn new(address: u64, direction: Direction, size: u64) -> Self {
+    pub fn new(address: usize, direction: Direction, size: usize) -> Self {
         Self { 
             address: address,
             direction: direction,
@@ -326,14 +326,14 @@ impl DecodeArg for Buffer {
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct NullBuffer {
-    pub address: u64,
+    pub address: usize,
     pub direction: Direction,
-    pub size: u64,
+    pub size: usize,
     pub content: Vec<u8>,
 }
 
 impl NullBuffer {
-    pub fn new(address: u64, direction: Direction) -> Self {
+    pub fn new(address: usize, direction: Direction) -> Self {
         Self { 
             address: address,
             direction: direction,
@@ -384,18 +384,18 @@ impl DecodeArg for NullBuffer {
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Array {
-    pub address: u64,
+    pub address: usize,
     pub direction: Direction,
-    pub count: u64,
+    pub count: usize,
     pub content: Vec<u32>,
     /* XXX
     pub element_type: Option<T>,
-    pub element_size: u64,
+    pub element_size: usize,
     */
 }
 
 impl Array {
-    pub fn new(address: u64, direction: Direction, count: u64) -> Self {
+    pub fn new(address: usize, direction: Direction, count: usize) -> Self {
         Self {
             address: address,
             direction: direction,
@@ -418,16 +418,16 @@ impl DecodeArg for Array {
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
 pub struct Struct {
-    pub address: u64,
+    pub address: usize,
     pub direction: Direction,
-    pub size: u64,
+    pub size: usize,
     pub name: String,
     pub content: Vec<u8>,
 }
 
 impl Struct {
-    //pub fn new(address: u64, name: &str) -> Self {    TODO: use name during creation
-    pub fn new(address: u64, direction: Direction) -> Self {
+    //pub fn new(address: usize, name: &str) -> Self {    TODO: use name during creation
+    pub fn new(address: usize, direction: Direction) -> Self {
         Self { 
             address: address,
             direction: direction,

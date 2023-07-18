@@ -23,8 +23,8 @@ pub trait RegisterOperation {
 }
 
 pub trait MemoryOperation {
-    fn read(&self, pid: i32, addr: u64, size: u64) -> Vec<u8>;
-    fn write(&self, pid: i32, addr: u64, mem: Vec<u8>) -> u64;
+    fn read(&self, pid: i32, addr: usize, size: usize) -> Vec<u8>;
+    fn write(&self, pid: i32, addr: usize, mem: Vec<u8>) -> usize;
 }
 
 /*

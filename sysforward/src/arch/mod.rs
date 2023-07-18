@@ -75,7 +75,7 @@ impl Register {
 
 
 pub(crate) struct SyscallTable {
-    map: HashMap<&'static str, u64>,
+    map: HashMap<&'static str, usize>,
 }
 
 impl SyscallTable {
@@ -99,11 +99,11 @@ impl SyscallTable {
         }
     }
 
-    pub fn get_syscall_no(&self, name: &str) -> Option<u64> {
+    pub fn get_syscall_no(&self, name: &str) -> Option<usize> {
         self.map.get(name).copied()
     }
 
-    pub fn get_syscall_name(&self, no: &u64) -> Option<String> {
+    pub fn get_syscall_name(&self, no: &usize) -> Option<String> {
         self.map.iter().find_map(|(&key, &val)| if val == *no { Some(String::from(key)) } else { None })
     }
 }

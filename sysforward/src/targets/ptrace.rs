@@ -43,7 +43,7 @@ impl RegisterOperation for Ptrace {
 
 impl MemoryOperation for Ptrace {
 
-    fn read(&self, pid: i32, addr: u64, size: u64) -> Vec<u8> {
+    fn read(&self, pid: i32, addr: usize, size: usize) -> Vec<u8> {
         let pid = Pid::from_raw(pid);
         let mut mem: Vec<u8> = Vec::new();
         let mut addr = addr;
@@ -78,11 +78,11 @@ impl MemoryOperation for Ptrace {
         mem
     }
 
-    fn write(&self, pid: i32, addr: u64, mem: Vec<u8>) -> u64 {
+    fn write(&self, pid: i32, addr: usize, mem: Vec<u8>) -> usize {
         let pid = Pid::from_raw(pid);
         let mut addr = addr;
-        let size = mem.len() as u64;
-        let mut count = mem.len() as u64;
+        let size = mem.len();
+        let mut count = mem.len();
         let mut mem: VecDeque<u8> = VecDeque::from(mem);
 
         while count > 0 {

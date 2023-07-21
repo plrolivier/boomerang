@@ -51,7 +51,7 @@ pub fn decode_exit_derive(input: TokenStream) -> TokenStream
         impl DecodeExit for #name {
             fn decode_exit(&mut self, value: usize, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error>
             {
-                self.retval.as_mut() = Some( #inner_type::from(value) );
+                self.retval = Some( #inner_type::from(value) );
                 Ok(())
             }
         }

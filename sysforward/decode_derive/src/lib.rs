@@ -35,16 +35,16 @@ pub fn decode_exit_derive(input: TokenStream) -> TokenStream
                 if let syn::GenericArgument::Type(ty) = &angle_bracketed.args[0] {
                     Some(ty.clone())
                 } else {
-                    None
+                    panic!("Failed to extract inner type of Option<> for retval");
                 }
             } else {
-                None
+                panic!("Failed to extract inner type of Option<> for retval");
             }
         } else {
-            None
+            panic!("retval is not an Option<>");
         }
     } else {
-        None
+        panic!("retval is not an Option<>");
     };
 
     let gen = quote! {

@@ -11,7 +11,7 @@ use sysforward::{
 
 
 
-struct ForwardFileRule {
+pub struct ForwardFileRule {
     pub filename: String,
     fd: Option<usize>,
     trigger_on_entry: bool,     // to avoid having to recheck during the callback
@@ -28,63 +28,72 @@ impl ForwardFileRule {
 
 impl Rule for ForwardFileRule {
 
-    fn filter(&mut self, syscall: &Syscall) -> Result<Decision, std::io::Error>
+    fn filter_entry(&mut self, syscall: Syscall) -> Result<Decision, std::io::Error>
     {
         let mut decision = Decision::Pass;
         self.trigger_on_entry = false;
 
-        let decoded_syscall = syscall.decoded.as_ref().unwrap();
+        println!("Syscall: {:?}", syscall);
+        if let Some(decoded_syscall) = syscall.decoded {
 
-        match decoded_syscall {
-            DecodedSyscall::Open(sc) => {
-                let bytes_filename: Vec<u8> = self.filename.bytes().collect::<Vec<_>>();
-                /* Note: the filename should exactly match the pathname and not a substring of it */
-                /* It could be nice to have some sort of regex pattern matching */
-                if sc.pathname.content ==  bytes_filename {
-                    self.trigger_on_entry = true;
-                    decision = Decision::Forward;
+            match decoded_syscall {
+                DecodedSyscall::Open(sc) => {
+                    let bytes_filename: Vec<u8> = self.filename.bytes().collect::<Vec<_>>();
+                    /* Note: the filename should exactly match the pathname and not a substring of it */
+                    /* It could be nice to have some sort of regex pattern matching */
+                    if sc.pathname.content ==  bytes_filename {
+                        self.trigger_on_entry = true;
+                        decision = Decision::Forward;
+                    }
+                    // TODO: recuperer FD on syscall returns
                 }
-                // TODO: recuperer FD on syscall returns
-            }
-            DecodedSyscall::Close(sc) => {
-                match self.fd {
-                    Some(fd) => {
-                        if sc.fd.value == fd {
-                            self.trigger_on_entry = true;
-                            decision = Decision::Forward;
-                        }
-                    },
-                    None => (),
+                DecodedSyscall::Close(sc) => {
+                    match self.fd {
+                        Some(fd) => {
+                            if sc.fd.value == fd {
+                                self.trigger_on_entry = true;
+                                decision = Decision::Forward;
+                            }
+                        },
+                        None => (),
+                    }
                 }
-            }
-            DecodedSyscall::Read(sc) => {
-                match self.fd {
-                    Some(fd) => {
-                        if sc.fd.value == fd {
-                            self.trigger_on_entry = true;
-                            decision = Decision::Forward;
-                        }
-                    },
-                    None => (),
+                DecodedSyscall::Read(sc) => {
+                    match self.fd {
+                        Some(fd) => {
+                            if sc.fd.value == fd {
+                                self.trigger_on_entry = true;
+                                decision = Decision::Forward;
+                            }
+                        },
+                        None => (),
+                    }
                 }
-            }
-            DecodedSyscall::Write(sc) => {
-                match self.fd {
-                    Some(fd) => {
-                        if sc.fd.value == fd {
-                            self.trigger_on_entry = true;
-                            decision = Decision::Forward;
-                        }
-                    },
-                    None => (),
+                DecodedSyscall::Write(sc) => {
+                    match self.fd {
+                        Some(fd) => {
+                            if sc.fd.value == fd {
+                                self.trigger_on_entry = true;
+                                decision = Decision::Forward;
+                            }
+                        },
+                        None => (),
+                    }
                 }
-            }
-            _ => (),
-        }
+                _ => (),
+            }   // match
+
+        }   // if let
+
         Ok(decision)
     }
 
-    fn on_syscall_exit(&mut self, syscall: &Syscall)
+    fn filter_exit(&mut self, syscall: Syscall) -> Result<Decision, std::io::Error>
+    {
+        Ok(syscall.decision.unwrap())
+    }
+
+    fn on_syscall_exit(&mut self, syscall: Syscall)
     {
         if syscall.decision.unwrap() != Decision::Forward {
             return;

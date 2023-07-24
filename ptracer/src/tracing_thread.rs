@@ -28,6 +28,10 @@ use sysforward::{
     targets,
 };
 
+use filters::{
+    ForwardFileRule,
+};
+
 use crate::{
     IP_ADDRESS, TRACER_PORT, EXECUTOR_PORT,
 };
@@ -99,13 +103,17 @@ impl TracingThread {
         let mem_op = Box::new(ptrace_op);
         let operator = Box::new(Operation{ register: regs_op, memory: mem_op });
 
-        let tracer = TracerEngine::new(pid,
-                                                     TargetArch::X86_64,
-                                                     IP_ADDRESS,
-                                                     TRACER_PORT,
-                                                     EXECUTOR_PORT,
-                                                     operator,
-                                                    );
+        let mut tracer = TracerEngine::new(pid,
+                                                         TargetArch::X86_64,
+                                                         IP_ADDRESS,
+                                                         TRACER_PORT,
+                                                         EXECUTOR_PORT,
+                                                         operator,
+                                                        );
+
+        /* Load filters */
+        let rule = Box::new(ForwardFileRule::new(String::from("/dev/kbuf")));
+        tracer.load_rule(0, rule);
         
         // Send the PID of the tracee to the control thread
         self.tx.send(pid.to_string()).unwrap();

@@ -33,11 +33,43 @@ impl Rule for ForwardFileRule {
         let mut decision = Decision::Pass;
         self.trigger_on_entry = false;
 
-        println!("Syscall: {:?}", syscall);
+        //println!("Syscall: {:?}", syscall);
         if let Some(decoded_syscall) = syscall.decoded {
 
             match decoded_syscall {
+
+                /* Open class syscalls */
                 DecodedSyscall::Open(sc) => {
+                    let bytes_filename: Vec<u8> = self.filename.bytes().collect::<Vec<_>>();
+                    /* Note: the filename should exactly match the pathname and not a substring of it */
+                    /* It could be nice to have some sort of regex pattern matching */
+                    if sc.pathname.content ==  bytes_filename {
+                        self.trigger_on_entry = true;
+                        decision = Decision::Forward;
+                    }
+                    // TODO: recuperer FD on syscall returns
+                }
+                DecodedSyscall::Creat(sc) => {
+                    let bytes_filename: Vec<u8> = self.filename.bytes().collect::<Vec<_>>();
+                    /* Note: the filename should exactly match the pathname and not a substring of it */
+                    /* It could be nice to have some sort of regex pattern matching */
+                    if sc.pathname.content ==  bytes_filename {
+                        self.trigger_on_entry = true;
+                        decision = Decision::Forward;
+                    }
+                    // TODO: recuperer FD on syscall returns
+                }
+                DecodedSyscall::Openat(sc) => {
+                    let bytes_filename: Vec<u8> = self.filename.bytes().collect::<Vec<_>>();
+                    /* Note: the filename should exactly match the pathname and not a substring of it */
+                    /* It could be nice to have some sort of regex pattern matching */
+                    if sc.pathname.content ==  bytes_filename {
+                        self.trigger_on_entry = true;
+                        decision = Decision::Forward;
+                    }
+                    // TODO: recuperer FD on syscall returns
+                }
+                DecodedSyscall::Openat2(sc) => {
                     let bytes_filename: Vec<u8> = self.filename.bytes().collect::<Vec<_>>();
                     /* Note: the filename should exactly match the pathname and not a substring of it */
                     /* It could be nice to have some sort of regex pattern matching */
@@ -58,6 +90,8 @@ impl Rule for ForwardFileRule {
                         None => (),
                     }
                 }
+
+                /* Read class syscall */
                 DecodedSyscall::Read(sc) => {
                     match self.fd {
                         Some(fd) => {
@@ -69,6 +103,8 @@ impl Rule for ForwardFileRule {
                         None => (),
                     }
                 }
+
+                /* Write class syscall */
                 DecodedSyscall::Write(sc) => {
                     match self.fd {
                         Some(fd) => {
@@ -80,6 +116,8 @@ impl Rule for ForwardFileRule {
                         None => (),
                     }
                 }
+
+                /* Others */
                 _ => (),
             }   // match
 
@@ -103,14 +141,34 @@ impl Rule for ForwardFileRule {
             let decoded_syscall = syscall.decoded.as_ref().unwrap();
 
             match decoded_syscall {
+
+                DecodedSyscall::Close(_sc) => {
+                    self.fd = None;
+                }
+
+                DecodedSyscall::Creat(sc) => {
+                    match sc.retval.as_ref() {
+                        Some(fd) => self.fd = Some(fd.value),
+                        None => (),
+                    }
+                }
                 DecodedSyscall::Open(sc) => {
                     match sc.retval.as_ref() {
                         Some(fd) => self.fd = Some(fd.value),
                         None => (),
                     }
                 }
-                DecodedSyscall::Close(_sc) => {
-                    self.fd = None;
+                DecodedSyscall::Openat(sc) => {
+                    match sc.retval.as_ref() {
+                        Some(fd) => self.fd = Some(fd.value),
+                        None => (),
+                    }
+                }
+                DecodedSyscall::Openat2(sc) => {
+                    match sc.retval.as_ref() {
+                        Some(fd) => self.fd = Some(fd.value),
+                        None => (),
+                    }
                 }
 
                 _ => (),

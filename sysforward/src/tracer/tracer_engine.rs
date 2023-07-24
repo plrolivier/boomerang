@@ -294,7 +294,7 @@ impl TracerEngine {
                 self.continue_exit().unwrap();
             },
             Some(Decision::Forward) => {
-                //self.forward_exit().unwrap();
+                self.forward_exit().unwrap();
             },
             _ => panic!("Decision not implemented")
         }
@@ -320,14 +320,14 @@ impl TracerEngine {
     fn forward_entry(&mut self) -> Result<(), io::Error>
     {
         /* Pre-forward instrumentation */
-        //self.instr_pre_forward().unwrap();
+        self.instr_pre_forward().unwrap();
 
         /* Forward */
         self.remote_syscall = self.protocol.send_syscall_entry(&self.remote_syscall).unwrap();
         println!("[{}] remote syscall retval: {:#x}", self.pid, self.remote_syscall.raw.retval as usize);
 
         /* Post-forward instrumentation */
-        //self.instr_post_forward().unwrap();
+        self.instr_post_forward().unwrap();
 
         Ok(())
     }

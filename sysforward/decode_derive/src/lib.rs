@@ -3,6 +3,16 @@ use quote::quote;
 use syn;
 
 
+
+/* TODO
+#[proc_macro_derive(DecodeEntry)]
+pub fn decode_entry_derive(input: TokenStream) -> TokenStream
+{
+    // TODO
+}
+*/
+
+
 #[proc_macro_derive(DecodeExit)]
 pub fn decode_exit_derive(input: TokenStream) -> TokenStream
 {

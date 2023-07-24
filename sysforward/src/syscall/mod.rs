@@ -24,6 +24,10 @@ pub mod resource;
 pub mod rseq;
 pub mod getrandom;
 pub mod epoll;
+pub mod robust_list;
+pub mod tid;
+pub mod lseek;
+pub mod exit;
 
 
 use serde::{ Serialize, Deserialize };

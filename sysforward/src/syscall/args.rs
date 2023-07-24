@@ -2,6 +2,7 @@
  * Syscall decoded arguments data structures
  */
 use core::fmt;
+use std::convert::From;
 
 //use nix::libc::printf;
 use serde::{ Serialize, Deserialize };
@@ -52,6 +53,8 @@ impl DecodeArg for ArgType {
 }
 
 
+// TODO: implement the PartialEq and Eq traits
+
 /* 
  * Direct value 
  */
@@ -63,6 +66,13 @@ pub struct Integer {
 
 impl Integer {
     pub fn new(value: usize) -> Self {
+        Self { value: value }
+    }
+}
+
+impl From<usize> for Integer {
+    fn from(value: usize) -> Self
+    {
         Self { value: value }
     }
 }
@@ -85,6 +95,13 @@ pub struct Fd {
 
 impl Fd {
     pub fn new(value: usize) -> Self {
+        Self { value: value }
+    }
+}
+
+impl From<usize> for Fd {
+    fn from(value: usize) -> Self
+    {
         Self { value: value }
     }
 }
@@ -116,6 +133,13 @@ impl Size {
     }
 }
 
+impl From<usize> for Size {
+    fn from(value: usize) -> Self
+    {
+        Self { value: value }
+    }
+}
+
 impl DecodeArg for Size {
     fn print(&self) {
         println!("size: {:#x}", self.value);
@@ -137,6 +161,13 @@ impl Offset {
         Self {
             value: value,
         }
+    }
+}
+
+impl From<usize> for Offset {
+    fn from(value: usize) -> Self
+    {
+        Self { value: value }
     }
 }
 
@@ -162,6 +193,14 @@ impl Flag {
     }
 }
 
+impl From<usize> for Flag {
+    fn from(value: usize) -> Self
+    {
+        let bytes = value.to_ne_bytes();
+        Self { value: bytes[0] }
+    }
+}
+
 impl DecodeArg for Flag {
     fn print(&self) {
         println!("flag: {:#x}", self.value);
@@ -182,6 +221,14 @@ pub struct Protection {
 impl Protection {
     pub fn new(value: usize) -> Self {
         Self { value: value as u8 }
+    }
+}
+
+impl From<usize> for Protection {
+    fn from(value: usize) -> Self
+    {
+        let bytes = value.to_ne_bytes();
+        Self { value: bytes[0] }
     }
 }
 
@@ -209,6 +256,14 @@ pub struct Signal {
 impl Signal {
     pub fn new(value: usize) -> Self {
         Self { value: value as u8 }
+    }
+}
+
+impl From<usize> for Signal {
+    fn from(value: usize) -> Self
+    {
+        let bytes = value.to_ne_bytes();
+        Self { value: bytes[0] }
     }
 }
 
@@ -259,13 +314,26 @@ impl fmt::LowerHex for Direction {
 pub struct Address {
     pub value: usize,
     pub direction: Direction,
+    pub content: usize,
 }
 
 impl Address {
     pub fn new(value: usize, direction: Direction) -> Self {
         Self { 
             value: value,
-            direction: direction
+            direction: direction,
+            content: 0,
+        }
+    }
+}
+
+impl From<usize> for Address {
+    fn from(value: usize) -> Self
+    {
+        Self {
+            value: value,
+            direction: Direction::InOut,
+            content: 0,
         }
     }
 }
@@ -274,6 +342,7 @@ impl DecodeArg for Address {
     fn print(&self) {
         println!("address: {:#x}", self.value);
         println!("direction: {:#x}", self.direction);
+        println!("content: {:#x}", self.content);
     }
 }
 
@@ -300,6 +369,18 @@ impl Buffer {
             direction: direction,
             size: size,
             content: Vec::new(),  // TODO: initialize with a default size?
+        }
+    }
+}
+
+impl From<usize> for Buffer {
+    fn from(value: usize) -> Self
+    {
+        Self {
+            address: value,
+            direction: Direction::InOut,
+            size: 0,
+            content: Vec::new(),
         }
     }
 }
@@ -339,6 +420,18 @@ impl NullBuffer {
             direction: direction,
             size: 0,
             content: Vec::new(),  // TODO: initialize with a default size?
+        }
+    }
+}
+
+impl From<usize> for NullBuffer {
+    fn from(value: usize) -> Self
+    {
+        Self {
+            address: value,
+            direction: Direction::InOut,
+            size: 0,
+            content: Vec::new(),
         }
     }
 }
@@ -405,6 +498,18 @@ impl Array {
     }
 }
 
+impl From<usize> for Array {
+    fn from(value: usize) -> Self
+    {
+        Self {
+            address: value,
+            direction: Direction::InOut,
+            count: 0,
+            content: Vec::new(),
+        }
+    }
+}
+
 impl DecodeArg for Array {
 
     fn decode(&mut self, _pid: i32, _operation: &Box<Operation>) -> Result<(), std::io::Error> { 
@@ -439,10 +544,26 @@ impl Struct {
     }
 }
 
+impl From<usize> for Struct {
+    fn from(value: usize) -> Self
+    {
+        Self {
+            address: value,
+            direction: Direction::InOut,
+            size: 0,
+            name: String::new(),
+            content: Vec::new(),
+        }
+    }
+}
+
 impl DecodeArg for Struct {
 
-    fn decode(&mut self, _pid: i32, _operation: &Box<Operation>) -> Result<(), std::io::Error> { 
-       panic!("To implement"); 
+    fn decode(&mut self, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error> { 
+       // The best would be to know the structure for each struct and read / parse it.
+       // For now read 4kMB
+        self.content = operation.memory.read(pid, self.address, 4096);
+        Ok(())
     }
 
     fn print(&self) {

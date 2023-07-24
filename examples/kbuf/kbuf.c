@@ -173,7 +173,8 @@ static int __init kbuf_init(void)
     }
     pr_debug("[KBUF] Register with major number: %d\n", ret);
 
-    kbuf_class = class_create(THIS_MODULE, "kbufclass");
+    //kbuf_class = class_create(THIS_MODULE, "kbufclass");
+    kbuf_class = class_create("kbufclass");
     if (IS_ERR(kbuf_class)) {
         unregister_chrdev(major_nb, DEVICE_NAME);
         pr_err("[KBUF] Failed to register device class\n");

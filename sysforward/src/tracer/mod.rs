@@ -2,8 +2,10 @@
  * The tracer engine takes care of handling syscalls.
  */
 mod tracer_engine;
-pub mod decoder;
+pub mod file_descriptor;
+pub mod decoder;    // TODO: fix pub interface
 pub mod filtering;
+pub mod decision_handler;
 
 pub use tracer_engine::TracerEngine;
 

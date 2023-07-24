@@ -8,27 +8,25 @@ use std::{
     collections::HashMap,
     sync::{ Arc },
     io::{ self },
+    any::Any,
 };
 use nix::{
     libc::user_regs_struct,
 };
 use serde_json;
 use crate::{
-    syscall::{ Syscall },
     arch::{ TargetArch, Architecture },
+    syscall::{ Syscall },
     operation::Operation,
     tracer::{
         decoder::{ Decoder },
-        filtering::{ Decision, Filter },
+        filtering::{ Decision, Filter, Rule },
+        file_descriptor::{ FdTable },
     },
     protocol::data::Client, memory,
 };
 
-/* Used to store the location where the FD is valid */
-enum FdLocation {
-    Local(u16),
-    Remote(u16),
-}
+use super::decoder::DecodedSyscall;
 
 /*
 struct TraceeState { 
@@ -58,7 +56,7 @@ pub struct TracerEngine {
     syscall: Syscall,
     remote_syscall: Syscall,
     insyscall: bool,
-    fd_table: HashMap<u16, FdLocation>,
+    fwd_fd_table: FdTable,
     //state: TraceeState,
 
     filter: Filter,
@@ -119,7 +117,7 @@ impl TracerEngine {
             syscall: Syscall::new(),
             remote_syscall: Syscall::new(),
             insyscall: false,   // Hypothesis: we do the tracing from the start!
-            fd_table: HashMap::new(),
+            fwd_fd_table: FdTable::new(),
             //state: TraceeState::new(),
             filter: Filter::new(String::from("filtername")),
             saved_syscall: Vec::new(),
@@ -153,30 +151,31 @@ impl TracerEngine {
 
     fn sync_entry(&mut self) {
         self.syscall = Syscall::new();
+        self.remote_syscall = Syscall::new();
 
         // Only for x86_64
-        self.set_syscall_entry(self.regs.orig_rax,
-                               self.regs.rdi,
-                               self.regs.rsi,
-                               self.regs.rdx,
-                               self.regs.r10,
-                               self.regs.r8,
-                               self.regs.r9,
-                               0,
+        self.set_syscall_entry(self.regs.orig_rax as usize,
+                               self.regs.rdi as usize,
+                               self.regs.rsi as usize,
+                               self.regs.rdx as usize,
+                               self.regs.r10 as usize,
+                               self.regs.r8 as usize,
+                               self.regs.r9 as usize,
+                               0 as usize,
         );
     }
 
     fn sync_exit(&mut self) {
         // Only for x86_64
-        self.set_syscall_exit(self.regs.orig_rax, self.regs.rdx);
+        self.set_syscall_exit(self.regs.orig_rax as usize, self.regs.rdx as usize);
     }
 
     /*
      * The other way is to directly call the right method.
      */
-    pub fn set_syscall_entry(&mut self, scno: u64, arg1: u64, 
-                             arg2: u64, arg3: u64, arg4: u64,
-                             arg5: u64, arg6: u64, arg7: u64) {
+    pub fn set_syscall_entry(&mut self, scno: usize, arg1: usize, 
+                             arg2: usize, arg3: usize, arg4: usize,
+                             arg5: usize, arg6: usize, arg7: usize) {
         // TODO: what about seccomp (see strace & PTRACE_GET_SYSCALL_INFO)
         self.syscall.raw.no = scno;
         self.syscall.raw.args[0] = arg1;
@@ -188,7 +187,7 @@ impl TracerEngine {
         self.syscall.raw.args[6] = arg7;
     }
 
-    pub fn set_syscall_exit(&mut self, retval: u64, errno: u64) {
+    pub fn set_syscall_exit(&mut self, retval: usize, errno: usize) {
         self.syscall.raw.retval = retval;
         self.syscall.raw.errno = errno;
     }
@@ -264,12 +263,12 @@ impl TracerEngine {
     /* Filtering */
 
     fn filter_entry(&mut self) -> Option<Decision> {
-        self.syscall.decision = Some(self.filter.filter(&self.syscall));
+        self.syscall.decision = Some(self.filter.filter(self.insyscall, &self.syscall));
         self.syscall.decision
     }
 
     fn filter_exit(&mut self) -> Option<Decision> {
-        self.syscall.decision = Some(self.filter.filter(&self.syscall));
+        self.syscall.decision = Some(self.filter.filter(self.insyscall, &self.syscall));
         self.syscall.decision
     }
 
@@ -295,11 +294,13 @@ impl TracerEngine {
                 self.continue_exit().unwrap();
             },
             Some(Decision::Forward) => {
-                self.forward_exit().unwrap();
+                //self.forward_exit().unwrap();
             },
             _ => panic!("Decision not implemented")
         }
 
+        /* Callbacks on rules */
+        self.filter.on_syscall_exit(&self.syscall);
     }
 
     fn continue_entry(&mut self) -> Result<(), io::Error>
@@ -314,31 +315,155 @@ impl TracerEngine {
         Ok(())
     }
 
+    /* Forwarding */
+
     fn forward_entry(&mut self) -> Result<(), io::Error>
     {
         /* Pre-forward instrumentation */
+        //self.instr_pre_forward().unwrap();
 
         /* Forward */
-        self.remote_syscall = self.protocol.send_syscall_entry(&self.syscall)?;
+        self.remote_syscall = self.protocol.send_syscall_entry(&self.remote_syscall).unwrap();
         println!("[{}] remote syscall retval: {:#x}", self.pid, self.remote_syscall.raw.retval as usize);
 
         /* Post-forward instrumentation */
+        //self.instr_post_forward().unwrap();
 
+        Ok(())
+    }
+
+    fn instr_pre_forward(&mut self) -> Result<(), io::Error>
+    {
+        /* Syscall specific instrumentation */
+        self.remote_syscall = self.syscall.clone();
+        match self.remote_syscall.name.as_str() {
+            "close" => {
+                // translate the fd with the remote fd
+                if let DecodedSyscall::Close(remote_syscall) = self.remote_syscall.decoded.as_mut().unwrap() {
+                    let user_fd = remote_syscall.fd.value;
+                    let kernel_fd = self.fwd_fd_table.translate(user_fd).unwrap();
+                    remote_syscall.fd.value = kernel_fd;
+                }
+            },
+            "read" => {
+                // translate the fd with the remote fd
+                if let DecodedSyscall::Read(remote_syscall) = self.remote_syscall.decoded.as_mut().unwrap() {
+                    let user_fd = remote_syscall.fd.value;
+                    let kernel_fd = self.fwd_fd_table.translate(user_fd).unwrap();
+                    remote_syscall.fd.value = kernel_fd;
+                }
+            },
+            "write" => {
+                // translate the fd with the remote fd
+                if let DecodedSyscall::Write(remote_syscall) = self.remote_syscall.decoded.as_mut().unwrap() {
+                    let user_fd = remote_syscall.fd.value;
+                    let kernel_fd = self.fwd_fd_table.translate(user_fd).unwrap();
+                    remote_syscall.fd.value = kernel_fd;
+                }
+            },
+            _ => (),
+        };
+
+        /* Replace local syscall with a dummy one */
+        // note: it would be more clean to modify self.syscall.raw values and synchronized once we return to the program execution.
+        // for now on x86-64, replace with getpid()
+        let mut regs = self.operator.register.read_registers(self.pid).unwrap();
+        regs.orig_rax = 39 as u64;  // getpid() in x86_64
+        self.operator.register.write_registers(self.pid, regs).unwrap();
+
+        Ok(())
+    }
+
+    fn instr_post_forward(&mut self) -> Result<(), io::Error>
+    {
+        match self.remote_syscall.name.as_str() {
+            "open"  => {
+                // a bit ugly but we replace the return value with the remote fd to not overlap with local fd space.
+                if let DecodedSyscall::Open(remote_syscall) = self.remote_syscall.decoded.as_mut().unwrap() {
+                    let retval = remote_syscall.retval.as_ref().unwrap().value;
+                    if retval >= 0 {
+                        let user_fd = self.fwd_fd_table.open_remote(retval);
+                        remote_syscall.retval.as_mut().unwrap().value = user_fd;
+                    }
+                }
+            },
+            "close" => {
+                // on successful close, remove the fd from the table
+                if let DecodedSyscall::Close(remote_syscall) = self.remote_syscall.decoded.as_mut().unwrap() {
+                    let retval = remote_syscall.retval.as_ref().unwrap().value;
+                    let user_fd = remote_syscall.fd.value;
+                    if retval >= 0 {
+                        let _kernel_fd = self.fwd_fd_table.close_remote(user_fd);
+                    }
+                }
+            },
+            _ => (),
+        };
         Ok(())
     }
 
     fn forward_exit(&mut self) -> Result<(), io::Error>
     {
+        /* 
+         * On local syscall exit, this is usually the moment when the forwarded syscall synchronizes 
+         * its state and its side-effects on the local system.
+         */
         // TODO
         //self.write_syscall_ret(self.remote_syscall.raw.retval, self.remote_syscall.raw.errno)?;
+
+        match self.remote_syscall.name.as_str() {
+            "read" => {
+                // sync the memory buffer
+                // TODO: should be automated by passing over all arguments
+                if let DecodedSyscall::Read(remote_syscall) = self.remote_syscall.decoded.as_ref().unwrap() {
+                    let mem = &remote_syscall.buf.content;
+                    let addr = remote_syscall.buf.address;
+                    self.operator.memory.write(self.pid, addr, mem.to_vec());
+                }
+            }
+            _ => (),
+        };
+
+        /* Syncrhonize back the return value and errno */
+        let mut regs = self.operator.register.read_registers(self.pid).unwrap();
+        regs.orig_rax = self.remote_syscall.raw.retval as u64;
+        regs.rdx = self.remote_syscall.raw.errno as u64;
+        self.operator.register.write_registers(self.pid, regs).unwrap();
+
         Ok(())
+    }
+
+    /*
+    fn update_fd_table(&mut self)
+    {
+        let sc: &dyn Any = self.syscall.decoded.as_ref().unwrap().get_syscall();
+        match self.syscall.name.as_str() {
+            "open" => {
+            },
+            "close" => {
+            }
+            _ => (),
+        };
+    }
+    */
+
+    /* Filtering management */
+
+    pub fn load_rule(&mut self, index: usize, rule: Box<dyn Rule>)
+    {
+        self.filter.insert(index, rule)
+    }
+
+    pub fn unload_rule(&mut self, index: usize) -> Box<dyn Rule>
+    {
+        self.filter.remove(index)
     }
 
     /* Statistics */
 
-    fn calculate_stats(&self) -> Result<HashMap<(u64, String), i32>, io::Error>
+    fn calculate_stats(&self) -> Result<HashMap<(usize, String), i32>, io::Error>
     {
-        let mut syscall_stats: HashMap<(u64, String), i32> = HashMap::new();
+        let mut syscall_stats: HashMap<(usize, String), i32> = HashMap::new();
 
         for syscall in &self.saved_syscall {
             let key = (syscall.raw.no.clone(), syscall.name.clone());
@@ -348,7 +473,7 @@ impl TracerEngine {
         Ok(syscall_stats)
     }
 
-    fn print_stats(&self, syscall_stats: HashMap<(u64, String), i32>)
+    fn print_stats(&self, syscall_stats: HashMap<(usize, String), i32>)
     {
         //println!("{:?}", syscall_stats);
 

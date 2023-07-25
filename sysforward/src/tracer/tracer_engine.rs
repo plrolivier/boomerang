@@ -218,6 +218,7 @@ impl TracerEngine {
         self.filter_entry();
         self.log_entry();
 
+        // Note: When should the decoded syscall be sync with the RawSyscall/tracee?
         self.carry_out_entry_decision();
 
         self.insyscall = true;

@@ -18,6 +18,8 @@ use crate::{
     syscall::{ Syscall },
     operation::Operation,
     protocol::data::Server,
+    executor_engine::Invoker,
+    tracer::decoder::DecodeExit,
 };
 
 
@@ -29,6 +31,7 @@ pub struct ExecutorEngine {
 
     syscall: Syscall,
     operator: Box<Operation>,
+    invoker: Box<dyn Invoker>,
 
     stop: Arc<Event>,
     stopped: Arc<Event>,
@@ -44,6 +47,7 @@ impl ExecutorEngine {
         stop_event: Arc<Event>,
         stopped_event: Arc<Event>,
         operator: Box<Operation>,
+        invoker: Box<dyn Invoker>,
     ) -> Self
     {
         Self {
@@ -53,6 +57,7 @@ impl ExecutorEngine {
             operator: operator,
             stop: stop_event,
             stopped: stopped_event,
+            invoker: invoker,
         }
     }
 
@@ -96,8 +101,9 @@ impl ExecutorEngine {
             }
 
             /* Carry out syscall's decision */
-            // TODO
             self.log_syscall();
+            // TODO
+            self.invoke_syscall().unwrap();
 
             /* Return syscall */
             self.protocol.return_syscall_exit(&self.syscall);
@@ -105,6 +111,34 @@ impl ExecutorEngine {
 
         self.stopped.set();
 
+    }
+
+    fn invoke_syscall(&mut self) -> Result<(), io::Error>
+    {
+        /* Encode the Syscall into a RawSyscall */
+
+        // Let's take the hypothesis, the decoded syscall has not been modified,
+        // and therefore does not need to be sync with the RawSyscall.
+        //let raw = self.syscall.raw.clone();
+
+        /* Invoke the syscall */
+        let raw = self.invoker.invoke_syscall(self.syscall.raw.no,
+                                 self.syscall.raw.args[0],
+                                 self.syscall.raw.args[1],
+                                 self.syscall.raw.args[2],
+                                 self.syscall.raw.args[3],
+                                 self.syscall.raw.args[4],
+                                 self.syscall.raw.args[5],
+                                 self.syscall.raw.args[6])
+                                 .unwrap();
+
+        /* Decode the syscall exit */
+        self.syscall.raw = raw;
+        if let Some(decoded_sc) = self.syscall.decoded.as_mut() {
+            decoded_sc.decode_exit(self.syscall.raw.retval, 0, &self.operator);
+        }
+
+        Ok(())
     }
 
     pub fn shutdown(&mut self)

@@ -23,7 +23,8 @@ use sysforward::{
     sync::{ Event },
     arch::TargetArch,
     memory::{ read_process_memory_maps, print_memory_regions },
-    executor_engine::{ ExecutorEngine, ExecutorCallback },
+    executor_engine::{ ExecutorEngine, Invoker },
+    syscall::{ RawSyscall },
     operation::Operation,
     targets,
 };
@@ -44,7 +45,7 @@ pub struct ExecutingThread {
     tx: Sender<String>,
     rx: Receiver<String>,
 
-    child: Option<Child>,
+    child_pid: Option<i32>,
 
     // to keep?
     stop: Arc<Event>,
@@ -58,7 +59,7 @@ impl ExecutingThread {
         Self { 
             tx: tx,
             rx: rx,
-            child: None,
+            child_pid: None,
             stop: stop,
             stopped: stopped,
         }
@@ -81,9 +82,8 @@ impl ExecutingThread {
         println!("***************************************************");
         println!("Executing thread {} booting...", process::id());
 
-        self.spawn_child()?;
-
-        let pid = self.child.as_ref().unwrap().id() as i32;
+        let mut invoker = ExecInvoker::new();
+        self.spawn_child(&mut invoker)?;
 
         let copy_stop = self.stop.clone();
         let copy_stopped = self.stopped.clone();
@@ -99,10 +99,11 @@ impl ExecutingThread {
                                                                copy_stop,
                                                                copy_stopped,
                                                                operator,
+                                                               Box::new(invoker),
                                                               );
 
         /* Show initial memory layout */
-        let pid = self.child.as_ref().unwrap().id();
+        let pid = self.child_pid.unwrap() as u32;
         let mem = read_process_memory_maps(pid);
         print_memory_regions(&mem);
 
@@ -112,7 +113,73 @@ impl ExecutingThread {
         Ok(executor)
     }
 
-    fn spawn_child(&mut self) -> Result<(), io::Error>
+    fn spawn_child(&mut self, invoker: &mut ExecInvoker) -> Result<(), io::Error>
+    {
+        let child = invoker.invoke_new_process().expect("Failed to spawn child process");
+        let pid = child.id() as i32;
+
+        invoker.child = Some(child);
+        self.child_pid = Some(pid);
+
+        Ok(())
+    }
+
+    fn run_thread(&self, mut executor: ExecutorEngine) -> Result<ExecutorEngine, io::Error>
+    {
+        executor.run();
+        Ok(executor)
+    }
+
+    /* */
+    pub fn shutdown_thread(&mut self, mut executor: ExecutorEngine) -> Result<(), io::Error>
+    {
+        println!("Executing thread {} shutdown", self.child_pid.unwrap());
+
+        // ...
+
+        Ok(())
+    }
+
+}
+
+
+
+struct ExecInvoker {
+    child: Option<Child>,
+ }
+
+impl ExecInvoker {
+    fn new() -> Self
+    {
+        Self { child: None }
+    }
+}
+
+impl Invoker for ExecInvoker {
+
+    fn invoke_syscall(&self, scno: usize, arg1:usize, arg2: usize,
+                      arg3: usize, arg4: usize, arg5: usize, arg6: usize,
+                      arg7: usize) -> Result<RawSyscall, io::Error>
+    {
+        
+        // Continue here
+
+        /* Setup the context */        
+        // memory
+        // registers
+
+        /* Invoke the syscall */
+
+
+        /* Capture what changed */
+
+
+        let raw = RawSyscall::new();
+        Ok(raw)
+    }
+
+
+    fn invoke_new_process(&self) -> Result<Child, io::Error>
     {
         let program = "/bin/true";
         let mut command = Command::new(program);
@@ -125,24 +192,9 @@ impl ExecutingThread {
                 Ok(())
             });
         }
-        self.child = Some(command.spawn().expect("Failed to spawn child process"));
 
-        Ok(())
+        let child = command.spawn()?;
+
+        Ok(child)
     }
-
-    fn run_thread(&self, mut executor: ExecutorEngine) -> Result<ExecutorEngine, io::Error>
-    {
-        // TODO: HOW TO STOP ???
-        executor.run();
-        Ok(executor)
-    }
-
-    /* */
-    pub fn shutdown_thread(&mut self, mut executor: ExecutorEngine) -> Result<(), io::Error>
-    {
-        let pid = self.child.as_ref().unwrap().id();
-        println!("Executing thread {} shutdown", pid);
-        Ok(())
-    }
-
 }

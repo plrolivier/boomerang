@@ -84,7 +84,7 @@ pub struct RawSyscall {
 }
 
 impl RawSyscall {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             no: 0,
             args: vec![0; 7],

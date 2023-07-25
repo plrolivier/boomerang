@@ -5,6 +5,7 @@
 
 mod tracing_thread;
 
+
 use std::{
     collections::{ HashMap },
     thread::{ self, Builder, JoinHandle },
@@ -99,6 +100,9 @@ impl Default for TraceDebugger {
 */
 
 
+/*
+ * A structure used to control tracing thread.
+ */
 struct ThreadCtrl {
     handler: JoinHandle<()>,
     barrier: Arc<Barrier>,
@@ -130,6 +134,7 @@ impl TracerCallback for TraceDebuggerCallback {
         let (tx_thread, rx_thread) = channel();
         let boot_barrier = Arc::new(Barrier::new(2));
         let barrier_copy = boot_barrier.clone();
+
         let mut tracing_thread = TracingThread::new(program, prog_args, tx_thread, rx_ctrl, boot_barrier);
 
         /* Create thread and start it */
@@ -138,7 +143,12 @@ impl TracerCallback for TraceDebuggerCallback {
             tracing_thread.start()
         ).unwrap();
         
-        let thread_ctrl = ThreadCtrl { handler: handler, barrier: barrier_copy, tx: tx_ctrl, rx: rx_thread };
+        let thread_ctrl = ThreadCtrl {
+            handler: handler,
+            barrier: barrier_copy,
+            tx: tx_ctrl,
+            rx: rx_thread
+        };
 
         let pid = thread_ctrl.rx.recv().unwrap();
         let pid = pid.parse().unwrap();

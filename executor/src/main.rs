@@ -1,33 +1,32 @@
 /*
  *
  */
+mod executing_thread;
+
+
 use std::{
     collections::{ HashMap },
-    os::unix::process::{ CommandExt },
-    process::{ exit, Child, Command },
     thread::{ Builder, JoinHandle },
-    sync::{ Arc, Barrier },
+    sync::{ 
+        Arc, Barrier,
+        mpsc::{ channel, Sender, Receiver },
+    },
     net::{ Ipv4Addr },
-    io,
+    io::{self, ErrorKind },
 };
 
 use nix::{
-    sys::{
-        ptrace,
-        wait::{ waitpid, WaitStatus},
-        signal::Signal,
-    },
-    unistd::{ Pid }, Error,
+    unistd::{ Pid },
 };
 
 use sysforward::{
     sync::{ Event },
-    arch::TargetArch,
-    memory::{ read_process_memory_maps, print_memory_regions },
     protocol::control::{ Configuration, ControlChannel },
-    executor_engine::{ ExecutorEngine, ExecutorCallback },
-    operation::Operation,
-    targets,
+    executor_engine::{ ExecutorCallback },
+};
+
+use crate::{
+    executing_thread::ExecutingThread,
 };
 
 
@@ -40,7 +39,7 @@ static EXECUTOR_PORT: u16 = 32001;
 
 
 /*
- *
+ * The debugger is the high-level structure which manage the executing threads and the connection with the python commands.
  */
 struct ExecDebugger {
     control_channel: ControlChannel,
@@ -54,7 +53,6 @@ impl ExecDebugger {
         Self {
             control_channel: ControlChannel::new(Configuration::Executor, None, Some(Box::new(ExecDebuggerCallback::new()))),
         }
-
     }
 
     pub fn run(&mut self)
@@ -68,9 +66,21 @@ impl ExecDebugger {
     }
 }
 
+
+/*
+ * A structure used to control an executing thread.
+ */
+struct ThreadCtrl {
+    handler: JoinHandle<()>,
+    tx: Sender<String>,
+    rx: Receiver<String>,
+    stop: Arc<Event>,
+    stopped: Arc<Event>,
+}
+
+
 struct ExecDebuggerCallback {
-    handler_map: HashMap<Pid, Option<JoinHandle<()>>>,
-    thread_map: HashMap<Pid, ExecThread>,
+    thread_map: HashMap<Pid, ThreadCtrl>,
 }
 
 impl ExecDebuggerCallback {
@@ -78,53 +88,45 @@ impl ExecDebuggerCallback {
     pub fn new() -> Self
     {
         Self {
-            handler_map: HashMap::new(),
             thread_map: HashMap::new(),
         }
-
     }
 }
 
 impl ExecutorCallback for ExecDebuggerCallback {
 
-    fn spawn_process(&mut self, program: &str, prog_args: &[&str]) -> Result<Pid, io::Error>
+    fn spawn_process(&mut self, _program: &str, _prog_args: &[&str]) -> Result<Pid, io::Error>
     {
-        println!("* Spawn process: {} {:?} *", program, prog_args);
-        let child: Child = unsafe {
-            let mut command = Command::new(program);
-            command.args(prog_args);
-            command.pre_exec(|| {
-                ptrace::traceme().unwrap();
-                Ok(())
-            });
+        println!("Creating new executing thread...");
 
-            command.spawn().expect("Failed to spawn child process")
-        };
+        let (tx_ctrl, rx_ctrl) = channel();
+        let (tx_thread, rx_thread) = channel();
+        let stop = Arc::new(Event::new());
+        let stop_clone = stop.clone();
+        let stopped = Arc::new(Event::new());
+        let stopped_clone = stopped.clone();
 
-        let pid = Pid::from_raw(child.id() as i32);
+        let mut executing_thread = ExecutingThread::new(tx_thread, rx_ctrl, stop, stopped);
 
-        // Wait for first syscall
-        match waitpid(pid, None) {
-            Ok(WaitStatus::Stopped(_, Signal::SIGTRAP)) => { /* ??? */ },
-            _ => panic!("WaitStatus not handled"),
-        };
-
-        // Create the tracing thread
-        let boot_barrier = Arc::new(Barrier::new(2));
-
-        let executing_thread = ExecThread::new(boot_barrier);
-        let copy_executing_thread = executing_thread.clone();
-        self.thread_map.insert(pid, executing_thread);
-
-        let builder = Builder::new().name(child.id().to_string());
+        /* Creat thread and start it */
+        let builder = Builder::new();
         let handler = builder.spawn(move ||
-            copy_executing_thread.boot_thread(child)
+            executing_thread.start()
         ).unwrap();
-        self.handler_map.insert(pid, Some(handler));
 
-        // Notify the executor
-        //self.notify_new_process();
+        let thread_ctrl = ThreadCtrl { 
+            handler: handler,
+            tx: tx_ctrl,
+            rx: rx_thread,
+            stop: stop_clone,
+            stopped: stopped_clone,
+        };
 
+        let pid = thread_ctrl.rx.recv().unwrap();
+        let pid = pid.parse().unwrap();
+        let pid = Pid::from_raw(pid);
+        self.thread_map.insert(pid, thread_ctrl);
+        
         Ok(pid)
     }
 
@@ -132,32 +134,29 @@ impl ExecutorCallback for ExecDebuggerCallback {
     {
         println!("* Kill process {:?} *", pid);
         
-        match self.handler_map.get_mut(&pid) {
-            Some(handler) => {
-                match handler.take() {
-                    Some(thread) => {
+        // TODO
+        match self.thread_map.remove(&pid) {
+            Some(thread) => {
 
-                        match self.thread_map.get_mut(&pid) {
-                            Some(exec_thread) => {
-                                println!("shutting down thread...");
-                                exec_thread.shutdown_thread(pid);
-                            }
-                            None => {
-                                // Error
-                            }
-                        }
-                        
-                        println!("joining...");
-                        thread.join().unwrap();
-                        println!("finished!");
-                    },
-                    None => {
-                        // Error
+                println!("stopping..");
+                if ! thread.stopped.is_set() {
+                    thread.stop.set();
+                    thread.stopped.wait();
+                }
+
+                match thread.handler.join() {
+                    Ok(()) => { },
+                    Err(err) => {
+                        println!("Couldn't joind the thread {}: {:?}", pid, err);
+                        return Err(io::Error::new(ErrorKind::Other, "Couldn't join the thread"))
                     }
                 }
             },
+
             None => {
-                // Error
+                // nix error: ESRC
+                println!("Error: No such process: {}", pid);
+                return Err(io::Error::new(ErrorKind::Other, "No such pid"))
             }
         }
         Ok(())
@@ -166,79 +165,6 @@ impl ExecutorCallback for ExecDebuggerCallback {
 
 
 
-/*
- *
- */
-#[derive(Clone, Debug)]
-struct ExecThread {
-    boot_barrier: Arc<Barrier>,
-    stop: Arc<Event>,
-    stopped: Arc<Event>,
-}
-
-impl ExecThread {
-
-    pub fn new(boot_barrier: Arc<Barrier>) -> Self
-    {
-        ExecThread { 
-            boot_barrier,
-            stop: Arc::new(Event::new()),
-            stopped: Arc::new(Event::new()),
-        }
-    }
-
-    fn boot_thread(
-        &self, 
-        tracee: Child,
-        //address_ipv4: &str,
-        //tracer_port: u16,
-        //executor_port: u16,
-    )
-    {
-        println!("[EXECUTOR] Start listening on {}:{}", IP_ADDRESS, EXECUTOR_PORT);
-        let copy_stop = self.stop.clone();
-        let copy_stopped = self.stopped.clone();
-        let ptrace_op = targets::ptrace::Ptrace{ };
-        let regs_op = Box::new(ptrace_op.clone());
-        let mem_op = Box::new(ptrace_op);
-        let operator = Box::new(Operation{ register: regs_op, memory: mem_op});
-        let executor = ExecutorEngine::new(TargetArch::X86_64,
-                                                           IP_ADDRESS,
-                                                           EXECUTOR_PORT,
-                                                           TRACER_PORT,
-                                                           copy_stop,
-                                                           copy_stopped,
-                                                           operator,
-                                                          );
-        //let exec_pid = tracee.id();
-
-        let mem = read_process_memory_maps(tracee.id());
-        print_memory_regions(&mem);
-
-        self.run_thread(executor);
-    }
-
-    fn run_thread(&self, mut executor: ExecutorEngine)
-    {
-        executor.run();
-    }
-
-    pub fn shutdown_thread(&self, pid: Pid)
-    {
-        println!("[EXECUTOR] Thread executing process {} shutdown", pid);
-
-        println!("killing...");
-        ptrace::kill(pid).unwrap();
-        println!("killed");
-
-        if ! self.stopped.is_set() {
-            self.stop.set();
-            self.stopped.wait();
-        }
-        println!("thread stopped")
-    }
-
-}
 
 
 

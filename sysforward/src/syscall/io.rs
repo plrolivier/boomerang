@@ -8,6 +8,7 @@ use crate::{
     syscall::{ RawSyscall },
     syscall::args::{ Direction, Integer, Fd, Size, Offset, Protection, Signal, Flag, Address, Buffer, NullBuffer, Array, Struct },
     tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
+    tracer::encoder::{ EncodeEntry, EncodeExit },
     operation::{ Operation },
 };
 
@@ -38,6 +39,12 @@ impl DecodeEntry for Read {
         self.count.decode(pid, operation);
     }
 }
+impl EncodeEntry for Read {
+    fn encode_entry(&mut self, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error> {
+        self.buf.encode(pid, operation).unwrap();
+        Ok(())
+    }
+}
 
 // ssize_t write(int fd, const void buf[.count], size_t count)
 #[derive(Serialize, Deserialize)]
@@ -63,6 +70,12 @@ impl DecodeEntry for Write {
         self.fd.decode(pid, operation);
         self.buf.decode(pid, operation);
         self.count.decode(pid, operation);
+    }
+}
+impl EncodeEntry for Write {
+    fn encode_entry(&mut self, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error> {
+        self.buf.encode(pid, operation).unwrap();
+        Ok(())
     }
 }
 

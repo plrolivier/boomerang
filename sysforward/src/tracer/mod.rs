@@ -4,6 +4,7 @@
 mod tracer_engine;
 pub mod file_descriptor;
 pub mod decoder;    // TODO: fix pub interface
+pub mod encoder;
 pub mod filtering;
 pub mod decision_handler;
 

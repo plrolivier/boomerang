@@ -9,6 +9,7 @@ use crate::{
     syscall::{ RawSyscall },
     syscall::args::{ Direction, Integer, Fd, Size, Flag, NullBuffer, Struct },
     tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
+    tracer::encoder::{ EncodeEntry, EncodeExit, EncodeArg },
     operation::{ Operation },
 };
 
@@ -33,6 +34,11 @@ impl DecodeEntry for Close {
         self.fd.decode(pid, operation);
     }
 }
+impl EncodeEntry for Close {
+    fn encode_entry(&mut self, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error> {
+        Ok(())
+    }
+}
 
 // int creat(const char *pathname, mode_t mode)
 #[derive(Serialize, Deserialize)]
@@ -53,8 +59,14 @@ impl Creat {
 }
 impl DecodeEntry for Creat {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.pathname.decode(pid, operation);
-        self.mode.decode(pid, operation);
+        self.pathname.decode(pid, operation).unwrap();
+        self.mode.decode(pid, operation).unwrap();
+    }
+}
+impl EncodeEntry for Creat {
+    fn encode_entry(&mut self, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error> {
+        self.pathname.encode(pid, operation).unwrap();
+        Ok(())
     }
 }
 
@@ -83,6 +95,12 @@ impl DecodeEntry for Open {
         self.pathname.decode(pid, operation);
         self.flags.decode(pid, operation);
         self.mode.decode(pid, operation);
+    }
+}
+impl EncodeEntry for Open {
+    fn encode_entry(&mut self, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error> {
+        self.pathname.encode(pid, operation).unwrap();
+        Ok(())
     }
 }
 /* 
@@ -124,6 +142,12 @@ impl DecodeEntry for Openat {
         self.mode.decode(pid, operation);
     }
 }
+impl EncodeEntry for Openat {
+    fn encode_entry(&mut self, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error> {
+        self.pathname.encode(pid, operation).unwrap();
+        Ok(())
+    }
+}
 
 // int openat2(int dirfd, const char *pathname, const struct open_how *how, size_t size)
 #[derive(Serialize, Deserialize)]
@@ -152,5 +176,12 @@ impl DecodeEntry for Openat2 {
         self.pathname.decode(pid, operation);
         self.how.decode(pid, operation);
         self.size.decode(pid, operation);
+    }
+}
+impl EncodeEntry for Openat2 {
+    fn encode_entry(&mut self, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error> {
+        self.pathname.encode(pid, operation).unwrap();
+        self.how.encode(pid, operation).unwrap();
+        Ok(())
     }
 }

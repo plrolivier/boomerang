@@ -1,7 +1,7 @@
 /*
  * Syscall decoded arguments data structures
  */
-use core::fmt;
+use core::{fmt, panic};
 use std::convert::From;
 
 //use nix::libc::printf;
@@ -11,6 +11,7 @@ use crate::{
     operation::{ Operation },
     tracer::{
         decoder::{ DecodeArg },
+        encoder::{ EncodeArg },
     },
 };
 
@@ -346,6 +347,14 @@ impl DecodeArg for Address {
     }
 }
 
+impl EncodeArg for Address {
+
+    fn encode(&mut self, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error> {
+        // TODO: if content is really used, write it
+        Ok(())
+    }
+}
+
 
 
 /* Pointer arguments */
@@ -399,6 +408,16 @@ impl DecodeArg for Buffer {
         println!("content: {:#x?}", self.content);
     }
 }
+
+impl EncodeArg for Buffer {
+
+    fn encode(&mut self, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error> {
+        let mem = self.content.clone();
+        operation.memory.write(pid, self.address, mem);
+        Ok(())
+    }
+}
+
 
 
 /*
@@ -470,6 +489,15 @@ impl DecodeArg for NullBuffer {
     }
 }
 
+impl EncodeArg for NullBuffer {
+
+    fn encode(&mut self, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error> {
+        let mem = self.content.clone();
+        operation.memory.write(pid, self.address, mem);
+        Ok(())
+    }
+}
+
 
 /*
  * Represent an array of value
@@ -517,6 +545,15 @@ impl DecodeArg for Array {
     }
 }
 
+impl EncodeArg for Array {
+
+    fn encode(&mut self, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error> {
+       panic!("To implement"); 
+    }
+}
+
+
+
 /*
  * Represent a structure in memory
  */
@@ -561,7 +598,7 @@ impl DecodeArg for Struct {
 
     fn decode(&mut self, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error> { 
        // The best would be to know the structure for each struct and read / parse it.
-       // For now read 4kMB
+       // For now read 4kB
         self.content = operation.memory.read(pid, self.address, 4096);
         Ok(())
     }
@@ -572,5 +609,14 @@ impl DecodeArg for Struct {
         println!("size: {:#x}", self.size);
         println!("address: {:#x}", self.address);
         println!("content: {:#x?}", self.content);
+    }
+}
+
+impl EncodeArg for Struct {
+
+    fn encode(&mut self, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error> {
+        let mem = self.content.clone();
+        operation.memory.write(pid, self.address, mem);
+        Ok(())
     }
 }

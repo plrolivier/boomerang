@@ -167,7 +167,7 @@ impl TracerEngine {
 
     fn sync_exit(&mut self) {
         // Only for x86_64
-        self.set_syscall_exit(self.regs.orig_rax as usize, self.regs.rdx as usize);
+        self.set_syscall_exit(self.regs.rax as usize, self.regs.rdx as usize);
     }
 
     /*

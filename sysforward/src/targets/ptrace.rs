@@ -78,22 +78,40 @@ impl MemoryOperation for Ptrace {
         mem
     }
 
-    fn write(&self, pid: i32, addr: usize, mem: Vec<u8>) -> usize {
+    fn write(&self, pid: i32, addr: usize, mem: Vec<u8>) -> usize
+    {
         let pid = Pid::from_raw(pid);
         let mut addr = addr;
+        let mut mem = mem;
+
+        // Pad the memory to be a multiple of 4
+        let pad_bytes = 4 - (mem.len() % 4);
+        mem.extend(std::iter::repeat(0).take(pad_bytes));
+
+        //println!("[WRITE] {:?}", mem);
+
         let size = mem.len();
         let mut count = mem.len();
-        let mut mem: VecDeque<u8> = VecDeque::from(mem);
 
-        while count > 0 {
+        for chunk in mem.chunks(4) {
+
             let address = addr as ptrace::AddressType;
-            let word = mem.pop_front().unwrap() as *mut c_void;
+            let word = u32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]);
+            let word = word as *mut c_void;
+
             unsafe {
-                ptrace::write(pid, address, word).unwrap();
+                match ptrace::write(pid, address, word) {
+                    Ok(()) => (),
+                    Err(err) => {
+                        eprintln!("An error {} occured during write at {:?} on {}", err, address, pid);
+                        break;
+                    }
+                }
             }
             addr += 4;
             count -= 4;
         }
+
         size - count
     }
 

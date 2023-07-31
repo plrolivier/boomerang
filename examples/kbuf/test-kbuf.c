@@ -66,11 +66,12 @@ int main() {
     }
     printf("Read from buffer module: %s\n", read_buffer);
 
-    // Print info the content of the buffer
+    /* Print info the content of the buffer
     ret = ioctl(fd, KBUF_IOCTL_PRINTK, 0);
     if (ret < 0) {
         perror("Fail to issue KBUF_IOCTL_PRINTK command\n");
     }
+    */
 
     // Close the buffer module
     if (close(fd) < 0) {

@@ -4,6 +4,7 @@ import logging
 import IPython as ip
 import os
 from os.path import dirname
+from time import sleep
 
 from chestburster import Chestburster
 
@@ -17,7 +18,7 @@ PID = os.getpid()
 
 #BASE_DIR='/tmp/kbuf/'
 
-PROJECT_PATH = dirname(dirname(dirname(dirname(__file__))))
+PROJECT_PATH = dirname(dirname(dirname(__file__)))
 BUILD_PATH =  PROJECT_PATH + "/target/debug/"
 
 TRACER_PATH = BUILD_PATH + "ptracer"
@@ -28,7 +29,7 @@ EXECUTOR_PATH = BUILD_PATH + "executor"
 EXECUTOR_IP="127.0.0.1"
 EXECUTOR_PORT=31001
 
-PROGRAM = PROJECT_PATH + "/chestburster/examples/kbuf/test-kbuf"
+PROGRAM = PROJECT_PATH + "/examples/kbuf/test-kbuf"
 ARGS = []
 
 # =============================================================================
@@ -46,6 +47,7 @@ logger.info(f"Tracer spawn process: {pid2}")
 # Trace syscall
 ack = tracer.start_tracing([pid2])
 
+sleep(1)
 #ip.embed()
 
 ack = tracer.stop_tracing([pid2])

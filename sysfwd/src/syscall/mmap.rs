@@ -12,10 +12,10 @@ use serde::{ Serialize, Deserialize };
 
 use decoding_macro::DecodeExit;
 use crate::{
-    syscall::{ RawSyscall },
+    syscall::RawSyscall,
     syscall::args::{ Direction, Integer, Fd, Size, Offset, Protection, Flag, Address },
     tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
-    operation::{ Operation },
+    operation::Operation,
 };
 
 
@@ -37,7 +37,7 @@ impl Brk {
 }
 impl DecodeEntry for Brk {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.addr.decode(pid, operation);
+        self.addr.decode(pid, operation).unwrap();
     }
 }
 
@@ -59,7 +59,7 @@ impl Sbrk {
 }
 impl DecodeEntry for Sbrk {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.increment.decode(pid, operation);
+        self.increment.decode(pid, operation).unwrap();
     }
 }
 
@@ -91,12 +91,12 @@ impl Mmap {
 }
 impl DecodeEntry for Mmap {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.addr.decode(pid, operation);
-        self.length.decode(pid, operation);
-        self.prot.decode(pid, operation);
-        self.flags.decode(pid, operation);
-        self.fd.decode(pid, operation);
-        self.offset.decode(pid, operation);
+        self.addr.decode(pid, operation).unwrap();
+        self.length.decode(pid, operation).unwrap();
+        self.prot.decode(pid, operation).unwrap();
+        self.flags.decode(pid, operation).unwrap();
+        self.fd.decode(pid, operation).unwrap();
+        self.offset.decode(pid, operation).unwrap();
     }
 }
 
@@ -126,11 +126,11 @@ impl Mremap {
 }
 impl DecodeEntry for Mremap {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.old_address.decode(pid, operation);
-        self.old_size.decode(pid, operation);
-        self.new_size.decode(pid, operation);
-        self.flags.decode(pid, operation);
-        self.new_address.decode(pid, operation);
+        self.old_address.decode(pid, operation).unwrap();
+        self.old_size.decode(pid, operation).unwrap();
+        self.new_size.decode(pid, operation).unwrap();
+        self.flags.decode(pid, operation).unwrap();
+        self.new_address.decode(pid, operation).unwrap();
     }
 }
 
@@ -155,8 +155,8 @@ impl Munmap {
 }
 impl DecodeEntry for Munmap {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.addr.decode(pid, operation);
-        self.length.decode(pid, operation);
+        self.addr.decode(pid, operation).unwrap();
+        self.length.decode(pid, operation).unwrap();
     }
 }
 
@@ -182,9 +182,9 @@ impl Mprotect {
 }
 impl DecodeEntry for Mprotect {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.addr.decode(pid, operation);
-        self.len.decode(pid, operation);
-        self.prot.decode(pid, operation);
+        self.addr.decode(pid, operation).unwrap();
+        self.len.decode(pid, operation).unwrap();
+        self.prot.decode(pid, operation).unwrap();
     }
 }
 
@@ -210,8 +210,8 @@ impl Madvise {
 }
 impl DecodeEntry for Madvise {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.addr.decode(pid, operation);
-        self.length.decode(pid, operation);
-        self.advice.decode(pid, operation);
+        self.addr.decode(pid, operation).unwrap();
+        self.length.decode(pid, operation).unwrap();
+        self.advice.decode(pid, operation).unwrap();
     }
 }

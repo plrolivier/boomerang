@@ -4,10 +4,10 @@
 use serde::{ Serialize, Deserialize };
 use decoding_macro::DecodeExit;
 use crate::{
-    syscall::{ RawSyscall },
+    syscall::RawSyscall,
     syscall::args::{ Direction, Integer, Size, Address },
     tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
-    operation::{ Operation },
+    operation::Operation,
 };
 
 
@@ -33,9 +33,9 @@ impl GetRobustList {
 }
 impl DecodeEntry for GetRobustList {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.pid.decode(pid, operation);
-        self.head_ptr.decode(pid, operation);
-        self.len_ptr.decode(pid, operation);
+        self.pid.decode(pid, operation).unwrap();
+        self.head_ptr.decode(pid, operation).unwrap();
+        self.len_ptr.decode(pid, operation).unwrap();
     }
 }
 
@@ -61,8 +61,8 @@ impl SetRobustList {
 }
 impl DecodeEntry for SetRobustList {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.pid.decode(pid, operation);
-        self.head_ptr.decode(pid, operation);
-        self.len_ptr.decode(pid, operation);
+        self.pid.decode(pid, operation).unwrap();
+        self.head_ptr.decode(pid, operation).unwrap();
+        self.len_ptr.decode(pid, operation).unwrap();
     }
 }

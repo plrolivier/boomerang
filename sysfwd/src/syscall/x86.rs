@@ -5,10 +5,10 @@ use serde::{ Serialize, Deserialize };
 use decoding_macro::DecodeExit;
 
 use crate::{
-    syscall::{ RawSyscall },
+    syscall::RawSyscall,
     syscall::args::{ Direction, Integer, Address },
     tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
-    operation::{ Operation },
+    operation::Operation,
 };
 
 
@@ -33,8 +33,8 @@ impl ArchPrctl {
 }
 impl DecodeEntry for ArchPrctl {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.code.decode(pid, operation);
-        self.addr.decode(pid, operation);
+        self.code.decode(pid, operation).unwrap();
+        self.addr.decode(pid, operation).unwrap();
     }
 }
 */

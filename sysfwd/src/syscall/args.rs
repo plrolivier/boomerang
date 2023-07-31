@@ -8,10 +8,10 @@ use std::convert::From;
 use serde::{ Serialize, Deserialize };
 
 use crate::{
-    operation::{ Operation },
+    operation::Operation,
     tracer::{
-        decoder::{ DecodeArg },
-        encoder::{ EncodeArg },
+        decoder::DecodeArg,
+        encoder::EncodeArg,
     },
 };
 
@@ -349,7 +349,7 @@ impl DecodeArg for Address {
 
 impl EncodeArg for Address {
 
-    fn encode(&mut self, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error> {
+    fn encode(&mut self, _pid: i32, _operation: &Box<Operation>) -> Result<(), std::io::Error> {
         // TODO: if content is really used, write it
         Ok(())
     }
@@ -552,7 +552,7 @@ impl DecodeArg for Array {
 
 impl EncodeArg for Array {
 
-    fn encode(&mut self, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error> {
+    fn encode(&mut self, _pid: i32, _operation: &Box<Operation>) -> Result<(), std::io::Error> {
        panic!("To implement"); 
     }
 }

@@ -4,10 +4,10 @@ use serde::{ Serialize, Deserialize };
 
 use decoding_macro::DecodeExit;
 use crate::{
-    syscall::{ RawSyscall },
+    syscall::RawSyscall,
     syscall::args::{ Direction, Integer, Size, Flag, Struct },
     tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
-    operation::{ Operation },
+    operation::Operation,
 };
 
 
@@ -34,9 +34,9 @@ impl Rseq {
 }
 impl DecodeEntry for Rseq {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.rseq.decode(pid, operation);
-        self.rseq_len.decode(pid, operation);
-        self.flags.decode(pid, operation);
-        self.sig.decode(pid, operation);
+        self.rseq.decode(pid, operation).unwrap();
+        self.rseq_len.decode(pid, operation).unwrap();
+        self.flags.decode(pid, operation).unwrap();
+        self.sig.decode(pid, operation).unwrap();
     }
 }

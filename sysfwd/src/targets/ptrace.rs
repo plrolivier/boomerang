@@ -2,24 +2,19 @@
  * The interfaces used by the tracer engine to interact with the tracee process.
  */
 use core::ffi::c_void;
-use std::{
-    collections::VecDeque,
-    io,
-};
+use std::io;
+
 use nix::{
     unistd::Pid,
     libc::user_regs_struct,
     sys::ptrace,
 };
-use crate::{
-    operation::{ RegisterOperation, MemoryOperation },
-};
+use crate::operation::{ RegisterOperation, MemoryOperation };
 
 
 
 #[derive(Clone, Debug)]
 pub struct Ptrace { }
-
 
 impl RegisterOperation for Ptrace {
 
@@ -39,7 +34,6 @@ impl RegisterOperation for Ptrace {
         }
     }
 }
-
 
 impl MemoryOperation for Ptrace {
 
@@ -116,14 +110,3 @@ impl MemoryOperation for Ptrace {
     }
 
 }
-
-
-/*
-impl SyscallOperation for Ptrace {
-    fn read_syscall_args(&self, pid: i32) -> Vec<u64>;
-    fn write_syscall_args(&self, pid: i32, args: Vec<u64>) -> Result<(), std::io::Error>;
-
-    fn read_syscall_ret(&self, pid: i32) -> (u64, u64);
-    fn write_syscall_ret(&self, pid: i32, retval: u64, errno: u64) -> Result<(), std::io::Error>;
-}
-*/

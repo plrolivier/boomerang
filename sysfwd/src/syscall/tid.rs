@@ -4,10 +4,10 @@
 use serde::{ Serialize, Deserialize };
 use decoding_macro::DecodeExit;
 use crate::{
-    syscall::{ RawSyscall },
+    syscall::RawSyscall,
     syscall::args::{ Direction, Integer, Address },
     tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
-    operation::{ Operation },
+    operation::Operation,
 };
 
 
@@ -29,6 +29,6 @@ impl SetTidAddress {
 }
 impl DecodeEntry for SetTidAddress {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.tidptr.decode(pid, operation);
+        self.tidptr.decode(pid, operation).unwrap();
     }
 }

@@ -99,7 +99,7 @@ impl SyscallTable {
         }
     }
 
-    pub fn get_syscall_no(&self, name: &str) -> Option<usize> {
+    pub fn _get_syscall_no(&self, name: &str) -> Option<usize> {
         self.map.get(name).copied()
     }
 

@@ -33,11 +33,9 @@ pub mod exit;
 use nix::libc::user_regs_struct;
 use serde::{ Serialize, Deserialize };
 
-use crate::{
-    tracer::{
-        decoder::{ DecodedSyscall },
-        filtering::{ Decision },
-    },
+use crate::tracer::{
+        decoder::DecodedSyscall,
+        filtering::Decision,
 };
 
 

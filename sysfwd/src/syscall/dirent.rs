@@ -4,10 +4,10 @@
 use serde::{ Serialize, Deserialize };
 use decoding_macro::DecodeExit;
 use crate::{
-    syscall::{ RawSyscall },
+    syscall::RawSyscall,
     syscall::args::{ Direction, Integer, Fd, Size, Struct },
     tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
-    operation::{ Operation },
+    operation::Operation,
 };
 
 
@@ -32,9 +32,9 @@ impl Getdents {
 }
 impl DecodeEntry for Getdents {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.fd.decode(pid, operation);
-        self.dirp.decode(pid, operation);
-        self.count.decode(pid, operation);
+        self.fd.decode(pid, operation).unwrap();
+        self.dirp.decode(pid, operation).unwrap();
+        self.count.decode(pid, operation).unwrap();
     }
 }
 
@@ -60,9 +60,9 @@ impl Getdents64 {
 }
 impl DecodeEntry for Getdents64 {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.fd.decode(pid, operation);
-        self.dirp.decode(pid, operation);
-        self.count.decode(pid, operation);
+        self.fd.decode(pid, operation).unwrap();
+        self.dirp.decode(pid, operation).unwrap();
+        self.count.decode(pid, operation).unwrap();
     }
 }
 
@@ -88,8 +88,8 @@ impl Readdir {
 }
 impl DecodeEntry for Readdir {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.fd.decode(pid, operation);
-        self.dirp.decode(pid, operation);
-        self.count.decode(pid, operation);
+        self.fd.decode(pid, operation).unwrap();
+        self.dirp.decode(pid, operation).unwrap();
+        self.count.decode(pid, operation).unwrap();
     }
 }

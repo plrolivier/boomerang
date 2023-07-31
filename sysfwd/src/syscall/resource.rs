@@ -5,10 +5,10 @@ use nix::sys::resource;
 use serde::{ Serialize, Deserialize };
 use decoding_macro::DecodeExit;
 use crate::{
-    syscall::{ RawSyscall },
+    syscall::RawSyscall,
     syscall::args::{ Direction, Integer, Fd, Size, Offset, Protection, Signal, Flag, Address, Buffer, NullBuffer, Array, Struct },
     tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
-    operation::{ Operation },
+    operation::Operation,
 };
 
 
@@ -31,8 +31,8 @@ impl Getrlimit {
 }
 impl DecodeEntry for Getrlimit {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.resource.decode(pid, operation);
-        self.rlim.decode(pid, operation);
+        self.resource.decode(pid, operation).unwrap();
+        self.rlim.decode(pid, operation).unwrap();
     }
 }
 
@@ -56,8 +56,8 @@ impl Setrlimit {
 }
 impl DecodeEntry for Setrlimit {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.resource.decode(pid, operation);
-        self.rlim.decode(pid, operation);
+        self.resource.decode(pid, operation).unwrap();
+        self.rlim.decode(pid, operation).unwrap();
     }
 }
 
@@ -85,10 +85,10 @@ impl Prlimit {
 }
 impl DecodeEntry for Prlimit {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.pid.decode(pid, operation);
-        self.resource.decode(pid, operation);
-        self.new_limit.decode(pid, operation);
-        self.old_limit.decode(pid, operation);
+        self.pid.decode(pid, operation).unwrap();
+        self.resource.decode(pid, operation).unwrap();
+        self.new_limit.decode(pid, operation).unwrap();
+        self.old_limit.decode(pid, operation).unwrap();
     }
 }
 
@@ -112,7 +112,7 @@ impl Getrusage {
 }
 impl DecodeEntry for Getrusage {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.who.decode(pid, operation);
-        self.usage.decode(pid, operation);
+        self.who.decode(pid, operation).unwrap();
+        self.usage.decode(pid, operation).unwrap();
     }
 }

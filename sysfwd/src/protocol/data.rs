@@ -2,17 +2,13 @@
  *
  */
 use std::{
-    time::{ Duration },
+    time::Duration,
     io,
     net::{ SocketAddr, UdpSocket, Ipv4Addr },
 };
 
-use nix::libc::recv;
 
-use crate::{
-    syscall::{ Syscall },
-};
-
+use crate::syscall::Syscall;
 
 
 /* 
@@ -20,21 +16,7 @@ use crate::{
  * Note: as long as only the size is really useful, no need for a struct.
  */
 const HEADER_SIZE: usize = 8;
-/*
-#[derive(Copy, Clone, Debug)]
-#[derive(Serialize, Deserialize)]
-pub struct Header {
-    pub size: usize,
-    //pid: i32,
-}
 
-impl Header {
-    pub fn new(size: usize) -> Self
-    {
-        Self { size }
-    }
-}
- */
 
 
 /*
@@ -43,7 +25,6 @@ impl Header {
  */
 pub struct Peer {
     local_socket: UdpSocket,
-    //local_address: SocketAddr,
     remote_address: SocketAddr,
 }
 
@@ -60,13 +41,6 @@ impl Peer {
         // For example with cat which read 0x20000 bytes
 
         // Craft the header
-        /* 
-        let header = Header::new(data.len());
-        //let header = serde_json::to_vec(&header).expect("Fail to serialize header to JSON");
-        let header = serde::Serialize
-        let message = [&header, data].concat();
-        println!("Header: {:?}", header);
-        */
         let header = data.len().to_be_bytes();
         let message: Vec<u8> = [&header[..HEADER_SIZE], data].concat();
 
@@ -78,18 +52,6 @@ impl Peer {
 
     pub fn receive(&self) -> Result<(Vec<u8>, usize), std::io::Error>
     {
-        /*
-        const HEADER_SIZE: usize = size_of::<Header>();
-        let mut header_buffer = [0u8; HEADER_SIZE];
-        let (count, _addr): (usize, SocketAddr) = self.local_socket.peek_from(&mut header_buffer)?;
-        if count != HEADER_SIZE {
-            panic!("Fail to read header");
-        }
-        println!("HEADER_SIZE = {}", HEADER_SIZE);
-        println!("Header: {:?}", header_buffer);
-        let header: Header = serde_json::from_slice(&header_buffer[..HEADER_SIZE]).expect("Fail to deserialize header from JSON");
-        */
-
         // Read header containing the size of the payload
         let mut header = [0u8; HEADER_SIZE];
         let (count, _addr): (usize, SocketAddr) = self.local_socket.peek_from(&mut header)?;
@@ -110,7 +72,6 @@ impl Peer {
     }
 
 }
-
 
 
 
@@ -159,6 +120,7 @@ impl Client {
 }
 
 
+
 /*
  * The worker...
  */
@@ -192,22 +154,7 @@ impl Server {
     pub fn receive_syscall(&self) -> Result<Syscall, std::io::Error>
     {
         // Read socket
-        //let mut buffer: Vec<u8> = vec![0; 1024];
         let (buffer, _len): (Vec<u8>, usize)  = self.connection.receive()?;
-        //println!("[EXECUTOR] Received {} bytes: {:?}", len, buffer);
-        /* 
-        match self.connection.receive() {
-            Ok((recv_buffer, _len)) => {
-                buffer = recv_buffer;
-            }
-
-            Err(err) => {
-                //eprintln!("Error receiving syscall message");
-                return Err(err);
-            }
-
-        }
-        */
 
         // Parse syscall
         let syscall = serde_json::from_slice(&buffer).expect("Fail to deserialize Syscall from JSON");

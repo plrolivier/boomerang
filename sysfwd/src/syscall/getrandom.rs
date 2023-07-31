@@ -5,10 +5,10 @@ use serde::{ Serialize, Deserialize };
 
 use decoding_macro::DecodeExit;
 use crate::{
-    syscall::{ RawSyscall },
+    syscall::RawSyscall,
     syscall::args::{ Direction, Integer, Buffer, Size, Flag },
     tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
-    operation::{ Operation },
+    operation::Operation,
 };
 
 
@@ -36,8 +36,8 @@ impl Getrandom {
 
 impl DecodeEntry for Getrandom {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.buf.decode(pid, operation);
-        self.buflen.decode(pid, operation);
-        self.flags.decode(pid, operation);
+        self.buf.decode(pid, operation).unwrap();
+        self.buflen.decode(pid, operation).unwrap();
+        self.flags.decode(pid, operation).unwrap();
     }
 }

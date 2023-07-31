@@ -5,11 +5,11 @@ use serde::{ Serialize, Deserialize };
 
 use decoding_macro::DecodeExit;
 use crate::{
-    syscall::{ RawSyscall },
+    syscall::RawSyscall,
     syscall::args::{ ArgType, Direction },
     syscall::args::{ Integer, Fd, Size, Offset, Protection, Signal, Flag, Address, Buffer, NullBuffer, Array, Struct },
     tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
-    operation::{ Operation },
+    operation::Operation,
 };
 
 
@@ -39,10 +39,10 @@ impl Statx {
 }
 impl DecodeEntry for Statx {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.dirfd.decode(pid, operation);
-        self.pathname.decode(pid, operation);
-        self.flags.decode(pid, operation);
-        self.mask.decode(pid, operation);
-        self.statxbuf.decode(pid, operation);
+        self.dirfd.decode(pid, operation).unwrap();
+        self.pathname.decode(pid, operation).unwrap();
+        self.flags.decode(pid, operation).unwrap();
+        self.mask.decode(pid, operation).unwrap();
+        self.statxbuf.decode(pid, operation).unwrap();
     }
 }

@@ -6,11 +6,11 @@ use serde::{ Serialize, Deserialize };
 use decoding_macro::DecodeExit;
 
 use crate::{
-    syscall::{ RawSyscall },
+    syscall::RawSyscall,
     syscall::args::{ Direction, Integer, Fd, Size, Flag, NullBuffer, Struct },
     tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
     tracer::encoder::{ EncodeEntry, EncodeExit, EncodeArg },
-    operation::{ Operation },
+    operation::Operation,
 };
 
 
@@ -31,7 +31,7 @@ impl Close {
 }
 impl DecodeEntry for Close {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.fd.decode(pid, operation);
+        self.fd.decode(pid, operation).unwrap();
     }
 }
 impl EncodeEntry for Close {
@@ -95,9 +95,9 @@ impl Open {
 }
 impl DecodeEntry for Open {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.pathname.decode(pid, operation);
-        self.flags.decode(pid, operation);
-        self.mode.decode(pid, operation);
+        self.pathname.decode(pid, operation).unwrap();
+        self.flags.decode(pid, operation).unwrap();
+        self.mode.decode(pid, operation).unwrap();
     }
 }
 impl EncodeEntry for Open {
@@ -111,7 +111,7 @@ impl EncodeEntry for Open {
 /* 
 impl DecodeExit for Open {
     fn decode_exit(&mut self, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error> { 
-        self.retval.as_mut().unwrap().decode(pid, operation);
+        self.retval.as_mut().unwrap().decode(pid, operation).unwrap();
         Ok(())
     }
 }
@@ -141,10 +141,10 @@ impl Openat {
 }
 impl DecodeEntry for Openat {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.dirfd.decode(pid, operation);
-        self.pathname.decode(pid, operation);
-        self.flags.decode(pid, operation);
-        self.mode.decode(pid, operation);
+        self.dirfd.decode(pid, operation).unwrap();
+        self.pathname.decode(pid, operation).unwrap();
+        self.flags.decode(pid, operation).unwrap();
+        self.mode.decode(pid, operation).unwrap();
     }
 }
 impl EncodeEntry for Openat {
@@ -181,10 +181,10 @@ impl Openat2 {
 }
 impl DecodeEntry for Openat2 {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.dirfd.decode(pid, operation);
-        self.pathname.decode(pid, operation);
-        self.how.decode(pid, operation);
-        self.size.decode(pid, operation);
+        self.dirfd.decode(pid, operation).unwrap();
+        self.pathname.decode(pid, operation).unwrap();
+        self.how.decode(pid, operation).unwrap();
+        self.size.decode(pid, operation).unwrap();
     }
 }
 impl EncodeEntry for Openat2 {

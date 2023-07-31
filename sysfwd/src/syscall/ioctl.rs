@@ -5,12 +5,12 @@
 use serde::{ Serialize, Deserialize };
 use decoding_macro::DecodeExit;
 use crate::{
-    syscall::{ RawSyscall },
+    syscall::RawSyscall,
     syscall::args::{ ArgType, Direction },
     syscall::args::{ Integer, Fd, Size, Offset, Protection, Signal, Flag, Address, Buffer, NullBuffer, Array, Struct },
     //syscall::args::{ Integer, Fd, Size, Flag, Buffer, NullBuffer, Struct },
     tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
-    operation::{ Operation },
+    operation::Operation,
 };
 
 // int ioctl(int fildes, int request, ... /* arg */)
@@ -36,8 +36,8 @@ impl Ioctl {
 }
 impl DecodeEntry for Ioctl {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.fd.decode(pid, operation);
-        self.request.decode(pid, operation);
-        self.arg.decode(pid, operation);
+        self.fd.decode(pid, operation).unwrap();
+        self.request.decode(pid, operation).unwrap();
+        self.arg.decode(pid, operation).unwrap();
     }
 }

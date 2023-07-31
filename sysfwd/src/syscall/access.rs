@@ -4,11 +4,11 @@
 use serde::{ Serialize, Deserialize };
 use decoding_macro::DecodeExit;
 use crate::{
-    syscall::{ RawSyscall },
+    syscall::RawSyscall,
     syscall::args::{ Direction, Integer, Fd, Flag, NullBuffer },
     //syscall::args::{ Integer, Fd, Size, Flag, Buffer, NullBuffer, Struct },
     tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
-    operation::{ Operation },
+    operation::Operation,
 };
 
 
@@ -32,8 +32,8 @@ impl Access {
 }
 impl DecodeEntry for Access {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.pathname.decode(pid, operation);
-        self.mode.decode(pid, operation);
+        self.pathname.decode(pid, operation).unwrap();
+        self.mode.decode(pid, operation).unwrap();
     }
 }
 
@@ -61,10 +61,10 @@ impl Faccessat {
 }
 impl DecodeEntry for Faccessat {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.dirfd.decode(pid, operation);
-        self.pathname.decode(pid, operation);
-        self.mode.decode(pid, operation);
-        self.flags.decode(pid, operation);
+        self.dirfd.decode(pid, operation).unwrap();
+        self.pathname.decode(pid, operation).unwrap();
+        self.mode.decode(pid, operation).unwrap();
+        self.flags.decode(pid, operation).unwrap();
     }
 }
 
@@ -92,9 +92,9 @@ impl Faccessat2 {
 }
 impl DecodeEntry for Faccessat2 {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.dirfd.decode(pid, operation);
-        self.pathname.decode(pid, operation);
-        self.mode.decode(pid, operation);
-        self.flags.decode(pid, operation);
+        self.dirfd.decode(pid, operation).unwrap();
+        self.pathname.decode(pid, operation).unwrap();
+        self.mode.decode(pid, operation).unwrap();
+        self.flags.decode(pid, operation).unwrap();
     }
 }

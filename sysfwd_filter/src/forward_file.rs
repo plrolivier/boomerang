@@ -2,7 +2,7 @@
  *
  */
 use sysfwd::{
-    syscall::{ self, Syscall },
+    syscall::Syscall,
     tracer::{
         decoder::DecodedSyscall,
         filtering::{ Decision, Rule },

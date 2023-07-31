@@ -4,10 +4,10 @@ use serde::{ Serialize, Deserialize };
 
 use decoding_macro::DecodeExit;
 use crate::{
-    syscall::{ RawSyscall },
+    syscall::RawSyscall,
     syscall::args::{ Direction, Integer, Flag, NullBuffer },
     tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
-    operation::{ Operation },
+    operation::Operation,
 };
 
 
@@ -33,7 +33,7 @@ impl MemfdCreate {
 
 impl DecodeEntry for MemfdCreate {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.name.decode(pid, operation);
-        self.flags.decode(pid, operation);
+        self.name.decode(pid, operation).unwrap();
+        self.flags.decode(pid, operation).unwrap();
     }
 }

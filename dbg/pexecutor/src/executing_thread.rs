@@ -3,11 +3,11 @@
  */
 use core::ffi::c_void;
 use std::{
-    os::unix::process::{ CommandExt },
-    process::{ self, exit, Child, Command, Stdio },
+    os::unix::process::CommandExt,
+    process::{ self, Child, Command, Stdio },
     sync::{ 
-        Arc, Barrier,
-        mpsc::{ channel, Sender, Receiver },
+        Arc,
+        mpsc::{ Sender, Receiver },
     },
     io,
 };
@@ -15,20 +15,18 @@ use nix::{
     sys::{
         ptrace,
         wait::{ waitpid, WaitStatus},
-        signal::{ Signal },
+        signal::Signal,
     },
-    unistd::{ Pid },
+    unistd::Pid,
 };
-
 #[cfg(target_os = "linux")]
 use libc;
 
 use sysfwd::{
-    sync::{ Event },
+    sync::Event,
     arch::TargetArch,
     memory::{ read_process_memory_maps, print_memory_regions },
     executor_engine::{ ExecutorEngine, Invoker },
-    syscall::{ RawSyscall },
     operation::Operation,
     targets,
 };
@@ -39,19 +37,16 @@ use crate::{
 
 
 
-
-
 /*
  *
  */
 #[derive(Debug)]
 pub struct ExecutingThread {
     tx: Sender<String>,
-    rx: Receiver<String>,
+    _rx: Receiver<String>,
 
     child_pid: Option<i32>,
 
-    // to keep?
     stop: Arc<Event>,
     stopped: Arc<Event>,
 }
@@ -62,7 +57,7 @@ impl ExecutingThread {
     {
         Self { 
             tx: tx,
-            rx: rx,
+            _rx: rx,
             child_pid: None,
             stop: stop,
             stopped: stopped,
@@ -75,7 +70,7 @@ impl ExecutingThread {
 
         let executor = self.run_thread(executor).unwrap();
 
-        self.shutdown_thread(executor);
+        self.shutdown_thread(executor).unwrap();
     }
 
     /*
@@ -83,7 +78,6 @@ impl ExecutingThread {
      */
     fn boot_thread(&mut self) -> Result<ExecutorEngine, io::Error>
     {
-        println!("***************************************************");
         println!("Executing thread {} booting...", process::id());
 
         let mut invoker = ExecInvoker::new();
@@ -96,7 +90,7 @@ impl ExecutingThread {
         let mem_op = Box::new(ptrace_op);
         let operator = Box::new(Operation{ register: regs_op, memory: mem_op});
 
-        let mut executor = ExecutorEngine::new(TargetArch::X86_64,
+        let executor = ExecutorEngine::new(TargetArch::X86_64,
                                                                IP_ADDRESS,
                                                                EXECUTOR_PORT,
                                                                TRACER_PORT,
@@ -136,7 +130,7 @@ impl ExecutingThread {
     }
 
     /* */
-    pub fn shutdown_thread(&mut self, mut executor: ExecutorEngine) -> Result<(), io::Error>
+    pub fn shutdown_thread(&mut self, mut _executor: ExecutorEngine) -> Result<(), io::Error>
     {
         println!("Executing thread {} shutdown", self.child_pid.unwrap());
 
@@ -148,12 +142,12 @@ impl ExecutingThread {
 }
 
 
-
 struct ExecInvoker {
     child: Option<Child>,
  }
 
 impl ExecInvoker {
+
     fn new() -> Self
     {
         Self { child: None }
@@ -164,10 +158,9 @@ impl Invoker for ExecInvoker {
 
     fn invoke_syscall(&self, scno: usize, arg1:usize, arg2: usize,
                       arg3: usize, arg4: usize, arg5: usize, arg6: usize,
-                      arg7: usize) -> Result<(usize, usize), io::Error>
+                      _arg7: usize)
+                      -> Result<(usize, usize), io::Error>
     {
-        
-
         /* Setup the register context */        
         let pid = self.child.as_ref().unwrap().id() as i32;
         let pid = Pid::from_raw(pid);
@@ -198,8 +191,9 @@ impl Invoker for ExecInvoker {
         ptrace::setregs(pid, regs).unwrap();
 
         
-        let regs2 = ptrace::getregs(pid).unwrap();
-        println!("regs before step: {:?}", regs2);
+        // Debug:
+        //let regs2 = ptrace::getregs(pid).unwrap();
+        //println!("regs before step: {:?}", regs2);
         /* small checks on memory
         let path_addr = arg2 as *mut c_void;
         let mut pathname: Vec<u8> = Vec::new();
@@ -240,7 +234,8 @@ impl Invoker for ExecInvoker {
 
         /* Capture what changed */
         let regs = ptrace::getregs(pid).unwrap();
-        println!("exit regs: {:?}", regs);
+        // Debug:
+        //println!("exit regs: {:?}", regs);
         let retval = regs.rax as usize;
         let errno = regs.rdx as usize;
 

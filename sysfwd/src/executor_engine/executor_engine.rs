@@ -1,30 +1,21 @@
 /*
  *
  */
-//pub mod invoker;
-
 use std::{
-    io::{ self }, sync::{Mutex, Condvar},
-    sync::{ Arc },
-};
-use std::thread;
-use std::time::Duration;
-
-use nix::{
-    unistd::{ Pid },
+    io::{ self },
+    sync::Arc,
 };
 
 use crate::{
-    sync::{ Event },
+    sync::Event,
     arch::{ TargetArch, Architecture },
-    syscall::{ Syscall },
+    syscall::Syscall,
     operation::Operation,
     protocol::data::Server,
     executor_engine::Invoker,
     tracer::decoder::DecodeExit,
     tracer::encoder::EncodeEntry,
 };
-
 
 
 
@@ -107,15 +98,9 @@ impl ExecutorEngine {
             }
 
             /* Carry out syscall's decision */
-            self.log_syscall();
+            self.log_entry_syscall();
             self.invoke_syscall().unwrap();
-            self.log_syscall();
-            println!("");
-
-            // Debug
-            println!("[{}] sleeping between syscall...", self.child_pid);
-            //thread::sleep(Duration::from_secs(10));
-            println!("[{}] waking up !", self.child_pid);
+            self.log_exit_syscall();
 
             /* Return syscall */
             self.protocol.return_syscall_exit(&self.syscall);
@@ -152,7 +137,7 @@ impl ExecutorEngine {
 
         /* Decode the syscall exit */
         if let Some(decoded_sc) = self.syscall.decoded.as_mut() {
-            decoded_sc.decode_exit(self.syscall.raw.retval, self.child_pid, &self.operator);
+            decoded_sc.decode_exit(self.syscall.raw.retval, self.child_pid, &self.operator).unwrap();
         }
 
         Ok(())
@@ -164,7 +149,6 @@ impl ExecutorEngine {
             self.stop.set();
             self.stopped.wait();
         }
-        //Ok()
     }
     
     fn init(&mut self)
@@ -173,9 +157,15 @@ impl ExecutorEngine {
     }
 
 
-    fn log_syscall(&self) {
+    fn log_entry_syscall(&self) {
         let json = serde_json::to_string(&self.syscall).unwrap();
-        println!("[{}] {}", self.child_pid, json)
+        println!("[{}] {}", self.child_pid, json);
+    }
+
+    fn log_exit_syscall(&self) {
+        let json = serde_json::to_string(&self.syscall).unwrap();
+        println!("[{}] {}", self.child_pid, json);
+        println!("");
     }
 
 }

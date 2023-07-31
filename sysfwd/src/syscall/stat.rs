@@ -4,11 +4,11 @@
 use serde::{ Serialize, Deserialize };
 use decoding_macro::DecodeExit;
 use crate::{
-    syscall::{ RawSyscall },
+    syscall::RawSyscall,
     syscall::args::{ Direction, Integer, Fd, Flag, NullBuffer, Struct },
     //syscall::args::{ Integer, Fd, Size, Flag, Buffer, NullBuffer, Struct },
     tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
-    operation::{ Operation },
+    operation::Operation,
 };
 
 
@@ -31,8 +31,8 @@ impl Stat {
 }
 impl DecodeEntry for Stat {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.pathname.decode(pid, operation);
-        self.statbuf.decode(pid, operation);
+        self.pathname.decode(pid, operation).unwrap();
+        self.statbuf.decode(pid, operation).unwrap();
     }
 }
 
@@ -56,8 +56,8 @@ impl Fstat {
 }
 impl DecodeEntry for Fstat {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.fd.decode(pid, operation);
-        self.statbuf.decode(pid, operation);
+        self.fd.decode(pid, operation).unwrap();
+        self.statbuf.decode(pid, operation).unwrap();
     }
 }
 
@@ -81,8 +81,8 @@ impl Lstat {
 }
 impl DecodeEntry for Lstat {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.pathname.decode(pid, operation);
-        self.statbuf.decode(pid, operation);
+        self.pathname.decode(pid, operation).unwrap();
+        self.statbuf.decode(pid, operation).unwrap();
     }
 }
 
@@ -110,9 +110,9 @@ impl Fstatat {
 }
 impl DecodeEntry for Fstatat {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.dirfd.decode(pid, operation);
-        self.pathname.decode(pid, operation);
-        self.statbuf.decode(pid, operation);
-        self.flags.decode(pid, operation);
+        self.dirfd.decode(pid, operation).unwrap();
+        self.pathname.decode(pid, operation).unwrap();
+        self.statbuf.decode(pid, operation).unwrap();
+        self.flags.decode(pid, operation).unwrap();
     }
 }

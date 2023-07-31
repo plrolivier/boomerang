@@ -6,10 +6,10 @@ use serde::{ Serialize, Deserialize };
 
 //use decoding_macro::DecodeExit;
 use crate::{
-    syscall::{ RawSyscall },
+    syscall::RawSyscall,
     syscall::args::{ Integer },
     tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
-    operation::{ Operation },
+    operation::Operation,
 };
 
 
@@ -31,6 +31,6 @@ impl ExitGroup {
 }
 impl DecodeEntry for ExitGroup {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.status.decode(pid, operation);
+        self.status.decode(pid, operation).unwrap();
     }
 }

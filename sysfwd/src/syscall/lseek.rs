@@ -5,11 +5,11 @@ use serde::{ Serialize, Deserialize };
 
 use decoding_macro::DecodeExit;
 use crate::{
-    syscall::{ RawSyscall },
+    syscall::RawSyscall,
     syscall::args::{ Direction, Integer, Fd, Size, Offset, Protection, Signal, Flag, Address, Buffer, NullBuffer, Array, Struct },
     tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
     tracer::encoder::{ EncodeArg, EncodeEntry },
-    operation::{ Operation },
+    operation::Operation,
 };
 
 
@@ -35,9 +35,9 @@ impl Lseek {
 }
 impl DecodeEntry for Lseek {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.fd.decode(pid, operation);
-        self.offset.decode(pid, operation);
-        self.whence.decode(pid, operation);
+        self.fd.decode(pid, operation).unwrap();
+        self.offset.decode(pid, operation).unwrap();
+        self.whence.decode(pid, operation).unwrap();
     }
 }
 impl EncodeEntry for Lseek {
@@ -75,11 +75,11 @@ impl Llseek {
 }
 impl DecodeEntry for Llseek {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.fd.decode(pid, operation);
-        self.offset_high.decode(pid, operation);
-        self.offset_low.decode(pid, operation);
-        self.result.decode(pid, operation);
-        self.whence.decode(pid, operation);
+        self.fd.decode(pid, operation).unwrap();
+        self.offset_high.decode(pid, operation).unwrap();
+        self.offset_low.decode(pid, operation).unwrap();
+        self.result.decode(pid, operation).unwrap();
+        self.whence.decode(pid, operation).unwrap();
     }
 }
 impl EncodeEntry for Llseek {

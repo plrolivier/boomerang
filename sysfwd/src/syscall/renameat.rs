@@ -4,10 +4,10 @@ use serde::{ Serialize, Deserialize };
 
 use decoding_macro::DecodeExit;
 use crate::{
-    syscall::{ RawSyscall },
+    syscall::RawSyscall,
     syscall::args::{ Direction, Integer, Fd, NullBuffer },
     tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
-    operation::{ Operation },
+    operation::Operation,
 };
 
 use super::args::Flag;
@@ -35,8 +35,8 @@ impl Rename {
 
 impl DecodeEntry for Rename {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.oldpath.decode(pid, operation);
-        self.newpath.decode(pid, operation);
+        self.oldpath.decode(pid, operation).unwrap();
+        self.newpath.decode(pid, operation).unwrap();
     }
 }
 
@@ -65,10 +65,10 @@ impl Renameat {
 
 impl DecodeEntry for Renameat {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.olddirfd.decode(pid, operation);
-        self.oldpath.decode(pid, operation);
-        self.newdirfd.decode(pid, operation);
-        self.newpath.decode(pid, operation);
+        self.olddirfd.decode(pid, operation).unwrap();
+        self.oldpath.decode(pid, operation).unwrap();
+        self.newdirfd.decode(pid, operation).unwrap();
+        self.newpath.decode(pid, operation).unwrap();
     }
 }
 
@@ -100,10 +100,10 @@ impl Renameat2 {
 
 impl DecodeEntry for Renameat2 {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.olddirfd.decode(pid, operation);
-        self.oldpath.decode(pid, operation);
-        self.newdirfd.decode(pid, operation);
-        self.newpath.decode(pid, operation);
-        self.flags.decode(pid, operation);
+        self.olddirfd.decode(pid, operation).unwrap();
+        self.oldpath.decode(pid, operation).unwrap();
+        self.newdirfd.decode(pid, operation).unwrap();
+        self.newpath.decode(pid, operation).unwrap();
+        self.flags.decode(pid, operation).unwrap();
     }
 }

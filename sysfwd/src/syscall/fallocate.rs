@@ -4,10 +4,10 @@ use serde::{ Serialize, Deserialize };
 
 use decoding_macro::DecodeExit;
 use crate::{
-    syscall::{ RawSyscall },
+    syscall::RawSyscall,
     syscall::args::{ Integer, Fd, Offset},
     tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
-    operation::{ Operation },
+    operation::Operation,
 };
 
 
@@ -37,9 +37,9 @@ impl Fallocate {
 
 impl DecodeEntry for Fallocate {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.fd.decode(pid, operation);
-        self.mode.decode(pid, operation);
-        self.offset.decode(pid, operation);
-        self.len.decode(pid, operation);
+        self.fd.decode(pid, operation).unwrap();
+        self.mode.decode(pid, operation).unwrap();
+        self.offset.decode(pid, operation).unwrap();
+        self.len.decode(pid, operation).unwrap();
     }
 }

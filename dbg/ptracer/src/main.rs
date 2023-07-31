@@ -1,5 +1,5 @@
 /*
- * Example to use libsysforward with ptrace.
+ * Example to use libsysfwd with ptrace.
  * Works with an executor instance.
  */
 
@@ -7,36 +7,30 @@ mod tracing_thread;
 
 
 use std::{
-    collections::{ HashMap },
-    thread::{ self, Builder, JoinHandle },
-    os::unix::process::{ CommandExt },
-    process::{ self, exit, Child, Command, Stdio },
+    collections::HashMap,
+    thread::{ Builder, JoinHandle },
     sync::{ 
         Arc, Barrier,
         mpsc::{ channel, Sender, Receiver },
     },
-    io::{self, prelude::*, BufReader, BufWriter, ErrorKind },
-    net::{ Ipv4Addr }, str::FromStr,
+    io::{self, ErrorKind },
+    net::Ipv4Addr,
 };
 
 use nix::{
     sys::{
         ptrace,
-        wait::{ waitpid, WaitStatus},
-        signal::{ Signal, kill },
+        signal::Signal
     },
-    unistd::{ Pid },
+    unistd::Pid,
 };
 
 use sysfwd::{
     protocol::control::{ Configuration, ControlChannel },
-    tracer::{ TracerCallback },
+    tracer::TracerCallback,
 };
 
-use crate::{ 
-    tracing_thread::TracingThread,
-};
-
+use crate::tracing_thread::TracingThread;
 
 
 /* Static variable to change */
@@ -91,14 +85,6 @@ impl TraceDebugger {
     }
 }
 
-/*
-impl Default for TraceDebugger {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-*/
-
 
 /*
  * A structure used to control tracing thread.
@@ -106,7 +92,7 @@ impl Default for TraceDebugger {
 struct ThreadCtrl {
     handler: JoinHandle<()>,
     barrier: Arc<Barrier>,
-    tx: Sender<String>,
+    _tx: Sender<String>,
     rx: Receiver<String>,
 
 }
@@ -146,7 +132,7 @@ impl TracerCallback for TraceDebuggerCallback {
         let thread_ctrl = ThreadCtrl {
             handler: handler,
             barrier: barrier_copy,
-            tx: tx_ctrl,
+            _tx: tx_ctrl,
             rx: rx_thread
         };
 
@@ -240,109 +226,6 @@ impl TracerCallback for TraceDebuggerCallback {
         // TODO: which signal use GDB ?
         Ok(())
     }
-
-
-
-
-
-    /*
-    fn check_connected(&self) -> bool
-    {
-        if self.reader.is_none() || self.writer.is_none() {
-            return false;
-        } else {
-            return true;
-        }
-    }
-
-    pub fn spawn(&mut self, program: &str, prog_args: &[String]) -> Result<Pid, io::Error>
-    {
-        // Verify the connection with executor
-        if ! self.check_connected() {
-            return Err(io::Error::new(io::ErrorKind::Other, "Not connected with executor"));
-        }
-
-        // Spawn the child
-        println!("[TRACER] Spawn {} {:?}", program, prog_args);
-        let child: Child = unsafe {
-            let mut command = Command::new(program);
-            command.args(prog_args);
-            command.pre_exec(|| {
-                ptrace::traceme().unwrap();
-                Ok(())
-            });
-
-            command.spawn().expect("Failed to spawn child process")
-        };
-
-        let pid = Pid::from_raw(child.id() as i32);
-
-        // Wait for first syscall
-        match waitpid(pid, None) {
-            Ok(WaitStatus::Stopped(_, Signal::SIGTRAP)) => { /* ??? */ },
-            _ => panic!("WaitStatus not handled"),
-        };
-
-        // Create the tracing thread
-        let boot_barrier = Arc::new(Barrier::new(2));
-
-        let tracing_thread = TracingThread { boot_barrier };
-        let copy_tracing_thread = tracing_thread.clone();
-        self.thread_map.insert(pid, tracing_thread);
-
-        let builder = Builder::new().name(child.id().to_string());
-        let handler = builder.spawn(move ||
-            copy_tracing_thread.boot_thread(child)
-        ).unwrap();
-        self.handler_map.insert(pid, Some(handler));
-
-        // Notify the executor
-        self.notify_new_process();
-
-        Ok(pid)
-    }
-
-    fn notify_new_process(&self)
-    {
-        // TODO: the port depends on how many thread has been spawn
-        let payload = control::NewProcessRequestPayload { 
-            address_ipv4: IP_ADDRESS,
-            tracer_port: TRACER_PORT,
-            executor_port: EXECUTOR_PORT,
-        };
-
-        let payload = serde_json::to_string(&payload).unwrap();
-
-        let message = control::Message {
-            command: control::Command::NewProcess,
-            payload: payload,
-        };
-
-        let mut data = serde_json::to_string(&message).unwrap();
-        data.push_str("\n");
-        println!("[TRACER] Send message: {}", data);
-
-        let _ret = self.writer.expect("No TcpStream Writer found").write(data.as_bytes());
-        self.writer.expect("No TcpStream Writer found").flush();
-    }
-
-    
-    pub fn start_tracing_thread(&self, pid: Pid)
-    {
-        let thread = self.thread_map.get(&pid).unwrap();
-        thread.boot_barrier.wait();
-    }
-
-    pub fn join_tracing_thread(&mut self, pid: Pid)
-    {
-        if let Some(handler) = self.handler_map.get_mut(&pid) {
-            if let Some(thread) = handler.take() {
-                thread.join().unwrap();
-            }
-        }
-    }
-    */
-
 }
 
 

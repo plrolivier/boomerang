@@ -4,10 +4,10 @@ use serde::{ Serialize, Deserialize };
 
 use decoding_macro::DecodeExit;
 use crate::{
-    syscall::{ RawSyscall },
+    syscall::RawSyscall,
     syscall::args::{ Direction, Fd, Flag, Address, NullBuffer, Struct },
     tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
-    operation::{ Operation },
+    operation::Operation,
 };
 
 use super::args::Integer;
@@ -39,11 +39,11 @@ impl NameToHandleAt {
 }
 impl DecodeEntry for NameToHandleAt {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.dirfd.decode(pid, operation);
-        self.pathname.decode(pid, operation);
-        self.handle.decode(pid, operation);
-        self.mount_id.decode(pid, operation);
-        self.flags.decode(pid, operation);
+        self.dirfd.decode(pid, operation).unwrap();
+        self.pathname.decode(pid, operation).unwrap();
+        self.handle.decode(pid, operation).unwrap();
+        self.mount_id.decode(pid, operation).unwrap();
+        self.flags.decode(pid, operation).unwrap();
     }
 }
 
@@ -68,8 +68,8 @@ impl OpenByHandleAt {
 }
 impl DecodeEntry for OpenByHandleAt {
     fn decode_entry(&mut self, pid: i32, operation: &Box<Operation>) {
-        self.mount_fd.decode(pid, operation);
-        self.handle.decode(pid, operation);
-        self.flags.decode(pid, operation);
+        self.mount_fd.decode(pid, operation).unwrap();
+        self.handle.decode(pid, operation).unwrap();
+        self.flags.decode(pid, operation).unwrap();
     }
 }

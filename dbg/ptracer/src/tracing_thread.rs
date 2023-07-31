@@ -3,11 +3,11 @@
  */
 
 use std::{
-    os::unix::process::{ CommandExt },
-    process::{ self, exit, Child, Command, Stdio },
+    os::unix::process::CommandExt,
+    process::{ self, Child, Command, Stdio },
     sync::{ 
         Arc, Barrier,
-        mpsc::{ channel, Sender, Receiver },
+        mpsc::{ Sender, Receiver },
     },
     io,
 };
@@ -16,9 +16,9 @@ use nix::{
     sys::{
         ptrace,
         wait::{ waitpid, WaitStatus},
-        signal::{ Signal },
+        signal::Signal,
     },
-    unistd::{ Pid },
+    unistd::Pid,
 };
 
 #[cfg(target_os = "linux")]
@@ -26,15 +26,12 @@ use libc;
 
 use sysfwd::{
     arch::TargetArch,
-    tracer::{ TracerEngine },
+    tracer::TracerEngine,
     operation::Operation,
     targets,
     memory::{ read_process_memory_maps, print_memory_regions },
 };
-
-use sysfwd_filter::{
-    ForwardFileRule,
-};
+use sysfwd_filter::ForwardFileRule;
 
 use crate::{
     IP_ADDRESS, TRACER_PORT, EXECUTOR_PORT,
@@ -49,12 +46,11 @@ use crate::{
 pub struct TracingThread {
     pub boot_barrier: Arc<Barrier>,
     tx: Sender<String>,
-    rx: Receiver<String>,
+    _rx: Receiver<String>,
 
     program: String,
     prog_args: Vec<String>,
     tracee: Option<Child>,
-    //tracer: Option<TracerEngine>,
 
     //use_pkexec: bool,
  }
@@ -67,11 +63,10 @@ impl TracingThread {
         TracingThread { 
             boot_barrier: barrier,
             tx: tx,
-            rx: rx,
+            _rx: rx,
             program: program,
             prog_args: prog_args,
             tracee: None,
-            //tracer: None,
             //use_pkexec: true,
         }
     }
@@ -93,7 +88,6 @@ impl TracingThread {
      */
     fn boot_thread(&mut self) -> Result<TracerEngine, io::Error>
     {
-        println!("***************************************************");
         println!("Tracing thread {} booting...", process::id());
 
         /* Setup the tracee */
@@ -131,7 +125,7 @@ impl TracingThread {
      * Spawn the process where the tracee program will live.
      * Use PTRACE_TRACEME and waits for the tracer thread to initialize.
      */
-    fn spawn_tracee(&mut self, mut program: String, mut prog_args: Vec<String>) -> Result<(), io::Error>
+    fn spawn_tracee(&mut self, program: String, prog_args: Vec<String>) -> Result<(), io::Error>
     {
         /*
         if self.use_pkexec {

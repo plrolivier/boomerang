@@ -5,29 +5,25 @@ mod executing_thread;
 
 
 use std::{
-    collections::{ HashMap },
+    collections::HashMap,
     thread::{ Builder, JoinHandle },
     sync::{ 
-        Arc, Barrier,
+        Arc,
         mpsc::{ channel, Sender, Receiver },
     },
-    net::{ Ipv4Addr },
+    net::Ipv4Addr,
     io::{self, ErrorKind },
 };
 
-use nix::{
-    unistd::{ Pid },
-};
+use nix::unistd::Pid;
 
 use sysfwd::{
-    sync::{ Event },
+    sync::Event,
     protocol::control::{ Configuration, ControlChannel },
-    executor_engine::{ ExecutorCallback },
+    executor_engine::ExecutorCallback,
 };
 
-use crate::{
-    executing_thread::ExecutingThread,
-};
+use crate::executing_thread::ExecutingThread;
 
 
 /* Static variable to change */
@@ -49,7 +45,6 @@ impl ExecDebugger {
 
     pub fn new() -> Self
     {
-        // TODO: configure with ptrace?
         Self {
             control_channel: ControlChannel::new(Configuration::Executor, None, Some(Box::new(ExecDebuggerCallback::new()))),
         }
@@ -59,8 +54,6 @@ impl ExecDebugger {
     {
         let ip = Ipv4Addr::new(127, 0, 0, 1);
         let port: u16 = 31001;
-
-        //self.control_channel.connect(ip, port).unwrap();
 
         self.control_channel.listen(ip, port);
     }
@@ -72,7 +65,7 @@ impl ExecDebugger {
  */
 struct ThreadCtrl {
     handler: JoinHandle<()>,
-    tx: Sender<String>,
+    _tx: Sender<String>,
     rx: Receiver<String>,
     stop: Arc<Event>,
     stopped: Arc<Event>,
@@ -116,7 +109,7 @@ impl ExecutorCallback for ExecDebuggerCallback {
 
         let thread_ctrl = ThreadCtrl { 
             handler: handler,
-            tx: tx_ctrl,
+            _tx: tx_ctrl,
             rx: rx_thread,
             stop: stop_clone,
             stopped: stopped_clone,
@@ -162,9 +155,6 @@ impl ExecutorCallback for ExecDebuggerCallback {
         Ok(())
     }
 }
-
-
-
 
 
 

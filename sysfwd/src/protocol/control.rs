@@ -9,17 +9,17 @@ use std::{
     //process::{ exit, Child, Command },
     //sync::{ Arc, Barrier },
     io::{ self, BufRead, BufReader, BufWriter, Write },
-    net::{TcpListener, TcpStream, Ipv4Addr, SocketAddr}, fmt::format,
+    net::{TcpListener, TcpStream, Ipv4Addr },
 };
 
 use nix::{
-    unistd::{ Pid },
+    unistd::Pid,
     sys::signal::Signal,
 };
 
 use crate::{
-    tracer::{ TracerCallback },
-    executor_engine::{ ExecutorCallback },
+    tracer::TracerCallback,
+    executor_engine::ExecutorCallback,
 };
 
 
@@ -38,7 +38,6 @@ pub struct ControlChannel {
     configuration: Configuration,
     tracer: Option<Box<dyn TracerCallback>>,        // USe callbakc closure or trait ???
     executor: Option<Box<dyn ExecutorCallback>>,
-    //stream: Option<TcpStream>,
     reader: Option<BufReader<TcpStream>>,
     writer: Option<BufWriter<TcpStream>>,
 }
@@ -56,37 +55,6 @@ impl ControlChannel {
             writer: None,
         }
     }
-
-    /* 
-    pub fn connect(&mut self, ip: Ipv4Addr, port: u16) -> Result<(), String>
-    {
-        let address = SocketAddr::new(ip.into(), port);
-        match TcpStream::connect(address) {
-            Ok(stream) => {
-                //self.stream = Some(stream);
-                self.reader = Some(BufReader::new(stream.try_clone().unwrap()));
-                self.writer = Some(BufWriter::new(stream));
-                println!("Connected with avatar2 on {:?}", address);
-                Ok(())
-            }
-            Err(err) => {
-                let msg = format!("Couldn't connect to avatar2: {}", err);
-                eprintln!("{}", msg);
-                Err(msg)
-            }
-        }
-    }
-
-    pub fn listen(&mut self)
-    {
-        /* Main loop listening for commands from avatar2 */
-        loop {
-            let message = self.receive_message();
-
-            self.dispatch_message(message);
-        }
-    }
-    */
 
     pub fn listen(&mut self, ip: Ipv4Addr, port: u16)
     {
@@ -217,48 +185,48 @@ impl ControlChannel {
 
     /* Function in common */
 
-    fn switch_configuration(&mut self, command: Vec<&str>) -> Result<(), String>
+    fn switch_configuration(&mut self, _command: Vec<&str>) -> Result<(), String>
     {
         let msg = format!("Switching between Tracer and Executor not supported yet :(");
         Err(msg)
     }
 
-    fn read_registers(&mut self, command: Vec<&str>) -> Result<(), String>
+    fn read_registers(&mut self, _command: Vec<&str>) -> Result<(), String>
     {
         // TODO
         let msg = format!("Command read register not implemented yet");
         Err(msg)
     }
 
-    fn write_registers(&mut self, command: Vec<&str>) -> Result<(), String>
+    fn write_registers(&mut self, _command: Vec<&str>) -> Result<(), String>
     {
         // TODO
         let msg = format!("Command write register not implemented yet");
         Err(msg)
     }
 
-    fn read_memory(&mut self, command: Vec<&str>) -> Result<(), String>
+    fn read_memory(&mut self, _command: Vec<&str>) -> Result<(), String>
     {
         // TODO
         let msg = format!("Command read memory not implemented yet");
         Err(msg)
     }
 
-    fn write_memory(&mut self, command: Vec<&str>) -> Result<(), String>
+    fn write_memory(&mut self, _command: Vec<&str>) -> Result<(), String>
     {
         // TODO
         let msg = format!("Command write memory not implemented yet");
         Err(msg)
     }
 
-    fn set_breakpoint(&mut self, command: Vec<&str>) -> Result<(), String>
+    fn set_breakpoint(&mut self, _command: Vec<&str>) -> Result<(), String>
     {
         // TODO
         let msg = format!("Command set breakpoint not implemented yet");
         Err(msg)
     }
 
-    fn remove_breakpoint(&mut self, command: Vec<&str>) -> Result<(), String>
+    fn remove_breakpoint(&mut self, _command: Vec<&str>) -> Result<(), String>
     {
         // TODO
         let msg = format!("Command remove breakpoint not implemented yet");
@@ -513,27 +481,3 @@ impl ControlChannel {
 
 
 }
-
-
-
-/* 
-pub struct ControlChannelServer {
-    reader: Option<BufReader<TcpStream>>,
-    writer: Option<BufWriter<TcpStream>>,
-}
-
-impl ControlChannelServer {
-
-    pub fn new(configuration: Configuration) -> Self
-    {
-        Self {
-            configuration,
-            reader: None,
-            writer: None,
-        }
-
-    }
-
-}
-*/
-

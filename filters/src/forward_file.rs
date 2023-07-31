@@ -117,6 +117,18 @@ impl Rule for ForwardFileRule {
                     }
                 }
 
+                DecodedSyscall::Lseek(sc) => {
+                    match self.fd {
+                        Some(fd) => {
+                            if sc.fd.value == fd {
+                                self.trigger_on_entry = true;
+                                decision = Decision::Forward;
+                            }
+                        },
+                        None => (),
+                    }
+                }
+
                 /* Others */
                 _ => (),
             }   // match

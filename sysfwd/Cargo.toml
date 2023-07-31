@@ -1,0 +1,16 @@
+[package]
+name = "sysfwd"
+version = "0.0.1"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+decoding_macro = { path = "./decoding_macro" }
+nix = "0.25.0"
+serde = { version = "1.0.147", features = ["derive"] }
+serde_json = "1.0.87"
+prost-types = "0.11"
+
+[build-dependencies]
+prost-build = "0.11"

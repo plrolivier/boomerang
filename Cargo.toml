@@ -1,9 +1,9 @@
 [workspace]
 members = [
-    "sysforward",
-    "filters",
-    "ptracer",
-    "executor",
+    "sysfwd",
+    "sysfwd_filter",
+    "dbg/ptracer",
+    "dbg/pexecutor",
 ]
 exclude = [
     "cb",

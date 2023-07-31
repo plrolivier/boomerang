@@ -8,6 +8,7 @@ use crate::{
     syscall::{ RawSyscall },
     syscall::args::{ Direction, Integer, Fd, Size, Offset, Protection, Signal, Flag, Address, Buffer, NullBuffer, Array, Struct },
     tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
+    tracer::encoder::{ EncodeArg, EncodeEntry },
     operation::{ Operation },
 };
 
@@ -37,6 +38,14 @@ impl DecodeEntry for Lseek {
         self.fd.decode(pid, operation);
         self.offset.decode(pid, operation);
         self.whence.decode(pid, operation);
+    }
+}
+impl EncodeEntry for Lseek {
+    fn encode_entry(&mut self, mut raw: RawSyscall, pid: i32, operation: &Box<Operation>) -> Result<RawSyscall, std::io::Error> {
+        raw.args[0] = self.fd.value;
+        raw.args[1] = self.offset.value;
+        raw.args[2] = self.whence.value;
+        Ok(raw)
     }
 }
 
@@ -71,5 +80,15 @@ impl DecodeEntry for Llseek {
         self.offset_low.decode(pid, operation);
         self.result.decode(pid, operation);
         self.whence.decode(pid, operation);
+    }
+}
+impl EncodeEntry for Llseek {
+    fn encode_entry(&mut self, mut raw: RawSyscall, pid: i32, operation: &Box<Operation>) -> Result<RawSyscall, std::io::Error> {
+        raw.args[0] = self.fd.value;
+        raw.args[1] = self.offset_high.value;
+        raw.args[2] = self.offset_low.value;
+        raw.args[3] = self.result.value;
+        raw.args[4] = self.whence.value;
+        Ok(raw)
     }
 }

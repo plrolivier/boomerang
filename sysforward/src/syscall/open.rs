@@ -35,8 +35,9 @@ impl DecodeEntry for Close {
     }
 }
 impl EncodeEntry for Close {
-    fn encode_entry(&mut self, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error> {
-        Ok(())
+    fn encode_entry(&mut self, mut raw: RawSyscall, pid: i32, operation: &Box<Operation>) -> Result<RawSyscall, std::io::Error> {
+        raw.args[0] = self.fd.value;
+        Ok(raw)
     }
 }
 
@@ -64,9 +65,11 @@ impl DecodeEntry for Creat {
     }
 }
 impl EncodeEntry for Creat {
-    fn encode_entry(&mut self, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error> {
+    fn encode_entry(&mut self, mut raw: RawSyscall, pid: i32, operation: &Box<Operation>) -> Result<RawSyscall, std::io::Error> {
+        raw.args[0] = self.pathname.address;
         self.pathname.encode(pid, operation).unwrap();
-        Ok(())
+        raw.args[1] = self.mode.value;
+        Ok(raw)
     }
 }
 
@@ -98,9 +101,11 @@ impl DecodeEntry for Open {
     }
 }
 impl EncodeEntry for Open {
-    fn encode_entry(&mut self, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error> {
+    fn encode_entry(&mut self, mut raw: RawSyscall, pid: i32, operation: &Box<Operation>) -> Result<RawSyscall, std::io::Error> {
+        raw.args[0] = self.pathname.address;
         self.pathname.encode(pid, operation).unwrap();
-        Ok(())
+        raw.args[1] = self.mode.value;
+        Ok(raw)
     }
 }
 /* 
@@ -143,9 +148,13 @@ impl DecodeEntry for Openat {
     }
 }
 impl EncodeEntry for Openat {
-    fn encode_entry(&mut self, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error> {
+    fn encode_entry(&mut self, mut raw: RawSyscall, pid: i32, operation: &Box<Operation>) -> Result<RawSyscall, std::io::Error> {
+        raw.args[0] = self.dirfd.value;
+        raw.args[1] = self.pathname.address;
         self.pathname.encode(pid, operation).unwrap();
-        Ok(())
+        raw.args[2] = self.flags.value;
+        raw.args[3] = self.mode.value;
+        Ok(raw)
     }
 }
 
@@ -179,9 +188,13 @@ impl DecodeEntry for Openat2 {
     }
 }
 impl EncodeEntry for Openat2 {
-    fn encode_entry(&mut self, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error> {
+    fn encode_entry(&mut self, mut raw: RawSyscall, pid: i32, operation: &Box<Operation>) -> Result<RawSyscall, std::io::Error> {
+        raw.args[0] = self.dirfd.value;
+        raw.args[1] = self.pathname.address;
         self.pathname.encode(pid, operation).unwrap();
+        raw.args[2] = self.how.address;
         self.how.encode(pid, operation).unwrap();
-        Ok(())
+        raw.args[3] = self.size.value;
+        Ok(raw)
     }
 }

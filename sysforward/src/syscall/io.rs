@@ -8,7 +8,7 @@ use crate::{
     syscall::{ RawSyscall },
     syscall::args::{ Direction, Integer, Fd, Size, Offset, Protection, Signal, Flag, Address, Buffer, NullBuffer, Array, Struct },
     tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
-    tracer::encoder::{ EncodeEntry, EncodeExit },
+    tracer::encoder::{ EncodeArg, EncodeEntry, EncodeExit },
     operation::{ Operation },
 };
 
@@ -40,9 +40,12 @@ impl DecodeEntry for Read {
     }
 }
 impl EncodeEntry for Read {
-    fn encode_entry(&mut self, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error> {
+    fn encode_entry(&mut self, mut raw: RawSyscall, pid: i32, operation: &Box<Operation>) -> Result<RawSyscall, std::io::Error> {
+        raw.args[0] = self.fd.value;
+        raw.args[1] = self.buf.address;
         self.buf.encode(pid, operation).unwrap();
-        Ok(())
+        raw.args[2] = self.count.value;
+        Ok(raw)
     }
 }
 
@@ -73,9 +76,12 @@ impl DecodeEntry for Write {
     }
 }
 impl EncodeEntry for Write {
-    fn encode_entry(&mut self, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error> {
+    fn encode_entry(&mut self, mut raw: RawSyscall, pid: i32, operation: &Box<Operation>) -> Result<RawSyscall, std::io::Error> {
+        raw.args[0] = self.fd.value;
+        raw.args[1] = self.buf.address;
         self.buf.encode(pid, operation).unwrap();
-        Ok(())
+        raw.args[2] = self.count.value;
+        Ok(raw)
     }
 }
 

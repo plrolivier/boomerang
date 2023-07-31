@@ -492,7 +492,12 @@ impl DecodeArg for NullBuffer {
 impl EncodeArg for NullBuffer {
 
     fn encode(&mut self, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error> {
-        let mem = self.content.clone();
+        let mut mem = self.content.clone();
+        // adjust the memory block to write to be a multiple of 4
+        let count = 4 - mem.len() % 4;
+        for _ in 0..count {
+            mem.push(0);
+        }
         operation.memory.write(pid, self.address, mem);
         Ok(())
     }

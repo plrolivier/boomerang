@@ -32,6 +32,6 @@ pub trait ExecutorCallback {
 pub trait Invoker {
     fn invoke_syscall(&self, scno: usize, arg1:usize, arg2: usize,
                       arg3: usize, arg4: usize, arg5: usize, arg6: usize,
-                      arg7: usize) -> Result<RawSyscall, io::Error>;
+                      arg7: usize) -> Result<(usize, usize), io::Error>;
     fn invoke_new_process(&self) -> Result<Child, io::Error>;
 }

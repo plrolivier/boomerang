@@ -135,6 +135,8 @@ impl TracerEngine {
 
     pub fn trace(&mut self) -> Result<(), io::Error>
     {
+        println!("fd_table: {:?}", self.fwd_fd_table);
+
         match self.insyscall {
             false    => {
                 self.sync_entry();
@@ -250,12 +252,12 @@ impl TracerEngine {
 
     fn log_entry(&self) {
         let json = serde_json::to_string(&self.syscall).unwrap();
-        println!("[{}] {}", self.pid, json)
+        println!("[{}] LOCAL: {}", self.pid, json)
     }
 
     fn log_exit(&mut self) {
         let json = serde_json::to_string(&self.syscall).unwrap();
-        println!("[{}] {}", self.pid, json);
+        println!("[{}] LOCAL: {}", self.pid, json);
         println!("");
 
         self.saved_syscall.push(self.syscall.clone());
@@ -290,18 +292,19 @@ impl TracerEngine {
     fn carry_out_exit_decision(&mut self)
     {
         // TODO: finish implementing the decisions
+        // first the instrumentation, then the filter callback
         match self.syscall.decision {
             Some(Decision::Continue) => {
                 self.continue_exit().unwrap();
+                self.filter.on_syscall_exit(&self.syscall);
             },
             Some(Decision::Forward) => {
                 self.forward_exit().unwrap();
+                self.filter.on_syscall_exit(&self.remote_syscall);
             },
             _ => panic!("Decision not implemented")
         }
 
-        /* Callbacks on rules */
-        self.filter.on_syscall_exit(&self.syscall);
     }
 
     fn continue_entry(&mut self) -> Result<(), io::Error>
@@ -325,7 +328,9 @@ impl TracerEngine {
 
         /* Forward */
         self.remote_syscall = self.protocol.send_syscall_entry(&self.remote_syscall).unwrap();
-        println!("[{}] remote syscall retval: {:#x}", self.pid, self.remote_syscall.raw.retval as usize);
+        //println!("[{}] remote syscall retval: {:#x}", self.pid, self.remote_syscall.raw.retval as usize);
+        let json = serde_json::to_string(&self.remote_syscall).unwrap();
+        println!("[{}] REMOTE: {}", self.pid, json);
 
         /* Post-forward instrumentation */
         self.instr_post_forward().unwrap();
@@ -350,7 +355,7 @@ impl TracerEngine {
                 // translate the fd with the remote fd
                 if let DecodedSyscall::Read(remote_syscall) = self.remote_syscall.decoded.as_mut().unwrap() {
                     let user_fd = remote_syscall.fd.value;
-                    let kernel_fd = self.fwd_fd_table.translate(user_fd).unwrap();
+                    let kernel_fd = self.fwd_fd_table.translate(user_fd).unwrap(); // BUG=> la conversion ne s'est pas bien passe avec openat
                     remote_syscall.fd.value = kernel_fd;
                 }
             },
@@ -362,6 +367,14 @@ impl TracerEngine {
                     remote_syscall.fd.value = kernel_fd;
                 }
             },
+            "lseek" => {
+                // translate the fd with the remote fd
+                if let DecodedSyscall::Lseek(remote_syscall) = self.remote_syscall.decoded.as_mut().unwrap() {
+                    let user_fd = remote_syscall.fd.value;
+                    let kernel_fd = self.fwd_fd_table.translate(user_fd).unwrap(); // BUG=> la conversion ne s'est pas bien passe avec openat
+                    remote_syscall.fd.value = kernel_fd;
+                }
+            }
             _ => (),
         };
 
@@ -382,18 +395,30 @@ impl TracerEngine {
                 // a bit ugly but we replace the return value with the remote fd to not overlap with local fd space.
                 if let DecodedSyscall::Open(remote_syscall) = self.remote_syscall.decoded.as_mut().unwrap() {
                     let retval = remote_syscall.retval.as_ref().unwrap().value;
-                    if retval >= 0 {
+                    if retval as i64 >= 0 {
                         let user_fd = self.fwd_fd_table.open_remote(retval);
                         remote_syscall.retval.as_mut().unwrap().value = user_fd;
+                        self.remote_syscall.raw.retval = user_fd;
                     }
                 }
             },
+            "openat" => {
+                // a bit ugly but we replace the return value with the remote fd to not overlap with local fd space.
+                if let DecodedSyscall::Openat(remote_syscall) = self.remote_syscall.decoded.as_mut().unwrap() {
+                    let retval = remote_syscall.retval.as_ref().unwrap().value;
+                    if retval as i64 >= 0 {
+                        let user_fd = self.fwd_fd_table.open_remote(retval);
+                        remote_syscall.retval.as_mut().unwrap().value = user_fd;
+                        self.remote_syscall.raw.retval = user_fd;
+                    }
+                }
+            }
             "close" => {
                 // on successful close, remove the fd from the table
                 if let DecodedSyscall::Close(remote_syscall) = self.remote_syscall.decoded.as_mut().unwrap() {
                     let retval = remote_syscall.retval.as_ref().unwrap().value;
                     let user_fd = remote_syscall.fd.value;
-                    if retval >= 0 {
+                    if retval as i64 >= 0 {
                         let _kernel_fd = self.fwd_fd_table.close_remote(user_fd);
                     }
                 }
@@ -417,7 +442,8 @@ impl TracerEngine {
                 // sync the memory buffer
                 // TODO: should be automated by passing over all arguments
                 if let DecodedSyscall::Read(remote_syscall) = self.remote_syscall.decoded.as_ref().unwrap() {
-                    let mem = &remote_syscall.buf.content;
+                    let size = remote_syscall.buf.size;
+                    let mem = &remote_syscall.buf.content[0..size];
                     let addr = remote_syscall.buf.address;
                     self.operator.memory.write(self.pid, addr, mem.to_vec());
                 }
@@ -427,9 +453,13 @@ impl TracerEngine {
 
         /* Syncrhonize back the return value and errno */
         let mut regs = self.operator.register.read_registers(self.pid).unwrap();
-        regs.orig_rax = self.remote_syscall.raw.retval as u64;
+        regs.rax = self.remote_syscall.raw.retval as u64;
         regs.rdx = self.remote_syscall.raw.errno as u64;
         self.operator.register.write_registers(self.pid, regs).unwrap();
+
+        // verify the register write...
+        let regs = self.operator.register.read_registers(self.pid).unwrap();
+        println!("fwd exit regs: {:?}", regs);
 
         Ok(())
     }

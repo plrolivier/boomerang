@@ -30,6 +30,7 @@ pub mod lseek;
 pub mod exit;
 
 
+use nix::libc::user_regs_struct;
 use serde::{ Serialize, Deserialize };
 
 use crate::{
@@ -73,6 +74,8 @@ impl Syscall {
 
 /* 
  * A raw syscall represents the raw intercepted values 
+ * 
+ * TODO: change attribute to private and use methods to synchronized with DecodedSyscall if the syscall is decoded...
  */
 #[derive(Serialize, Deserialize)]
 #[derive(Clone, Debug)]
@@ -91,5 +94,16 @@ impl RawSyscall {
             retval: 0,
             errno: 0,
         }
+    }
+
+    pub fn from_x86_exit(regs: user_regs_struct, rawsyscall: &RawSyscall) -> Self
+    {
+        let mut new_raw = rawsyscall.clone();
+
+        // assert scno == orig_rax
+
+        new_raw.retval = regs.rax as usize;
+        new_raw.errno = regs.rdx as usize;
+        new_raw
     }
 }

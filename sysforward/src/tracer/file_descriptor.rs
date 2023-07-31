@@ -13,7 +13,7 @@ use std::{
 /* 
  * Used to store the location where the FD is valid
  */
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum FdLocation {
     Local(usize),
     Remote(usize),
@@ -30,6 +30,7 @@ static REMOTE_FD_OFFSET: usize = 4096;
  * A wrapper structure around hashmap for managing file descriptor translation.
  * For now, it is only used to store remote FD.
  */
+#[derive(Debug)]
 pub struct FdTable {
     fd_table: Vec<Option<FdLocation>>,
     available_fd: HashSet<usize>,
@@ -54,18 +55,18 @@ impl FdTable {
         if let Some(user_fd) = self.available_fd.iter().copied().min() {
             self.fd_table[user_fd] = Some(kernel_fd);
             self.available_fd.remove(&user_fd);
-            user_fd + REMOTE_FD_OFFSET
+            user_fd
         } else {
             let user_fd = self.fd_table.len();
             self.fd_table.push(Some(kernel_fd));
-            user_fd + REMOTE_FD_OFFSET
+            user_fd
         }
     }
 
     pub fn open_remote(&mut self, kernel_fd: usize) -> usize
     {
         let fd = FdLocation::Remote(kernel_fd);
-        self.insert(fd)
+        self.insert(fd) + REMOTE_FD_OFFSET
     }
 
     /* The table is not used for local FD.
@@ -82,8 +83,6 @@ impl FdTable {
      */
     fn remove(&mut self, user_fd: usize) -> Option<FdLocation>
     {
-        let user_fd = user_fd - REMOTE_FD_OFFSET;
-        
         if user_fd < self.fd_table.len() {
             if let Some(kernel_fd) = self.fd_table[user_fd] {
                 self.fd_table[user_fd] = None;
@@ -101,6 +100,11 @@ impl FdTable {
 
     pub fn close_remote(&mut self, user_fd: usize) -> Option<usize>
     {
+        //if user_fd < REMOTE_FD_OFFSET {
+        //    return None;
+        //}
+        //let user_fd = user_fd - REMOTE_FD_OFFSET;
+
         if let Some(kernel_fd) = self.remove(user_fd) {
             if let (FdLocation::Remote(remote_fd)) = kernel_fd {
                 Some(remote_fd)
@@ -120,6 +124,9 @@ impl FdTable {
      */
     pub fn translate(&self, user_fd: usize) -> Option<usize>
     {
+        if user_fd < REMOTE_FD_OFFSET {
+            return None;
+        }
         let user_fd = user_fd - REMOTE_FD_OFFSET;
 
         if user_fd < self.fd_table.len() {

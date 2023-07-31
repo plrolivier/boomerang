@@ -21,11 +21,15 @@ use nix::{
     unistd::{ Pid },
 };
 
+#[cfg(target_os = "linux")]
+use libc;
+
 use sysforward::{
     arch::TargetArch,
     tracer::{ TracerEngine },
     operation::Operation,
     targets,
+    memory::{ read_process_memory_maps, print_memory_regions },
 };
 
 use filters::{
@@ -94,10 +98,12 @@ impl TracingThread {
 
         /* Setup the tracee */
         self.spawn_tracee(self.program.clone(), self.prog_args.clone())?; 
+        let pid = self.tracee.as_ref().unwrap().id() as i32;
+
+        let mem = read_process_memory_maps(pid as u32);
+        print_memory_regions(&mem);
 
         /* Setup the tracer */
-        let pid = self.tracee.as_ref().unwrap().id() as i32;
-        
         let ptrace_op = targets::ptrace::Ptrace{ };
         let regs_op = Box::new(ptrace_op.clone());
         let mem_op = Box::new(ptrace_op);
@@ -143,6 +149,8 @@ impl TracingThread {
         unsafe {
             command.pre_exec(|| {
                 ptrace::traceme().unwrap();
+                // Disable ASLR for the program
+                libc::personality(libc::ADDR_NO_RANDOMIZE.try_into().unwrap());
                 Ok(())
             });
         }

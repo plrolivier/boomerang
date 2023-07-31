@@ -7,6 +7,8 @@ use std::{
     io::{ self }, sync::{Mutex, Condvar},
     sync::{ Arc },
 };
+use std::thread;
+use std::time::Duration;
 
 use nix::{
     unistd::{ Pid },
@@ -20,6 +22,7 @@ use crate::{
     protocol::data::Server,
     executor_engine::Invoker,
     tracer::decoder::DecodeExit,
+    tracer::encoder::EncodeEntry,
 };
 
 
@@ -30,6 +33,7 @@ pub struct ExecutorEngine {
     protocol: Server,
 
     syscall: Syscall,
+    child_pid: i32,
     operator: Box<Operation>,
     invoker: Box<dyn Invoker>,
 
@@ -48,6 +52,7 @@ impl ExecutorEngine {
         stopped_event: Arc<Event>,
         operator: Box<Operation>,
         invoker: Box<dyn Invoker>,
+        child_pid: i32,
     ) -> Self
     {
         Self {
@@ -58,6 +63,7 @@ impl ExecutorEngine {
             stop: stop_event,
             stopped: stopped_event,
             invoker: invoker,
+            child_pid: child_pid,
         }
     }
 
@@ -102,8 +108,14 @@ impl ExecutorEngine {
 
             /* Carry out syscall's decision */
             self.log_syscall();
-            // TODO
             self.invoke_syscall().unwrap();
+            self.log_syscall();
+            println!("");
+
+            // Debug
+            println!("[{}] sleeping between syscall...", self.child_pid);
+            //thread::sleep(Duration::from_secs(10));
+            println!("[{}] waking up !", self.child_pid);
 
             /* Return syscall */
             self.protocol.return_syscall_exit(&self.syscall);
@@ -120,9 +132,13 @@ impl ExecutorEngine {
         // Let's take the hypothesis, the decoded syscall has not been modified,
         // and therefore does not need to be sync with the RawSyscall.
         //let raw = self.syscall.raw.clone();
+        if let Some(decoded_sc) = self.syscall.decoded.as_mut() {
+            let raw = self.syscall.raw.clone();
+            self.syscall.raw = decoded_sc.encode_entry(raw, self.child_pid, &self.operator).unwrap();
+        }
 
         /* Invoke the syscall */
-        let raw = self.invoker.invoke_syscall(self.syscall.raw.no,
+        let (retval, errno)= self.invoker.invoke_syscall(self.syscall.raw.no,
                                  self.syscall.raw.args[0],
                                  self.syscall.raw.args[1],
                                  self.syscall.raw.args[2],
@@ -131,11 +147,12 @@ impl ExecutorEngine {
                                  self.syscall.raw.args[5],
                                  self.syscall.raw.args[6])
                                  .unwrap();
+        self.syscall.raw.retval = retval;
+        self.syscall.raw.errno = errno;
 
         /* Decode the syscall exit */
-        self.syscall.raw = raw;
         if let Some(decoded_sc) = self.syscall.decoded.as_mut() {
-            decoded_sc.decode_exit(self.syscall.raw.retval, 0, &self.operator);
+            decoded_sc.decode_exit(self.syscall.raw.retval, self.child_pid, &self.operator);
         }
 
         Ok(())
@@ -158,7 +175,7 @@ impl ExecutorEngine {
 
     fn log_syscall(&self) {
         let json = serde_json::to_string(&self.syscall).unwrap();
-        println!("[EXECUTOR] {}", json)
+        println!("[{}] {}", self.child_pid, json)
     }
 
 }

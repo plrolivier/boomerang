@@ -2,11 +2,11 @@
  *
  */
 use sysfwd::{
-    syscall::Syscall,
-    tracer::{
+    syscall::{
+        Syscall,
         decoder::DecodedSyscall,
-        filtering::{ Decision, Rule },
     },
+    tracer::filtering::{ Decision, Rule },
 };
 
 

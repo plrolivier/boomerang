@@ -9,7 +9,7 @@ use nix::{
     libc::user_regs_struct,
     sys::ptrace,
 };
-use crate::operation::{ RegisterOperation, MemoryOperation };
+use crate::targets::operation::{ RegisterOperation, MemoryOperation };
 
 
 

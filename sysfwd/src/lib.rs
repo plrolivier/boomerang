@@ -3,17 +3,20 @@
  */
 
 pub mod sync;
-pub mod operation;
-pub mod protocol; // Should be private?
-
 pub mod arch;
-pub mod syscall;
+pub mod protocol; // Should be private?
 pub mod memory;
+
+pub mod syscall;
 pub mod tracer;
-pub mod executor_engine;
+pub mod executor;
 //pub mod migration;
 pub mod targets;
 
+
+/*
+ * Exposed interface
+ */
 pub use crate::tracer::TracerEngine;
-pub use crate::executor_engine::ExecutorEngine;
+pub use crate::executor::ExecutorEngine;
 

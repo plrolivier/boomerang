@@ -3,24 +3,17 @@
  */
 mod tracer_engine;
 pub mod file_descriptor;
-pub mod decoder;    // TODO: fix pub interface
-pub mod encoder;
 pub mod filtering;
-pub mod decision_handler;
 
 pub use tracer_engine::TracerEngine;
 
 
-use std::{
-    io::{ self },
-};
+use std::io;
 use nix::{
-    unistd::{ Pid },
-    sys::signal::{Signal},
+    unistd::Pid,
+    sys::signal::Signal,
 };
-use crate::{
-    syscall::{ Syscall },
-};
+use crate::syscall::Syscall;
 
 
 

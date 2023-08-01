@@ -8,11 +8,11 @@ use std::convert::From;
 use serde::{ Serialize, Deserialize };
 
 use crate::{
-    operation::Operation,
-    tracer::{
+    syscall::{
         decoder::DecodeArg,
         encoder::EncodeArg,
     },
+    targets::operation::Operation,
 };
 
 

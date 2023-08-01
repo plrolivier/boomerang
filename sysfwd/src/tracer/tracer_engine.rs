@@ -13,17 +13,18 @@ use nix::libc::user_regs_struct;
 use serde_json;
 use crate::{
     arch::{ TargetArch, Architecture },
-    syscall::Syscall,
-    operation::Operation,
+    protocol::data::Client,
+    syscall::{
+        Syscall,
+        decoder::{ Decoder, DecodedSyscall },
+    },
     tracer::{
-        decoder::Decoder,
         filtering::{ Decision, Filter, Rule },
         file_descriptor::FdTable,
     },
-    protocol::data::Client,
+    targets::operation::Operation,
 };
 
-use super::decoder::DecodedSyscall;
 
 /*
 struct TraceeState { 

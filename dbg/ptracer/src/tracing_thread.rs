@@ -27,7 +27,7 @@ use libc;
 use sysfwd::{
     arch::TargetArch,
     tracer::TracerEngine,
-    operation::Operation,
+    targets::operation::Operation,
     targets,
     memory::{ read_process_memory_maps, print_memory_regions },
 };

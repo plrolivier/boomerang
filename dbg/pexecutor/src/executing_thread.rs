@@ -26,9 +26,8 @@ use sysfwd::{
     sync::Event,
     arch::TargetArch,
     memory::{ read_process_memory_maps, print_memory_regions },
-    executor_engine::{ ExecutorEngine, Invoker },
-    operation::Operation,
-    targets,
+    executor::{ ExecutorEngine, Invoker },
+    targets::{ self, operation::Operation },
 };
 
 use crate::{

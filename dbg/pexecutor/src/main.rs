@@ -20,7 +20,7 @@ use nix::unistd::Pid;
 use sysfwd::{
     sync::Event,
     protocol::control::{ Configuration, ControlChannel },
-    executor_engine::ExecutorCallback,
+    executoenginer::ExecutorCallback,
 };
 
 use crate::executing_thread::ExecutingThread;

@@ -6,10 +6,10 @@
 
 
 use crate::{
-    arch::{ Architecture },
-    syscall::{ self, Syscall, RawSyscall },
+    //arch::{ Architecture },
+    syscall::RawSyscall,
     operation::Operation,
-    tracer::decoder::{ DecodedSyscall },
+    tracer::decoder::DecodedSyscall,
 };
 
 
@@ -18,19 +18,19 @@ use crate::{
 /* The trait implemented by each syscalls */
 
 pub trait EncodeArg {
-    fn encode(&mut self, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error> { 
+    fn encode(&mut self, _pid: i32, _operation: &Box<Operation>) -> Result<(), std::io::Error> { 
         Ok(())
     }
 }
 
 pub trait EncodeEntry {
-    fn encode_entry(&mut self, mut raw: RawSyscall, pid: i32, operation: &Box<Operation>) -> Result<RawSyscall, std::io::Error> {
+    fn encode_entry(&mut self, raw: RawSyscall, _pid: i32, _operation: &Box<Operation>) -> Result<RawSyscall, std::io::Error> {
         Ok(raw)
     }
 }
 
 pub trait EncodeExit {
-    fn encode_exit(&mut self, value: usize, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error> { 
+    fn encode_exit(&mut self, _value: usize, _pid: i32, _operation: &Box<Operation>) -> Result<(), std::io::Error> { 
         Ok(())
     }
 }
@@ -41,7 +41,7 @@ pub trait EncodeExit {
 
 impl EncodeEntry for DecodedSyscall {
 
-    fn encode_entry(&mut self, mut raw: RawSyscall, pid: i32, operation: &Box<Operation>) -> Result<RawSyscall, std::io::Error> {
+    fn encode_entry(&mut self, raw: RawSyscall, pid: i32, operation: &Box<Operation>) -> Result<RawSyscall, std::io::Error> {
         match self {
             DecodedSyscall::Close(x) => x.encode_entry(raw, pid, operation),
             DecodedSyscall::Creat(x) => x.encode_entry(raw, pid, operation),

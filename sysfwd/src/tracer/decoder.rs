@@ -6,7 +6,7 @@ use std::sync::Arc;
 use serde::{Serialize, Deserialize};
 
 use crate::{
-    arch::{ Architecture },
+    arch::Architecture,
     syscall::{ self, Syscall },
     operation::Operation,
 };
@@ -1393,7 +1393,7 @@ impl Decoder {
 
         /* Decode return value */
         if let Some(decoded_sc) = &mut syscall.decoded {
-            decoded_sc.decode_exit(syscall.raw.retval, pid, operation);
+            decoded_sc.decode_exit(syscall.raw.retval, pid, operation).unwrap();
         }
 
     }
@@ -1402,7 +1402,7 @@ impl Decoder {
 
 
 pub trait DecodeArg {
-    fn decode(&mut self, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error> { 
+    fn decode(&mut self, _pid: i32, _operation: &Box<Operation>) -> Result<(), std::io::Error> { 
         Ok(())
     }
     fn print(&self) { }
@@ -1416,7 +1416,7 @@ pub trait DecodeEntry {
 }
 
 pub trait DecodeExit {
-    fn decode_exit(&mut self, value: usize, pid: i32, operation: &Box<Operation>) -> Result<(), std::io::Error> { 
+    fn decode_exit(&mut self, _value: usize, _pid: i32, _operation: &Box<Operation>) -> Result<(), std::io::Error> { 
         Ok(())
     }
 }
@@ -1749,7 +1749,7 @@ impl DecodeExit for DecodedSyscall {
             DecodedSyscall::SetRobustList(x) => x.decode_exit(value, pid, operation),
             DecodedSyscall::Lseek(x) => x.decode_exit(value, pid, operation),
             DecodedSyscall::Llseek(x) => x.decode_exit(value, pid, operation),
-            DecodedSyscall::ExitGroup(x) => Ok(()),
+            DecodedSyscall::ExitGroup(_) => Ok(()),
             //_ => panic!("oops"),
             //DecodedSyscall::(x) => x.decode_exit(value, pid, operation),
         }

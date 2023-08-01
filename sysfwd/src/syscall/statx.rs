@@ -6,8 +6,8 @@ use serde::{ Serialize, Deserialize };
 use decoding_macro::DecodeExit;
 use crate::{
     syscall::RawSyscall,
-    syscall::args::{ ArgType, Direction },
-    syscall::args::{ Integer, Fd, Size, Offset, Protection, Signal, Flag, Address, Buffer, NullBuffer, Array, Struct },
+    syscall::args::Direction,
+    syscall::args::{ Integer, Fd, Flag, NullBuffer, Struct },
     tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
     operation::Operation,
 };

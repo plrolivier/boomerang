@@ -6,9 +6,9 @@ use serde::{ Serialize, Deserialize };
 use decoding_macro::DecodeExit;
 use crate::{
     syscall::RawSyscall,
-    syscall::args::{ Direction, Integer, Fd, Size, Offset, Protection, Signal, Flag, Address, Buffer, NullBuffer, Array, Struct },
+    syscall::args::{ Direction, Integer, Fd, Size, Offset, Flag, Buffer, Struct },
     tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
-    tracer::encoder::{ EncodeArg, EncodeEntry, EncodeExit },
+    tracer::encoder::{ EncodeArg, EncodeEntry },
     operation::Operation,
 };
 

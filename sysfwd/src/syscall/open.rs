@@ -9,7 +9,7 @@ use crate::{
     syscall::RawSyscall,
     syscall::args::{ Direction, Integer, Fd, Size, Flag, NullBuffer, Struct },
     tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
-    tracer::encoder::{ EncodeEntry, EncodeExit, EncodeArg },
+    tracer::encoder::{ EncodeEntry, EncodeArg },
     operation::Operation,
 };
 
@@ -35,7 +35,7 @@ impl DecodeEntry for Close {
     }
 }
 impl EncodeEntry for Close {
-    fn encode_entry(&mut self, mut raw: RawSyscall, pid: i32, operation: &Box<Operation>) -> Result<RawSyscall, std::io::Error> {
+    fn encode_entry(&mut self, mut raw: RawSyscall, _pid: i32, _operation: &Box<Operation>) -> Result<RawSyscall, std::io::Error> {
         raw.args[0] = self.fd.value;
         Ok(raw)
     }

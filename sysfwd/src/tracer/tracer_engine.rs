@@ -6,24 +6,21 @@
  */
 use std::{
     collections::HashMap,
-    sync::{ Arc },
-    io::{ self },
-    any::Any,
+    sync::Arc,
+    io,
 };
-use nix::{
-    libc::user_regs_struct,
-};
+use nix::libc::user_regs_struct;
 use serde_json;
 use crate::{
     arch::{ TargetArch, Architecture },
-    syscall::{ Syscall },
+    syscall::Syscall,
     operation::Operation,
     tracer::{
-        decoder::{ Decoder },
+        decoder::Decoder,
         filtering::{ Decision, Filter, Rule },
-        file_descriptor::{ FdTable },
+        file_descriptor::FdTable,
     },
-    protocol::data::Client, memory,
+    protocol::data::Client,
 };
 
 use super::decoder::DecodedSyscall;

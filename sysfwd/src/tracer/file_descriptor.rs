@@ -2,9 +2,7 @@
  * To manage the file descriptor management and translation between local, remote, user and kernel.
  */
 
-use std::{
-    collections::HashSet,
-};
+use std::collections::HashSet;
 
 
 
@@ -106,7 +104,7 @@ impl FdTable {
         //let user_fd = user_fd - REMOTE_FD_OFFSET;
 
         if let Some(kernel_fd) = self.remove(user_fd) {
-            if let (FdLocation::Remote(remote_fd)) = kernel_fd {
+            if let FdLocation::Remote(remote_fd) = kernel_fd {
                 Some(remote_fd)
             } else {
                 panic!("FdTable is not supposed to store Local(fd) yet.");

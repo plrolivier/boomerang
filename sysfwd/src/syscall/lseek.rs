@@ -6,9 +6,9 @@ use serde::{ Serialize, Deserialize };
 use decoding_macro::DecodeExit;
 use crate::{
     syscall::RawSyscall,
-    syscall::args::{ Direction, Integer, Fd, Size, Offset, Protection, Signal, Flag, Address, Buffer, NullBuffer, Array, Struct },
+    syscall::args::{ Direction, Integer, Fd, Offset, Address },
     tracer::decoder::{ DecodeArg, DecodeEntry, DecodeExit },
-    tracer::encoder::{ EncodeArg, EncodeEntry },
+    tracer::encoder::EncodeEntry,
     operation::Operation,
 };
 
@@ -41,7 +41,7 @@ impl DecodeEntry for Lseek {
     }
 }
 impl EncodeEntry for Lseek {
-    fn encode_entry(&mut self, mut raw: RawSyscall, pid: i32, operation: &Box<Operation>) -> Result<RawSyscall, std::io::Error> {
+    fn encode_entry(&mut self, mut raw: RawSyscall, _pid: i32, _operation: &Box<Operation>) -> Result<RawSyscall, std::io::Error> {
         raw.args[0] = self.fd.value;
         raw.args[1] = self.offset.value;
         raw.args[2] = self.whence.value;
@@ -83,7 +83,7 @@ impl DecodeEntry for Llseek {
     }
 }
 impl EncodeEntry for Llseek {
-    fn encode_entry(&mut self, mut raw: RawSyscall, pid: i32, operation: &Box<Operation>) -> Result<RawSyscall, std::io::Error> {
+    fn encode_entry(&mut self, mut raw: RawSyscall, _pid: i32, _operation: &Box<Operation>) -> Result<RawSyscall, std::io::Error> {
         raw.args[0] = self.fd.value;
         raw.args[1] = self.offset_high.value;
         raw.args[2] = self.offset_low.value;

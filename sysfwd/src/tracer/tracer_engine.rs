@@ -133,8 +133,6 @@ impl TracerEngine {
 
     pub fn trace(&mut self) -> Result<(), io::Error>
     {
-        println!("fd_table: {:?}", self.fwd_fd_table);
-
         match self.insyscall {
             false    => {
                 self.sync_entry();

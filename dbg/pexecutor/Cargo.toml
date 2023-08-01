@@ -6,6 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-sysfwd = { version = "0.0.1", path ="../../sysfwd" }
+sysfwd = { version = "0.1.0", path ="../../sysfwd" }
 libc = "0.2"
 nix = "0.25.0"

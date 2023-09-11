@@ -1,7 +1,15 @@
 /*
  *
  */
+//mod arm;
+//mod aarch64;
+//mod mipsn32;
+//mod mipsn64;
+mod mipso32;
+//mod powerpc;
+//mod riscv;
 mod x86_64;
+mod x86_64_x32;
 
 
 use std::collections::HashMap;
@@ -10,15 +18,16 @@ use std::collections::HashMap;
 
 #[derive(Clone, Copy)]
 pub enum TargetArch {
-    Arm,
-    Aarch64,
+    //Arm,
+    //Aarch64,
+    //Mipsn32,
+    //Mipsn64,
     Mipso32,
-    Mipsn32,
-    Mipsn64,
-    Powerpc,
-    Riscv,
+    //Powerpc,
+    //Riscv,
     X86,
     X86_64,
+    X86_64X32,
 }
 
 
@@ -82,12 +91,16 @@ impl SyscallTable {
     pub fn new(arch: &TargetArch) -> Self {
         Self {
             map: match arch {
-                TargetArch::X86_64  => x86_64::create_syscall_table(),
+                TargetArch::X86_64      => x86_64::syscall_table::create_syscall_table(),
+                TargetArch::X86_64X32   => x86_64_x32::syscall_table::create_syscall_table(),
                 /*
-                TargetArch::X86     => x86::create_syscall_table(),
+                TargetArch::X86_64_ia32     => x86_64_ia32::syscall_table::create_syscall_table(),
+                TargetArch::X86_32     => x86_32::syscall_table::create_syscall_table(),
                 TargetArch::Arm     => arm::create_syscall_table(),
                 TargetArch::Aarch64 => aarch64::create_syscall_table(),
-                TargetArch::Mipso32 => mipso32::create_syscall_table(),
+                */
+                TargetArch::Mipso32 => mipso32::syscall_table::create_syscall_table(),
+                /*
                 TargetArch::Mipsn32 => mipsn32::create_syscall_table(),
                 TargetArch::Mipsn64 => mipsn64::create_syscall_table(),
                 TargetArch::Powerpc => powerpc::create_syscall_table(),

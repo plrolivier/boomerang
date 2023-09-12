@@ -18,13 +18,17 @@ use std::collections::HashMap;
 
 #[derive(Clone, Copy)]
 pub enum TargetArch {
-    //Arm,
+    //Aarch32,
     //Aarch64,
+    //Arm_eabi,
+    //Arm_oabi,
     //Mipsn32,
     //Mipsn64,
     Mipso32,
-    //Powerpc,
-    //Riscv,
+    //Powerpc32,
+    //Powerpc64,
+    //Riscv32,
+    //Riscv64,
     X86,
     X86_64,
     X86_64X32,
@@ -91,21 +95,26 @@ impl SyscallTable {
     pub fn new(arch: &TargetArch) -> Self {
         Self {
             map: match arch {
-                TargetArch::X86_64      => x86_64::syscall_table::create_syscall_table(),
-                TargetArch::X86_64X32   => x86_64_x32::syscall_table::create_syscall_table(),
                 /*
-                TargetArch::X86_64_ia32     => x86_64_ia32::syscall_table::create_syscall_table(),
-                TargetArch::X86_32     => x86_32::syscall_table::create_syscall_table(),
-                TargetArch::Arm     => arm::create_syscall_table(),
-                TargetArch::Aarch64 => aarch64::create_syscall_table(),
+                TargetArch::Aarch32     => aarch32::create_syscall_table(),
+                TargetArch::Aarch64     => aarch64::create_syscall_table(),
+                TargetArch::Arm_eabi    => arm_eabi::create_syscall_table(),
+                TargetArch::Arm_oabi    => arm_oabi::create_syscall_table(),
                 */
                 TargetArch::Mipso32 => mipso32::syscall_table::create_syscall_table(),
                 /*
                 TargetArch::Mipsn32 => mipsn32::create_syscall_table(),
                 TargetArch::Mipsn64 => mipsn64::create_syscall_table(),
-                TargetArch::Powerpc => powerpc::create_syscall_table(),
+                TargetArch::Powerpc32 => powerpc32::create_syscall_table(),
+                TargetArch::Powerpc64 => powerpc64::create_syscall_table(),
                 TargetArch::Riscv32 => riscv32::create_syscall_table(),
                 TargetArch::Riscv64 => riscv64::create_syscall_table(),
+                */
+                TargetArch::X86_64      => x86_64::syscall_table::create_syscall_table(),
+                TargetArch::X86_64X32   => x86_64_x32::syscall_table::create_syscall_table(),
+                /*
+                TargetArch::X86_64_ia32 => x86_64_ia32::syscall_table::create_syscall_table(),
+                TargetArch::X86_32      => x86_32::syscall_table::create_syscall_table(),
                 */
                 _ => panic!("Architecture not implemented"),
             },

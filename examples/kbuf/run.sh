@@ -31,6 +31,9 @@ fi
 
 
 # Launch the example
+echo "[*] Load kernel module"
 insmod ./kbuf.ko
+echo "[*] Start forwarding..."
 python forward.py
+echo "[*] Remove kernel module"
 rmmod kbuf

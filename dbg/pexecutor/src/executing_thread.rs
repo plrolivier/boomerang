@@ -39,8 +39,10 @@ use crate::{
 /*
  *
  */
-#[derive(Debug)]
+//#[derive(Debug)]
 pub struct ExecutingThread {
+    target_arch: Arc<TargetArch>,
+
     tx: Sender<String>,
     _rx: Receiver<String>,
 
@@ -52,9 +54,10 @@ pub struct ExecutingThread {
 
 impl ExecutingThread {
 
-    pub fn new(tx: Sender<String>, rx: Receiver<String>, stop: Arc<Event>, stopped: Arc<Event>) -> Self 
+    pub fn new(target_arch: Arc<TargetArch>, tx: Sender<String>, rx: Receiver<String>, stop: Arc<Event>, stopped: Arc<Event>) -> Self 
     {
         Self { 
+            target_arch: target_arch,
             tx: tx,
             _rx: rx,
             child_pid: None,
@@ -88,17 +91,18 @@ impl ExecutingThread {
         let regs_op = Box::new(ptrace_op.clone());
         let mem_op = Box::new(ptrace_op);
         let operator = Box::new(Operation{ register: regs_op, memory: mem_op});
+        let arch = Arc::clone(&self.target_arch);
 
-        let executor = ExecutorEngine::new(TargetArch::X86_64,
-                                                               IP_ADDRESS,
-                                                               EXECUTOR_PORT,
-                                                               TRACER_PORT,
-                                                               copy_stop,
-                                                               copy_stopped,
-                                                               operator,
-                                                               Box::new(invoker),
-                                                               self.child_pid.unwrap(),
-                                                              );
+        let executor = ExecutorEngine::new(arch,
+                                                           IP_ADDRESS,
+                                                           EXECUTOR_PORT,
+                                                           TRACER_PORT,
+                                                           copy_stop,
+                                                           copy_stopped,
+                                                           operator,
+                                                           Box::new(invoker),
+                                                           self.child_pid.unwrap(),
+                                                          );
 
         /* Show initial memory layout */
         let pid = self.child_pid.unwrap() as u32;

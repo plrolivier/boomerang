@@ -26,6 +26,7 @@ use nix::{
 };
 
 use sysfwd::{
+    arch::TargetArch,
     protocol::control::{ Configuration, ControlChannel },
     tracer::TracerCallback,
 };
@@ -46,12 +47,13 @@ static EXECUTOR_PORT: u16 = 32001;
  */
 struct TraceDebugger {
     control_channel: ControlChannel,
+    //target_arch: TargetArch,
 }
 
 
 impl TraceDebugger {
 
-    pub fn new() -> Self
+    pub fn new(target_arch: TargetArch) -> Self
     {
         // TODO: configure with ptrace?
 
@@ -70,7 +72,8 @@ impl TraceDebugger {
          * 
          */
         Self {
-            control_channel: ControlChannel::new(Configuration::Tracer, Some(Box::new(TraceDebuggerCallback::new())), None)
+            //target_arch: target_arch,
+            control_channel: ControlChannel::new(Configuration::Tracer, Some(Box::new(TraceDebuggerCallback::new(&target_arch))), None)
         }
     }
 
@@ -98,13 +101,15 @@ struct ThreadCtrl {
 }
 
 struct TraceDebuggerCallback {
+    target_arch: Arc<TargetArch>,
     thread_map: HashMap<Pid, ThreadCtrl>,
 }
 
 impl TraceDebuggerCallback {
-    pub fn new() -> Self {
+    pub fn new(target_arch: &TargetArch) -> Self {
         Self {
             thread_map: HashMap::new(),
+            target_arch: Arc::new(*target_arch),
         }
     }
 
@@ -121,7 +126,8 @@ impl TracerCallback for TraceDebuggerCallback {
         let boot_barrier = Arc::new(Barrier::new(2));
         let barrier_copy = boot_barrier.clone();
 
-        let mut tracing_thread = TracingThread::new(program, prog_args, tx_thread, rx_ctrl, boot_barrier);
+        let arch = Arc::clone(&self.target_arch);
+        let mut tracing_thread = TracingThread::new(arch, program, prog_args, tx_thread, rx_ctrl, boot_barrier);
 
         /* Create thread and start it */
         let builder = Builder::new();
@@ -250,7 +256,7 @@ fn main()
     let prog_args = &args[2..];
      */
 
-    let mut dbg = TraceDebugger::new();
+    let mut dbg = TraceDebugger::new(TargetArch::X86_64);
 
 
     // Start tracing system calls

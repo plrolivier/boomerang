@@ -37,7 +37,7 @@ pub struct ExecutorEngine {
 impl ExecutorEngine {
 
     pub fn new(
-        target_arch: TargetArch,
+        target_arch: Arc<TargetArch>,
         ipv4_address: &str,
         executor_port: u16,
         tracer_port: u16,
@@ -48,8 +48,10 @@ impl ExecutorEngine {
         child_pid: i32,
     ) -> Self
     {
+        let arch = *target_arch.clone();
+
         Self {
-            arch: Architecture::new(target_arch),
+            arch: Architecture::new(arch),
             protocol: Server::new(ipv4_address, executor_port, tracer_port),
             syscall: Syscall::new(),
             operator: operator,

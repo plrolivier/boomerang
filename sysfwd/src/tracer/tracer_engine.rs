@@ -66,15 +66,17 @@ impl TracerEngine {
 
     pub fn new(
         pid: i32,
-        target_arch: TargetArch,
+        target_arch: Arc<TargetArch>,
         ipv4_address: &str,
         tracer_port: u16,
         executor_port: u16,
         operator: Box<Operation>,
     ) -> Self 
     {
-        let arch = Arc::new(Architecture::new(target_arch));
-        let decoder = Arc::new(Decoder::new(arch.clone()));
+        let arch = *target_arch.clone();
+        let arch = Arc::new(Architecture::new(arch));
+        let clone_arch = Arc::clone(&arch);
+        let decoder = Arc::new(Decoder::new(clone_arch));
 
         Self {
             pid: pid,

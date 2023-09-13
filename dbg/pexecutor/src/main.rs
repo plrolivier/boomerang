@@ -18,6 +18,7 @@ use std::{
 use nix::unistd::Pid;
 
 use sysfwd::{
+    arch::TargetArch,
     sync::Event,
     protocol::control::{ Configuration, ControlChannel },
     executor::ExecutorCallback,
@@ -43,10 +44,10 @@ struct ExecDebugger {
 
 impl ExecDebugger {
 
-    pub fn new() -> Self
+    pub fn new(target_arch: TargetArch) -> Self
     {
         Self {
-            control_channel: ControlChannel::new(Configuration::Executor, None, Some(Box::new(ExecDebuggerCallback::new()))),
+            control_channel: ControlChannel::new(Configuration::Executor, None, Some(Box::new(ExecDebuggerCallback::new(&target_arch)))),
         }
     }
 
@@ -74,14 +75,16 @@ struct ThreadCtrl {
 
 struct ExecDebuggerCallback {
     thread_map: HashMap<Pid, ThreadCtrl>,
+    target_arch: Arc<TargetArch>,
 }
 
 impl ExecDebuggerCallback {
 
-    pub fn new() -> Self
+    pub fn new(target_arch: &TargetArch) -> Self
     {
         Self {
             thread_map: HashMap::new(),
+            target_arch: Arc::new(*target_arch),
         }
     }
 }
@@ -99,7 +102,8 @@ impl ExecutorCallback for ExecDebuggerCallback {
         let stopped = Arc::new(Event::new());
         let stopped_clone = stopped.clone();
 
-        let mut executing_thread = ExecutingThread::new(tx_thread, rx_ctrl, stop, stopped);
+        let arch = Arc::clone(&self.target_arch);
+        let mut executing_thread = ExecutingThread::new(arch, tx_thread, rx_ctrl, stop, stopped);
 
         /* Creat thread and start it */
         let builder = Builder::new();
@@ -170,7 +174,7 @@ fn main()
     }
     */
 
-    let mut dbg = ExecDebugger::new();
+    let mut dbg = ExecDebugger::new(TargetArch::X86_64);
 
     // Listen for incomming connection and order from a trace dgb
     println!("[EXECUTOR] Start debugger...");

@@ -44,6 +44,7 @@ use crate::{
  */
 //#[derive(Clone, Debug)]
 pub struct TracingThread {
+    target_arch: Arc<TargetArch>,
     pub boot_barrier: Arc<Barrier>,
     tx: Sender<String>,
     _rx: Receiver<String>,
@@ -58,9 +59,10 @@ pub struct TracingThread {
 
 impl TracingThread {
 
-    pub fn new(program: String, prog_args: Vec<String>, tx: Sender<String>, rx: Receiver<String>, barrier: Arc<Barrier>) -> Self 
+    pub fn new(target_arch: Arc<TargetArch>, program: String, prog_args: Vec<String>, tx: Sender<String>, rx: Receiver<String>, barrier: Arc<Barrier>) -> Self 
     {
         TracingThread { 
+            target_arch: target_arch,
             boot_barrier: barrier,
             tx: tx,
             _rx: rx,
@@ -102,9 +104,10 @@ impl TracingThread {
         let regs_op = Box::new(ptrace_op.clone());
         let mem_op = Box::new(ptrace_op);
         let operator = Box::new(Operation{ register: regs_op, memory: mem_op });
+        let arch = Arc::clone(&self.target_arch);
 
         let mut tracer = TracerEngine::new(pid,
-                                                         TargetArch::X86_64,
+                                                         arch,
                                                          IP_ADDRESS,
                                                          TRACER_PORT,
                                                          EXECUTOR_PORT,

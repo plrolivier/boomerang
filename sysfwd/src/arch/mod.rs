@@ -135,7 +135,8 @@ impl Register {
     */
 
 
-pub(crate) struct SyscallTable {
+#[derive(Clone, Debug)]
+pub struct SyscallTable {
     map: HashMap<&'static str, usize>,
 }
 

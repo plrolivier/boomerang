@@ -75,8 +75,8 @@ impl TracerEngine {
     {
         let arch = *target_arch.clone();
         let arch = Arc::new(Architecture::new(arch));
-        let clone_arch = Arc::clone(&arch);
-        let decoder = Arc::new(Decoder::new(clone_arch));
+        let clone_syscall_table = arch.syscall_table.clone();
+        let decoder = Arc::new(Decoder::new(clone_syscall_table));
         let registers = create_user_register(&arch.name);
 
         Self {

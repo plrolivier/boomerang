@@ -6,7 +6,7 @@ use std::sync::Arc;
 use serde::{Serialize, Deserialize};
 
 use crate::{
-    arch::Architecture,
+    arch::SyscallTable,
     syscall::{ Syscall, syscalls },
     targets::operation::Operation,
 };
@@ -14,21 +14,21 @@ use crate::{
 
 
 pub struct Decoder {
-    arch: Arc<Architecture>,
+    //arch: Arc<Architecture>,
+    syscall_table: SyscallTable,
 }
 
 impl Decoder {
-    pub fn new(arch: Arc<Architecture>) -> Self {
+    pub fn new(syscall_table: SyscallTable) -> Self {
         Self { 
-            //arch: Architecture::new(arch),
-            arch: arch,
+            syscall_table: syscall_table,
         }
     }
 
     pub fn decode_entry(&self, syscall: &mut Syscall, pid: i32, operation: &Box<Operation>) {
 
         // TODO: improve the match by using number instead of strings
-        match self.arch.syscall_table.get_syscall_name(&syscall.raw.no) {
+        match self.syscall_table.get_syscall_name(&syscall.raw.no) {
             Some(x) => syscall.name = x,
             None => println!("No name found for {}", syscall.raw.no),
         }

@@ -25,7 +25,7 @@ use nix::{
 use libc;
 
 use sysfwd::{
-    arch::TargetArch,
+    arch::{TargetArch, x86_64::UserRegisterX86_64},
     tracer::TracerEngine,
     targets::operation::Operation,
     targets,
@@ -202,7 +202,8 @@ impl TracingThread {
     fn sync_registers(&self, pid: Pid, tracer: &mut TracerEngine) -> Result<(), io::Error>
     {
         let regs: nix::libc::user_regs_struct = ptrace::getregs(pid)?;
-        tracer.sync_registers(regs);
+        let uregs = Box::new(UserRegisterX86_64::from(regs));
+        tracer.sync_registers(uregs);
         Ok(())
     }
 

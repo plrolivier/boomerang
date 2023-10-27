@@ -9,10 +9,9 @@ use std::{
     sync::Arc,
     io,
 };
-use nix::libc::user_regs_struct;
 use serde_json;
 use crate::{
-    arch::{ TargetArch, Architecture },
+    arch::{ TargetArch, Architecture, UserRegister, create_user_register },
     protocol::data::Client,
     syscall::{
         Syscall,
@@ -44,7 +43,8 @@ pub struct TracerEngine {
     pub pid: i32,
     pub arch: Arc<Architecture>,
     //pub regs: Vec<u64>,
-    pub regs: user_regs_struct,     // only for x86_64
+    //pub regs: user_regs_struct,     // only for x86_64
+    pub regs: Box<dyn UserRegister>,
 
     operator: Box<Operation>,
     decoder: Arc<Decoder>,
@@ -77,40 +77,12 @@ impl TracerEngine {
         let arch = Arc::new(Architecture::new(arch));
         let clone_arch = Arc::clone(&arch);
         let decoder = Arc::new(Decoder::new(clone_arch));
+        let registers = create_user_register(&arch.name);
 
         Self {
             pid: pid,
             arch: arch,
-            //regs: vec![0; 33],
-            regs: user_regs_struct {
-                r15: 0,
-                r14: 0,
-                r13: 0,
-                r12: 0,
-                rbp: 0,
-                rbx: 0,
-                r11: 0,
-                r10: 0,
-                r9: 0,
-                r8: 0,
-                rax: 0,
-                rcx: 0,
-                rdx: 0,
-                rsi: 0,
-                rdi: 0,
-                orig_rax: 0,
-                rip: 0,
-                cs: 0,
-                eflags: 0,
-                rsp: 0,
-                ss: 0,
-                fs_base: 0,
-                gs_base: 0,
-                ds: 0,
-                es: 0,
-                fs: 0,
-                gs: 0,
-            },
+            regs: registers,
             operator: operator,
             decoder: decoder,
             protocol: Client::new(ipv4_address, tracer_port, executor_port),
@@ -129,8 +101,8 @@ impl TracerEngine {
      * When the tracking of the syscall entry/exit is left to the library,
      * we only synchronize the registers.
      */
-    pub fn sync_registers(&mut self, regs: user_regs_struct) {
-        self.regs = regs.clone();
+    pub fn sync_registers(&mut self, regs: Box<dyn UserRegister>) {
+        self.regs = regs;
     }
 
     pub fn trace(&mut self) -> Result<(), io::Error>
@@ -153,26 +125,15 @@ impl TracerEngine {
         self.syscall = Syscall::new();
         self.remote_syscall = Syscall::new();
 
-        // Only for x86_64
-        self.set_syscall_entry(self.regs.orig_rax as usize,
-                               self.regs.rdi as usize,
-                               self.regs.rsi as usize,
-                               self.regs.rdx as usize,
-                               self.regs.r10 as usize,
-                               self.regs.r8 as usize,
-                               self.regs.r9 as usize,
-                               0 as usize,
-        );
+        self.regs.set_syscall_entry(&mut self.syscall);
     }
 
     fn sync_exit(&mut self) {
-        // Only for x86_64
-        self.set_syscall_exit(self.regs.rax as usize, self.regs.rdx as usize);
+        self.regs.set_syscall_exit(&mut self.syscall);
     }
 
     /*
      * The other way is to directly call the right method.
-     */
     pub fn set_syscall_entry(&mut self, scno: usize, arg1: usize, 
                              arg2: usize, arg3: usize, arg4: usize,
                              arg5: usize, arg6: usize, arg7: usize) {
@@ -191,6 +152,7 @@ impl TracerEngine {
         self.syscall.raw.retval = retval;
         self.syscall.raw.errno = errno;
     }
+     */
 
     pub fn shutdown(&mut self) -> Result<(), io::Error>
     {

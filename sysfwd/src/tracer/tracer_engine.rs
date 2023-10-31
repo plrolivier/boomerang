@@ -11,7 +11,7 @@ use std::{
 };
 use serde_json;
 use crate::{
-    arch::{ TargetArch, Architecture, UserRegister, create_user_register },
+    arch::{ TargetArch, Architecture, UserRegister },
     protocol::data::Client,
     syscall::{
         Syscall,
@@ -42,15 +42,13 @@ pub struct TracerEngine {
 
     pub pid: i32,
     pub arch: Arc<Architecture>,
-    //pub regs: Vec<u64>,
-    //pub regs: user_regs_struct,     // only for x86_64
-    pub regs: Box<dyn UserRegister>,
 
     operator: Box<Operation>,
     decoder: Arc<Decoder>,
     protocol: Client,
 
     /* Tracee state */
+    regs: Box<dyn UserRegister>,
     syscall: Syscall,
     remote_syscall: Syscall,
     insyscall: bool,
@@ -75,9 +73,9 @@ impl TracerEngine {
     {
         let arch = *target_arch.clone();
         let arch = Arc::new(Architecture::new(arch));
+        let registers = arch.create_user_register();
         let clone_syscall_table = arch.syscall_table.clone();
         let decoder = Arc::new(Decoder::new(clone_syscall_table));
-        let registers = create_user_register(&arch.name);
 
         Self {
             pid: pid,

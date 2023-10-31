@@ -1,8 +1,6 @@
 /*
  * Decode syscall arguments.
  */
-use std::sync::Arc;
-
 use serde::{Serialize, Deserialize};
 
 use crate::{

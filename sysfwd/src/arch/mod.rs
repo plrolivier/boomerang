@@ -43,18 +43,37 @@ pub enum TargetArch {
 pub struct Architecture {
     pub name: TargetArch,
     //register_table: Register,
-    pub(crate) syscall_table: SyscallTable,
+    pub syscall_table: SyscallTable,
 }
 
 impl Architecture {
     pub fn new(name: TargetArch) -> Self {
         Self {
             name: name,
-            //register_table: Register::new(&name),
             syscall_table: SyscallTable::new(&name),
         }
     }
+
+    pub fn create_user_register(&self) -> Box<dyn UserRegister> {
+        match self.name {
+            TargetArch::X86_64 => Box::new(x86_64::UserRegisterX86_64::new()),
+            //TargetArch::X86_64X32 => Box::new(x86_64_x32::X86_64X32Register),
+            //TargetArch::Mipso32 => Box::new(mipso32::Mipso32Register),
+            //TargetArch::Aarch32 => Box::new(aarch32::Aarch32Register),
+            //TargetArch::Aarch64 => Box::new(aarch64::Aarch64Register),
+            //TargetArch::Arm_eabi => Box::new(arm_eabi::ArmEabiRegister),
+            //TargetArch::Arm_oabi => Box::new(arm_oabi::ArmOabiRegister),
+            //TargetArch::Mipsn32 => Box::new(mipsn32::Mipsn32Register),
+            //TargetArch::Mipsn64 => Box::new(mipsn64::Mipsn64Register),
+            //TargetArch::Powerpc32 => Box::new(powerpc32::Powerpc32Register),
+            //TargetArch::Powerpc64 => Box::new(powerpc64::Powerpc64Register),
+            //TargetArch::Riscv32 => Box::new(riscv32::Riscv32Register),
+            //TargetArch::Riscv64 => Box::new(riscv64::Riscv64Register),
+            _ => panic!("Architecture not implemented"),
+        }
 }
+}
+
 
 
 pub trait UserRegister {
@@ -62,25 +81,6 @@ pub trait UserRegister {
     fn set_syscall_exit(&self, syscall: &mut Syscall);
 }
 
-
-pub fn create_user_register(arch: &TargetArch) -> Box<dyn UserRegister> {
-    match arch {
-        TargetArch::X86_64 => Box::new(x86_64::UserRegisterX86_64::new()),
-        //TargetArch::X86_64X32 => Box::new(x86_64_x32::X86_64X32Register),
-        //TargetArch::Mipso32 => Box::new(mipso32::Mipso32Register),
-        //TargetArch::Aarch32 => Box::new(aarch32::Aarch32Register),
-        //TargetArch::Aarch64 => Box::new(aarch64::Aarch64Register),
-        //TargetArch::Arm_eabi => Box::new(arm_eabi::ArmEabiRegister),
-        //TargetArch::Arm_oabi => Box::new(arm_oabi::ArmOabiRegister),
-        //TargetArch::Mipsn32 => Box::new(mipsn32::Mipsn32Register),
-        //TargetArch::Mipsn64 => Box::new(mipsn64::Mipsn64Register),
-        //TargetArch::Powerpc32 => Box::new(powerpc32::Powerpc32Register),
-        //TargetArch::Powerpc64 => Box::new(powerpc64::Powerpc64Register),
-        //TargetArch::Riscv32 => Box::new(riscv32::Riscv32Register),
-        //TargetArch::Riscv64 => Box::new(riscv64::Riscv64Register),
-        _ => panic!("Architecture not implemented"),
-    }
-}
 
 
 /* 

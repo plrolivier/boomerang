@@ -109,6 +109,36 @@ impl UserRegisterX86_64 {
             gs: uregs.gs,
         }
     }
+
+    pub fn set(&mut self, uregs: user_regs_struct) {
+        self.r15 = uregs.r15;
+        self.r14 = uregs.r14;
+        self.r13 = uregs.r13;
+        self.r12 = uregs.r12;
+        self.rbp = uregs.rbp;
+        self.rbx = uregs.rbx;
+        self.r11 = uregs.r11;
+        self.r10 = uregs.r10;
+        self.r9 = uregs.r9;
+        self.r8 = uregs.r8;
+        self.rax = uregs.rax;
+        self.rcx = uregs.rcx;
+        self.rdx = uregs.rdx;
+        self.rsi = uregs.rsi;
+        self.rdi = uregs.rdi;
+        self.orig_rax = uregs.orig_rax;
+        self.rip = uregs.rip;
+        self.cs = uregs.cs;
+        self.eflags = uregs.eflags;
+        self.rsp = uregs.rsp;
+        self.ss = uregs.ss;
+        self.fs_base = uregs.fs_base;
+        self.gs_base = uregs.gs_base;
+        self.ds = uregs.ds;
+        self.es = uregs.es;
+        self.fs = uregs.fs;
+        self.gs = uregs.gs;
+    }
 }
 
 impl UserRegister for UserRegisterX86_64 {

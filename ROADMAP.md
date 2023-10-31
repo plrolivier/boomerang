@@ -17,7 +17,8 @@ Syscalls to support are `open/read/write/lseek/close`.
 
 Goal: support for multiple architecture (mips)
 
-- [ ] Rework how arch are selected
+- [x] Rework how arch are selected
+- [x] Add new register structure
 - [ ] Add mips architecture
 - [ ] New example with lima dev board
 

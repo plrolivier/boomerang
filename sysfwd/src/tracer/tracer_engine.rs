@@ -45,10 +45,10 @@ pub struct TracerEngine {
 
     operator: Box<Operation>,
     decoder: Arc<Decoder>,
-    protocol: Client,
+    protocol: Option<Client>,
 
     /* Tracee state */
-    regs: Box<dyn UserRegister>,
+    //regs: Box<dyn UserRegister>,  // SHould we really keep this here?
     syscall: Syscall,
     remote_syscall: Syscall,
     insyscall: bool,
@@ -65,25 +65,34 @@ impl TracerEngine {
     pub fn new(
         pid: i32,
         target_arch: Arc<TargetArch>,
-        ipv4_address: &str,
-        tracer_port: u16,
-        executor_port: u16,
+        ipv4_address: Option<&str>,
+        tracer_port: Option<u16>,
+        executor_port: Option<u16>,
         operator: Box<Operation>,
     ) -> Self 
     {
         let arch = *target_arch.clone();
         let arch = Arc::new(Architecture::new(arch));
-        let registers = arch.create_user_register();
+        //let registers = arch.create_user_register();
         let clone_syscall_table = arch.syscall_table.clone();
         let decoder = Arc::new(Decoder::new(clone_syscall_table));
+
+        let client = match ipv4_address {
+            Some(value) => {
+                Some(Client::new(value, tracer_port.unwrap(), executor_port.unwrap()))
+            },
+            None => {
+                None
+            }
+        };
 
         Self {
             pid: pid,
             arch: arch,
-            regs: registers,
+            //regs: registers,
             operator: operator,
             decoder: decoder,
-            protocol: Client::new(ipv4_address, tracer_port, executor_port),
+            protocol: client,
             syscall: Syscall::new(),
             remote_syscall: Syscall::new(),
             insyscall: false,   // Hypothesis: we do the tracing from the start!
@@ -98,10 +107,11 @@ impl TracerEngine {
     /*
      * When the tracking of the syscall entry/exit is left to the library,
      * we only synchronize the registers.
-     */
     pub fn sync_registers(&mut self, regs: Box<dyn UserRegister>) {
-        self.regs = regs;
+        // XXX Be carefull, this is only valable for x86_64
+        self.operator.register.read_registers(self.pid).unwrap();
     }
+    */
 
     pub fn trace(&mut self) -> Result<(), io::Error>
     {
@@ -123,11 +133,11 @@ impl TracerEngine {
         self.syscall = Syscall::new();
         self.remote_syscall = Syscall::new();
 
-        self.regs.set_syscall_entry(&mut self.syscall);
+        self.operator.syscall.read_syscall_args(self.pid).unwrap();
     }
 
     fn sync_exit(&mut self) {
-        self.regs.set_syscall_exit(&mut self.syscall);
+        self.operator.syscall.read_syscall_ret(self.pid).unwrap();
     }
 
     /*
@@ -285,7 +295,7 @@ impl TracerEngine {
         self.instr_pre_forward().unwrap();
 
         /* Forward */
-        self.remote_syscall = self.protocol.send_syscall_entry(&self.remote_syscall).unwrap();
+        self.remote_syscall = self.protocol.as_ref().unwrap().send_syscall_entry(&self.remote_syscall).unwrap();
         //println!("[{}] remote syscall retval: {:#x}", self.pid, self.remote_syscall.raw.retval as usize);
         let json = serde_json::to_string(&self.remote_syscall).unwrap();
         println!("[{}] REMOTE: {}", self.pid, json);
@@ -339,9 +349,8 @@ impl TracerEngine {
         /* Replace local syscall with a dummy one */
         // note: it would be more clean to modify self.syscall.raw values and synchronized once we return to the program execution.
         // for now on x86-64, replace with getpid()
-        let mut regs = self.operator.register.read_registers(self.pid).unwrap();
-        regs.orig_rax = 39 as u64;  // getpid() in x86_64
-        self.operator.register.write_registers(self.pid, regs).unwrap();
+        self.operator.syscall.replace_syscall_no(self.pid, 39).unwrap();
+
 
         Ok(())
     }
@@ -410,10 +419,7 @@ impl TracerEngine {
         };
 
         /* Syncrhonize back the return value and errno */
-        let mut regs = self.operator.register.read_registers(self.pid).unwrap();
-        regs.rax = self.remote_syscall.raw.retval as u64;
-        regs.rdx = self.remote_syscall.raw.errno as u64;
-        self.operator.register.write_registers(self.pid, regs).unwrap();
+        self.operator.syscall.write_syscall_ret(self.pid, self.remote_syscall.raw.retval, self.remote_syscall.raw.errno).unwrap();
 
         // verify the register write...
         let regs = self.operator.register.read_registers(self.pid).unwrap();

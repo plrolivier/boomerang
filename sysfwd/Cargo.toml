@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 decoding_macro = { path = "./decoding_macro" }
+libc = "0.2"
 nix = "0.25.0"
 serde = { version = "1.0.147", features = ["derive"] }
 serde_json = "1.0.87"

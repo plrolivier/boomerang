@@ -238,6 +238,13 @@ impl TracerCallback for TraceDebuggerCallback {
 
 fn main()
 {
+    // For now, the target architecture is the same for the debuggee program and the one where it runs.
+    #[cfg(target_arch = "x86_64")]
+    let arch = TargetArch::X86_64;
+    #[cfg(target_arch = "mips")]
+    let arch = TargetArch::Mipso32;
+
+
     /* TODO: add more argument to configure the tracer:
      *  - program to trace with its arguments
      *  - option on which port to listen
@@ -256,7 +263,9 @@ fn main()
     let prog_args = &args[2..];
      */
 
-    let mut dbg = TraceDebugger::new(TargetArch::X86_64);
+
+
+    let mut dbg = TraceDebugger::new(arch);
 
 
     // Start tracing system calls

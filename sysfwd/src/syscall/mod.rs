@@ -7,7 +7,6 @@ pub mod encoder;
 pub mod syscalls;
 
 
-use nix::libc::user_regs_struct;
 use serde::{ Serialize, Deserialize };
 
 use crate::{
@@ -71,6 +70,7 @@ impl RawSyscall {
         }
     }
 
+    /* 
     pub fn from_x86_exit(regs: user_regs_struct, rawsyscall: &RawSyscall) -> Self
     {
         let mut new_raw = rawsyscall.clone();
@@ -81,4 +81,5 @@ impl RawSyscall {
         new_raw.errno = regs.rdx as usize;
         new_raw
     }
+    */
 }

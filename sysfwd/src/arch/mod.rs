@@ -9,19 +9,18 @@ mod mipso32;
 //mod powerpc;
 //mod riscv;
 pub mod x86_64;
-//mod x86_64_x32;
+mod x86_64_x32;
+
 
 
 use std::collections::HashMap;
 
 
-use crate::{
-    syscall::Syscall,
-};
+use crate::syscall::Syscall;
 
 
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub enum TargetArch {
     //Aarch32,
     //Aarch64,
@@ -36,7 +35,7 @@ pub enum TargetArch {
     //Riscv64,
     //X86,
     X86_64,
-    //X86_64X32,
+    X86_64X32,
 }
 
 
@@ -56,19 +55,20 @@ impl Architecture {
 
     pub fn create_user_register(&self) -> Box<dyn UserRegister> {
         match self.name {
-            TargetArch::X86_64 => Box::new(x86_64::UserRegisterX86_64::new()),
-            //TargetArch::X86_64X32 => Box::new(x86_64_x32::X86_64X32Register),
-            //TargetArch::Mipso32 => Box::new(mipso32::Mipso32Register),
-            //TargetArch::Aarch32 => Box::new(aarch32::Aarch32Register),
-            //TargetArch::Aarch64 => Box::new(aarch64::Aarch64Register),
-            //TargetArch::Arm_eabi => Box::new(arm_eabi::ArmEabiRegister),
-            //TargetArch::Arm_oabi => Box::new(arm_oabi::ArmOabiRegister),
-            //TargetArch::Mipsn32 => Box::new(mipsn32::Mipsn32Register),
-            //TargetArch::Mipsn64 => Box::new(mipsn64::Mipsn64Register),
-            //TargetArch::Powerpc32 => Box::new(powerpc32::Powerpc32Register),
-            //TargetArch::Powerpc64 => Box::new(powerpc64::Powerpc64Register),
-            //TargetArch::Riscv32 => Box::new(riscv32::Riscv32Register),
-            //TargetArch::Riscv64 => Box::new(riscv64::Riscv64Register),
+            //TargetArch::Aarch32 => Box::new(aarch32::Aarch32Register::new()),
+            //TargetArch::Aarch64 => Box::new(aarch64::Aarch64Register::new()),
+            //TargetArch::Arm_eabi => Box::new(arm_eabi::ArmEabiRegister::new()),
+            //TargetArch::Arm_oabi => Box::new(arm_oabi::ArmOabiRegister::new()),
+            //TargetArch::Mipsn32 => Box::new(mipsn32::Mipsn32Register::new()),
+            //TargetArch::Mipsn64 => Box::new(mipsn64::Mipsn64Register::new()),
+            TargetArch::Mipso32 => Box::new(mipso32::Mipso32Register::new()),
+            //TargetArch::Powerpc32 => Box::new(powerpc32::Powerpc32Register::new()),
+            //TargetArch::Powerpc64 => Box::new(powerpc64::Powerpc64Register::new()),
+            //TargetArch::Riscv32 => Box::new(riscv32::Riscv32Register::new()),
+            //TargetArch::Riscv64 => Box::new(riscv64::Riscv64Register::new()),
+            //TargetArch::X86 => Box::new(x86::X86::new()),
+            TargetArch::X86_64 => Box::new(x86_64::X86Register::default()),
+            TargetArch::X86_64X32 => Box::new(x86_64::X86Register::default()),
             _ => panic!("Architecture not implemented"),
         }
 }
@@ -81,58 +81,6 @@ pub trait UserRegister {
     fn set_syscall_exit(&self, syscall: &mut Syscall);
 }
 
-
-
-/* 
-pub(crate) struct Register {
-    //map: HashMap<&'static str, u8>,
-}
-
-impl Register {
-    pub fn new(arch: &TargetArch) -> Self {
-
-        map: match arch {
-            TargetArch::X86_64  => x86_64::create_register_table(),
-            //TargetArch::X86     => x86::create_register_table(),
-            //TargetArch::Arm     => arm::create_register_table(),
-            //TargetArch::Aarch64 => aarch64::create_register_table(),
-            TargetArch::Mipso32 => mipso32::create_register_table(),
-            //TargetArch::Mipsn32 => mipsn32::create_register_table(),
-            //TargetArch::Mipsn64 => mipsn64::create_register_table(),
-            //TargetArch::Powerpc => powerpc::create_register_table(),
-            //TargetArch::Riscv32 => riscv32::create_register_table(),
-            //TargetArch::Riscv64 => riscv64::create_register_table(),
-            _ => panic!("Architecture not implemented"),
-        };
-
-        /*
-        Self {
-            map: match arch {
-                TargetArch::X86_64  => x86_64::create_register_table(),
-                //TargetArch::X86     => x86::create_register_table(),
-                //TargetArch::Arm     => arm::create_register_table(),
-                //TargetArch::Aarch64 => aarch64::create_register_table(),
-                //TargetArch::Mipso32 => mipso32::create_register_table(),
-                //TargetArch::Mipsn32 => mipsn32::create_register_table(),
-                //TargetArch::Mipsn64 => mipsn64::create_register_table(),
-                //TargetArch::Powerpc => powerpc::create_register_table(),
-                //TargetArch::Riscv32 => riscv32::create_register_table(),
-                //TargetArch::Riscv64 => riscv64::create_register_table(),
-                _ => panic!("Architecture not implemented"),
-            },
-        }
-        */
-    }
-
-    pub fn get_no(&self, name: &str) -> Option<u8> {
-        self.map.get(name).copied()
-    }
-
-    pub fn get_name(&self, no: &u64) -> Option<str> {
-        self.map.iter().find_map(|(key, &val)| if val == no { Some(no) } else { None })
-    }
-}
-    */
 
 
 #[derive(Clone, Debug)]
@@ -158,13 +106,10 @@ impl SyscallTable {
                 TargetArch::Powerpc64 => powerpc64::create_syscall_table(),
                 TargetArch::Riscv32 => riscv32::create_syscall_table(),
                 TargetArch::Riscv64 => riscv64::create_syscall_table(),
-                */
-                TargetArch::X86_64      => x86_64::syscall_table::create_syscall_table(),
-                //TargetArch::X86_64X32   => x86_64_x32::syscall_table::create_syscall_table(),
-                /*
-                TargetArch::X86_64_ia32 => x86_64_ia32::syscall_table::create_syscall_table(),
                 TargetArch::X86_32      => x86_32::syscall_table::create_syscall_table(),
                 */
+                TargetArch::X86_64      => x86_64::syscall_table::create_syscall_table(),
+                TargetArch::X86_64X32   => x86_64_x32::syscall_table::create_syscall_table(),
                 _ => panic!("Architecture not implemented"),
             },
         }

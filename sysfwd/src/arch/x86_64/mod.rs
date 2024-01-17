@@ -3,8 +3,10 @@
  */
 pub mod syscall_table;
 
+#[cfg(target_arch = "x86_64")]
+pub mod ptrace;
 
-use nix::libc::user_regs_struct;
+
 
 use crate::{
     arch::UserRegister,
@@ -14,7 +16,7 @@ use crate::{
 
  
 #[derive(Clone, Debug)]
-pub struct UserRegisterX86_64 {
+pub struct X86Register {
     r15: u64,
     r14: u64,
     r13: u64,
@@ -45,9 +47,9 @@ pub struct UserRegisterX86_64 {
 
 }
 
-impl UserRegisterX86_64 {
-    pub fn new() -> Self {
-        UserRegisterX86_64 {
+impl X86Register {
+    pub fn default() -> Self {
+        X86Register {
             r15: 0,
             r14: 0,
             r13: 0,
@@ -78,8 +80,9 @@ impl UserRegisterX86_64 {
         }
     }
 
+    /* 
     pub fn from(uregs: user_regs_struct) -> Self {
-        UserRegisterX86_64 {
+        X86_64Register {
             r15: uregs.r15,
             r14: uregs.r14,
             r13: uregs.r13,
@@ -139,9 +142,10 @@ impl UserRegisterX86_64 {
         self.fs = uregs.fs;
         self.gs = uregs.gs;
     }
+    */
 }
 
-impl UserRegister for UserRegisterX86_64 {
+impl UserRegister for X86Register {
 
     fn set_syscall_entry(&self, syscall: &mut Syscall) {
         syscall.raw.no = self.orig_rax as usize;

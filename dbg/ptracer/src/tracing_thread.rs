@@ -25,7 +25,7 @@ use nix::{
 use libc;
 
 use sysfwd::{
-    arch::{TargetArch, x86_64::UserRegisterX86_64},
+    arch::{TargetArch, x86_64::X86Register, x86_64::ptrace::X86Ptrace },
     tracer::TracerEngine,
     targets::operation::Operation,
     targets,
@@ -100,21 +100,23 @@ impl TracingThread {
         print_memory_regions(&mem);
 
         /* Setup the tracer */
-        let ptrace_op = targets::ptrace::Ptrace{ };
-        let regs_op = Box::new(ptrace_op.clone());
-        let mem_op = Box::new(ptrace_op);
-        let operator = Box::new(Operation{ register: regs_op, memory: mem_op });
+        let x86ptrace_op = X86Ptrace::default();
+        let regs_op = Box::new(x86ptrace_op.clone());
+        let mem_op = Box::new(x86ptrace_op.clone());
+        let sys_op = Box::new(x86ptrace_op);
+        let operator = Box::new(Operation{ register: regs_op, memory: mem_op, syscall: sys_op });
         let arch = Arc::clone(&self.target_arch);
 
         let mut tracer = TracerEngine::new(pid,
                                                          arch,
-                                                         IP_ADDRESS,
-                                                         TRACER_PORT,
-                                                         EXECUTOR_PORT,
+                                                         Some(IP_ADDRESS),
+                                                         Some(TRACER_PORT),
+                                                         Some(EXECUTOR_PORT),
                                                          operator,
                                                         );
 
         /* Load filters */
+        // TODO: don't make the filter hardcoded
         let rule = Box::new(ForwardFileRule::new(String::from("/dev/kbuf")));
         tracer.load_rule(0, rule);
         
@@ -199,11 +201,13 @@ impl TracingThread {
         Ok(tracer)
     }
 
+    
     fn sync_registers(&self, pid: Pid, tracer: &mut TracerEngine) -> Result<(), io::Error>
     {
-        let regs: nix::libc::user_regs_struct = ptrace::getregs(pid)?;
-        let uregs = Box::new(UserRegisterX86_64::from(regs));
-        tracer.sync_registers(uregs);
+        // TODO: Rethink the purpose of this function now that operator.syscall read the args by itself
+        //let regs: nix::libc::user_regs_struct = ptrace::getregs(pid)?;
+        //let uregs = Box::new(X86Register::from(regs));
+        //tracer.sync_registers(uregs);
         Ok(())
     }
 

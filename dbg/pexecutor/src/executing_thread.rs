@@ -24,7 +24,7 @@ use libc;
 
 use sysfwd::{
     sync::Event,
-    arch::TargetArch,
+    arch::{ TargetArch, x86_64::ptrace::X86Ptrace },
     memory::{ read_process_memory_maps, print_memory_regions },
     executor::{ ExecutorEngine, Invoker },
     targets::{ self, operation::Operation },
@@ -87,11 +87,13 @@ impl ExecutingThread {
 
         let copy_stop = self.stop.clone();
         let copy_stopped = self.stopped.clone();
-        let ptrace_op = targets::ptrace::Ptrace{ };
-        let regs_op = Box::new(ptrace_op.clone());
-        let mem_op = Box::new(ptrace_op);
-        let operator = Box::new(Operation{ register: regs_op, memory: mem_op});
         let arch = Arc::clone(&self.target_arch);
+
+        let x86ptrace_op = X86Ptrace::default();
+        let regs_op = Box::new(x86ptrace_op.clone());
+        let mem_op = Box::new(x86ptrace_op.clone());
+        let sys_op = Box::new(x86ptrace_op);
+        let operator = Box::new(Operation{ register: regs_op, memory: mem_op, syscall: sys_op});
 
         let executor = ExecutorEngine::new(arch,
                                                            IP_ADDRESS,

@@ -3,41 +3,7 @@
  */
 use std::collections::HashMap;
 
-/*
-pub fn create_register_table() -> HashMap<&'static str, u8> {
-    HashMap::from([
-        ("rax", 0),
-        ("rbx", 1),
-        ("rcx", 2),
-        ("rdx", 3),
-        ("rsi", 4),
-        ("rdi", 5),
-        ("rbp", 6),
-        ("rsp", 7),
-        ("r8", 8),
-        ("r9", 9),
-        ("r10", 10),
-        ("r11", 11),
-        ("r12", 12),
-        ("r13", 13),
-        ("r14", 14),
-        ("r15", 15),
-        ("rip", 16),
-        ("pc", 16),
-        ("eflags", 17),
-        ("cs", 18),
-        ("ss", 19),
-        ("ds", 20),
-        ("es", 21),
-        ("fs", 22),
-        ("gs", 23),
-        // TODO find the right value here
-        ("orig_rax", 100),
-        ("fs_base", 100),
-        ("gs_base", 100),
-    ])
-}
-*/
+
 
 pub fn create_syscall_table() -> HashMap<&'static str, usize> {
     HashMap::from([

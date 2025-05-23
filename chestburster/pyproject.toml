@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "chestburster"
 version = "0.1.0"
 authors = [
-  { name="Paul L.R. Olivier", email="paul.olivier@laas.fr" },
+  { name="plrolivier", email="olivier.paul.lr@gmail.com" },
 ]
 description = "Rehost processes betweeb different hosts and forward syscalls"
 readme = "README.md"
